@@ -23,6 +23,7 @@ AstroTrooper.Model = function()
     return mdl
 end
 AstroTrooper.hooks = {}
+AstroTrooper.CameraOffset = Vector(9, 0, -4)
 
 ents.register(AstroTrooper, "astrobase")
 
