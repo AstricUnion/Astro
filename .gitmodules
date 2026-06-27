@@ -1,0 +1,9 @@
+[submodule "libs/tween"]
+	path = libs/tween
+	url = git@github.com:AstricUnion/Tween
+[submodule "libs/bmodentity"]
+	path = libs/bmodentity
+	url = git@github.com:AstricUnion/BModEntity
+[submodule "libs/model"]
+	path = libs/model
+	url = git@github.com:AstricUnion/BModel

@@ -1,0 +1,11 @@
+{
+    "runtime.special": {
+        "love.filesystem.load": "loadfile"
+    },
+    "workspace.library": [
+        "/nix/store/6ghf1310yqpwqn9xbyla079w5kpv4b3d-starfall.lua",
+        "/nix/store/rl8mzq17zfish6cx37y76d2vk8w2a16w-glua",
+        "/nix/store/dvg2chdki69xabwnvni5q9gvhq297q8z-love2d",
+        "${3rd}/love2d/library"
+    ]
+}
