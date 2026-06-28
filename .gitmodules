@@ -7,3 +7,6 @@
 [submodule "libs/model"]
 	path = libs/model
 	url = git@github.com:AstricUnion/BModel
+[submodule "libs/beffect"]
+	path = libs/beffect
+	url = git@github.com:AstricUnion/BEffects

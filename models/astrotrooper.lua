@@ -22,11 +22,11 @@ model.new("astrotrooper_projectile", part {
 })
 
 model.new("astrotrooper_blaster", hitbox {
-        vertex {"cube", Vector(0, 0, 6), Angle(0, 0, 0), Vector(30, 8, 10)},
-        vertex {"cylinder", Vector(36, 0, 2), Angle(0, 90, 0), Vector(6, 6, 8)},
-        material = "Metal",
-        mass = 200,
-    })
+    vertex {"cube", Vector(0, 0, 6), Angle(0, 0, 0), Vector(30, 8, 10)},
+    vertex {"cylinder", Vector(36, 0, 2), Angle(0, 90, 0), Vector(6, 6, 8)},
+    material = "Metal",
+    mass = 200,
+})
     :add("blaster", part {
         holo { Vector(-5, 0, 2), nil, "models/hunter/blocks/cube025x025x025.mdl", color = Color(255, 0, 0, 0) },
         holo { Vector(-28, 0, -2), Angle(180, 90, 90), "models/props_combine/combinethumper001a.mdl", Vector(0.08, 0.08, 0.12), color = Color(255, 40, 40), material = "models/props_combine/metal_combinebridge001" },
@@ -42,8 +42,8 @@ model.new("astrotrooper_blaster", hitbox {
         if !boneId then return end
         local bone = ent:getBoneEntity(boneId)
         ent.tween = tween.start(tween.new {
-            param { 0, 0.1, bone, property.LOCALPOS, Vector(), Vector(-16, 0, 0), math.easeOutQuart },
-            param { 0.1, 0.3, bone, property.LOCALPOS, Vector(-16, 0, 0), Vector(0, 0, 0), math.easeInQuart }
+            param { 0, 0.15, bone, property.LOCALPOS, Vector(), Vector(-20, 0, 0), math.easeOutCubic },
+            param { 0.15, 0.3, bone, property.LOCALPOS, Vector(-20, 0, 0), Vector(), math.easeOutCubic }
         })
     end)
     :addSequence("reload", 1, function(ent)
@@ -54,9 +54,11 @@ model.new("astrotrooper_blaster", hitbox {
         local propertyWithoutDiff = table.copy(property.LOCALANGLES)
         propertyWithoutDiff.diff = nil
         ent.tween = tween.start(tween.new {
+            param { 0, 0.15, bone, property.LOCALPOS, nil, Vector(), math.easeOutCubic },
             param { 0, 0.6, bone, propertyWithoutDiff, Angle(), Angle(360, 0, 0), math.easeInOutQuart},
         })
     end)
+
 
 local mat = {[0] = "models/props_combine/metal_combinebridge001", [1] = "models/props_combine/metal_combinebridge001", [2] = "models/props_combine/metal_combinebridge001"}
 model.new("astrotrooper", hitbox {
@@ -79,9 +81,14 @@ model.new("astrotrooper", hitbox {
         holo { nil, Angle(0, 180, 0), "models/props_combine/combine_train02a.mdl", Vector(0.1, 0.1, 0.06), color = Color(255, 40, 40) },
         holo { Vector(0, 40, 12), Angle(-150, 90, 0), "models/props_combine/combine_barricade_med02a.mdl", Vector(0.15, 0.18, 0.18), color = Color(255, 40, 40) },
         holo { Vector(0, -40, 12), Angle(-150, -90, 0), "models/props_combine/combine_barricade_med02a.mdl", Vector(0.15, 0.18, 0.18), color = Color(255, 40, 40) },
+    })
+    :add("body", "rotor1", part {
         holo { Vector(0, 0, -11), nil, "models/props_phx/wheels/moped_tire.mdl", Vector(1.8, 1.8, 2.2), color = Color(255, 40, 40), material = mat},
-        holo { Vector(0, 0, -6), Angle(0, 0, 90), "models/props_wasteland/wheel03a.mdl", Vector(0.27, 0.18, 0.27), color = Color(255, 40, 40) },
         holo { Vector(0, 0, -10), Angle(90, 0, 0), "models/props_c17/pulleywheels_large01.mdl", Vector(1.2, 1, 1), color = Color(255, 40, 40), material = mat }
+    })
+    :add("body", "rotor2", part {
+        rig(Vector(0, 0, -6)),
+        holo { Vector(0, 0, -6), Angle(0, 0, 90), "models/props_wasteland/wheel03a.mdl", Vector(0.27, 0.18, 0.27), color = Color(255, 40, 40) },
     })
     :add("camera", rig(Vector(0, 0, 25), Angle()))
     :add("camera", "head", part {
@@ -96,20 +103,12 @@ model.new("astrotrooper", hitbox {
     :addSequence("idle", 0.5, function(ent)
         if ent.tween then tween.stop(ent.tween) end
 
-        local headId = ent:lookupBone("head")
-        if !headId then return end
-        local head = ent:getBoneEntity(headId)
-        if !head then return end
-
-        local cameraId = ent:lookupBone("camera")
-        if !cameraId then return end
-        local camera = ent:getBoneEntity(cameraId)
-        if !camera then return end
-
-        local bodyId = ent:lookupBone("body")
-        if !bodyId then return end
-        local body = ent:getBoneEntity(bodyId)
-        if !body then return end
+        local head = ent:getBoneEntity(ent:lookupBone("head"))
+        local camera = ent:getBoneEntity(ent:lookupBone("camera"))
+        local body = ent:getBoneEntity(ent:lookupBone("body"))
+        local rotor1 = ent:getBoneEntity(ent:lookupBone("rotor1"))
+        local rotor2 = ent:getBoneEntity(ent:lookupBone("rotor2"))
+        if !(body and head and camera and rotor1 and rotor2) then return end
 
         ent.tween = tween.start(tween.new {
             function(process)
@@ -128,5 +127,14 @@ model.new("astrotrooper", hitbox {
 
             param { 0, 2, head, property.LOCALANGLES, Angle(8, 0, 0), Angle(0, 0, 0), math.easeInOutSine },
             param { 2, 4, head, property.LOCALANGLES, Angle(0, 0, 0), Angle(8, 0, 0), math.easeInOutSine },
+
+            function(process)
+                if process > 4 then
+                    return true
+                end
+                local delta = game.serverFrameTime()
+                rotor1:setLocalAngles(rotor1:getLocalAngles() + Angle(0, 200 * delta, 0))
+                rotor2:setLocalAngles(rotor2:getLocalAngles() + Angle(0, -200 * delta, 0))
+            end
         }, true)
     end)

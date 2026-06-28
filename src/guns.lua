@@ -37,7 +37,6 @@ if SERVER then
         guns.projectiles[#guns.projectiles+1] = data
     end
 
-    local eff = effect.create()
     hook.add("Think", "GunsProjectiles", function()
         local tick = game.getTickInterval()
         local cur = timer.curtime()
@@ -46,12 +45,18 @@ if SERVER then
             local trace_result = trace.line(pos, pos + v.velocity * tick, v.ignore, MASK.SHOT_HULL)
             if trace_result.Hit or cur - v.startedAt > v.timeout then
                 v.ent:setPos(trace_result.HitPos)
-                v.ent:remove()
+                v.ent:setNoDraw(true)
                 guns.projectiles[i] = nil
                 if !trace_result.HitSky then
                     game.blastDamage(trace_result.HitPos, v.radius, v.damage)
-                    eff:setOrigin(trace_result.HitPos)
-                    eff:play("Explosion")
+                    timer.simple(5, function()
+                        v.ent:remove()
+                    end)
+                    local eff = beff.create("projectile_explosion")
+                    eff:setOrigin(pos)
+                    eff:setNormal(v.velocity:getNormalized())
+                    eff:setScale(1)
+                    eff:play()
                 end
             end
         end

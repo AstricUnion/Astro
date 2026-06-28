@@ -2,11 +2,24 @@
 local ents = ents
 
 ---@class AstroModuleBase: BModEntity
+---@field Health number Health of module
 local AstroModuleBase = {}
 AstroModuleBase.Identifier = "astromodule_base"
 AstroModuleBase.Name = "AstroModule base"
 AstroModuleBase.Model = ""
 AstroModuleBase.hooks = {}
+AstroModuleBase.Health = -1
+
+---[SHARED] Initialize module hook
+function AstroModuleBase:moduleInitialize() end
+
+---[SHARED] Initialize module
+function AstroModuleBase:initialize()
+    if SERVER then
+        self.ent:setHealth(self.Health)
+        self.ent:setMaxHealth(self.Health)
+    end
+end
 
 if SERVER then
     ---[SERVER] On activate AstroModule
@@ -27,6 +40,16 @@ if SERVER then
     function AstroModuleBase:deactivate()
         self:onDeactivate()
         self:setNWVar("isActive", false)
+    end
+
+    ---[SERVER] Damage mechanics
+    ---@param self AstroBase
+    ---@param target Entity
+    function AstroModuleBase.hooks.PostEntityTakeDamage(self, target, _, _, amount, _, pos, force)
+        if target ~= self.ent or self.Health <= 0 then return end
+        local current = self.ent:getHealth() - amount
+        self.ent:setHealth(current)
+        self.ent:applyForceOffset(force, pos)
     end
 
     ---[INTERNAL] [SERVER] Set Astro for this module
@@ -85,6 +108,7 @@ ents.register(AstroModuleBase)
 ---@field VelocityRatio number Velocity ratio to lerp. By default is 0.05
 ---@field CameraOffset Vector Camera offset
 ---@field CameraAngle Angle Camera angles
+---@field Health number Health of Astro
 ---@field Modules AstroModuleCfg[]
 ---@field protected seat Vehicle Seat for astro driver
 ---@field protected driver Player Driver of this Astro
@@ -92,6 +116,9 @@ ents.register(AstroModuleBase)
 ---@field protected physobj PhysObj Physics object of this Astro
 ---@field protected modules AstroModuleBase[] Initialized modules of astro
 ---@field protected filter Entity[] Entities to filter (for eyeTrace)
+---@field protected lastPos Vector Last position to calculate FOV
+---@field protected fovOffset number Current FOV offset. Will be lerp-ed
+---@field protected slop number Current slop offset. Will be lerp-ed
 local AstroBase = {}
 AstroBase.Identifier = "astrobase"
 AstroBase.Name = "Base Astro"
@@ -100,9 +127,10 @@ AstroBase.hooks = {}
 
 AstroBase.SprintSpeed = 600
 AstroBase.Speed = 400
-AstroBase.VelocityRatio = 0.05
+AstroBase.VelocityRatio = 0.04
 AstroBase.CameraOffset = Vector()
 AstroBase.CameraAngle = Angle()
+AstroBase.Health = 1000
 AstroBase.Modules = {}
 
 
@@ -114,6 +142,8 @@ function AstroBase:initialize()
     self.filter = {self.ent}
     local modules = {}
     if SERVER then
+        self.ent:setHealth(self.Health)
+        self.ent:setMaxHealth(self.Health)
         local seat = prop.createSeat(self.ent:getPos(), Angle(), "models/nova/airboat_seat.mdl", true)
         self.seat = seat
         self.physobj = self.ent:getPhysicsObject()
@@ -129,6 +159,10 @@ function AstroBase:initialize()
             modules[i] = ent
             self.filter[#self.filter+1] = ent.ent
         end
+    else
+        self.lastPos = self.ent:getPos()
+        self.fovOffset = 0
+        self.slop = 0
     end
     self.modules = modules
     self:astroInitialize()
@@ -151,23 +185,39 @@ if SERVER then
     ---@param ply Player
     ---@param vehicle Vehicle
     function AstroBase.hooks:PlayerEnteredVehicle(ply, vehicle)
-        if vehicle == self.seat then
-            self:setNWVar("AstroDriver", ply:getUserID())
-            self.physobj:enableGravity(false)
-            enableHud(ply, true)
-            ply:setViewEntity(self.ent)
-        end
+        if vehicle ~= self.seat then return end
+        self:setNWVar("AstroDriver", ply:getUserID())
+        self.physobj:enableGravity(false)
+        enableHud(ply, true)
+        ply:setViewEntity(self.ent)
     end
 
     ---@param ply Player
     ---@param vehicle Vehicle
     function AstroBase.hooks:PlayerLeaveVehicle(ply, vehicle)
-        if vehicle == self.seat then
-            self:setNWVar("AstroDriver", nil)
-            self.physobj:enableGravity(true)
-            ply:setViewEntity(nil)
-            enableHud(ply, false)
-        end
+        if vehicle ~= self.seat then return end
+        self:setNWVar("AstroDriver", nil)
+        self.physobj:enableGravity(true)
+        ply:setViewEntity(nil)
+        enableHud(ply, false)
+    end
+
+    ---[SERVER] Get fly velocity of Astro
+    ---@return Vector velocity
+    function AstroBase:getVelocity()
+        return self.velocity
+    end
+
+    ---[SERVER] Add vector to fly velocity
+    ---@param vel Vector
+    function AstroBase:addVelocity(vel)
+        self.velocity = self.velocity + vel
+    end
+
+    ---[SERVER] Add vector to fly velocity
+    ---@param vel Vector
+    function AstroBase:setVelocity(vel)
+        self.velocity = vel
     end
 
     ---Gets key direction of player.
@@ -203,7 +253,8 @@ if SERVER then
             local speed = dr:keyDown(IN_KEY.DUCK) and self.SprintSpeed or self.Speed
             self.velocity = math.lerpVector(self.VelocityRatio, self.velocity, dir * speed * 100 * frametime)
             self.physobj:setVelocity(self.velocity)
-            local ang = self.ent:worldToLocalAngles(eyeangles)
+            local localVel = self.physobj:getLocalVelocity()
+            local ang = self.ent:worldToLocalAngles(Angle(eyeangles.p, eyeangles.y, (localVel.y / -speed) * 2))
             local angvel = ang:getQuaternion():getRotationVector() - self.ent:getAngleVelocity() / 5
             self.physobj:addAngleVelocity(angvel)
             for _, v in ipairs(self.modules) do
@@ -229,8 +280,19 @@ if SERVER then
             astro:inputReleased(net.readUInt(32))
         end
     end)
+
+    ---[SERVER] Damage mechanics
+    ---@param self AstroBase
+    ---@param target Entity
+    function AstroBase.hooks.PostEntityTakeDamage(self, target, _, _, amount, _, pos, force)
+        if target ~= self.ent then return end
+        local current = self.ent:getHealth() - amount
+        self.ent:setHealth(current)
+        self.ent:applyForceOffset(force, pos)
+    end
 else
     local Ply = player()
+
     ---[CLIENT] Calc view for Astro
     function AstroBase.hooks:CalcView(pos, ang)
         local dr = self:getDriver()
@@ -242,15 +304,44 @@ else
         local eyeAngles = dr:getEyeAngles()
         camera:setAngles(eyeAngles)
         pos, ang = localToWorld(self.CameraOffset, self.CameraAngle, camera:getPos(), eyeAngles)
+        local velocity = (pos - self.lastPos):getRotated(ang)
+        self.lastPos = pos
+        self.fovOffset = math.lerp(0.1, self.fovOffset, velocity:getLength() / 8)
+        self.slop = math.lerp(0.2, self.slop, velocity.y / 16)
         return {
             origin = pos,
-            angles = ang,
-            fov = 120
+            angles = ang:setR(self.slop),
+            fov = 120 + self.fovOffset
         }
     end
 
+    local drawElements = {
+        ["CHudChat"] = true,
+        ["CHudMessage"] = true
+    }
+
+    ---[CLIENT] Draw HUD or not
+    ---@param element string
+    function AstroBase.hooks:HUDShouldDraw(element)
+        local dr = self:getDriver()
+        if dr ~= Ply then return end
+        return drawElements[element] or false
+    end
+
+    ---[CLIENT] Draw HUD for Astro
+    function AstroBase.hooks:PostDrawHUD()
+        local dr = self:getDriver()
+        if dr ~= Ply then return end
+        local sw, sh = render.getGameResolution()
+        render.drawRect(sw / 2 - 1, sh / 2 - 1, 2, 2)
+    end
+
+    ---[CLIENT] Hook on render offscreen
+    function AstroBase:renderOffscreen() end
+
     ---[CLIENT] Effects for head for astro
     function AstroBase.hooks:RenderOffscreen()
+        self:renderOffscreen()
         local dr = self:getDriver()
         if !dr or dr == Ply then return end
         local cameraId = self.ent:lookupBone("camera")
@@ -270,7 +361,7 @@ else
 
     ---[INTERNAL] [CLIENT] Astrobot input pressed
     function AstroBase.hooks:InputPressed(button)
-        if self:getDriver() == Ply then
+        if self:getDriver() == Ply and !input.getCursorVisible() then
             self:inputPressed(button)
             net.start("AstroInputPressed")
                 net.writeEntity(self.ent)
@@ -281,7 +372,7 @@ else
 
     ---[INTERNAL] [CLIENT] Astrobot input released
     function AstroBase.hooks:InputReleased(button)
-        if self:getDriver() == Ply then
+        if self:getDriver() == Ply and !input.getCursorVisible() then
             self:inputReleased(button)
             net.start("AstroInputReleased")
                 net.writeEntity(self.ent)
@@ -298,14 +389,12 @@ else
     end
 end
 
-
 ---[SHARED] Get driver
 ---@return Player?
 function AstroBase:getDriver()
     local userId = self:getNWVar("AstroDriver")
     return userId and player(userId) or nil
 end
-
 
 ---[SHARED] Get Astro eye trace
 ---@return TraceResult? trace
