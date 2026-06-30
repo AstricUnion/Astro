@@ -19,6 +19,7 @@ function AstroModuleBase:initialize()
         self.ent:setHealth(self.Health)
         self.ent:setMaxHealth(self.Health)
     end
+    self:moduleInitialize()
 end
 
 if SERVER then
@@ -42,14 +43,24 @@ if SERVER then
         self:setNWVar("isActive", false)
     end
 
+    ---[SERVER] When module damaged
+    function AstroModuleBase:onDamage(attacker, inflictor, amount, type, pos, force) end
+
+    ---[SERVER] On module death
+    function AstroModuleBase:onDeath() end
+
     ---[SERVER] Damage mechanics
-    ---@param self AstroBase
+    ---@param self AstroModuleBase
     ---@param target Entity
-    function AstroModuleBase.hooks.PostEntityTakeDamage(self, target, _, _, amount, _, pos, force)
+    function AstroModuleBase.hooks.PostEntityTakeDamage(self, target, attacker, inflictor, amount, type, pos, force)
         if target ~= self.ent or self.Health <= 0 then return end
         local current = self.ent:getHealth() - amount
         self.ent:setHealth(current)
         self.ent:applyForceOffset(force, pos)
+        self:onDamage(attacker, inflictor, amount, type, pos, force)
+        if current <= 0 then
+            self:onDeath()
+        end
     end
 
     ---[INTERNAL] [SERVER] Set Astro for this module
@@ -91,6 +102,18 @@ end
 ---@return number?
 function AstroModuleBase:getModuleID()
     return self:getNWVar("ModuleID")
+end
+
+---[SHARED] Get module's health
+---@return number health
+function AstroModuleBase:getHealth()
+    return self.ent:getHealth()
+end
+
+---[SHARED] Is Astro alive
+---@return boolean isAlive
+function AstroModuleBase:isAlive()
+    return self.ent:getHealth() > 0
 end
 
 ents.register(AstroModuleBase)
@@ -152,7 +175,7 @@ function AstroBase:initialize()
         for i, v in ipairs(self.Modules) do
             local ent = ents.create(v.module)
             local localPos, localAng = localToWorld(v.offset, Angle(), pos, ang)
-            ent:spawn(localPos, localAng, true)
+            ent:spawn(localPos, localAng, false)
             ---@cast ent AstroModuleBase
             ent.ent:setParent(self.ent)
             ent:setAstro(self, i)
@@ -220,6 +243,12 @@ if SERVER then
         self.velocity = vel
     end
 
+    ---[SERVER] Set Astro's state
+    ---@param state number
+    function AstroBase:setState(state)
+        self:setNWVar("state", state)
+    end
+
     ---Gets key direction of player.
     ---@param ply Player
     ---@param negative_key number See IN_KEY enum
@@ -243,11 +272,20 @@ if SERVER then
         return dir
     end
 
+    ---[SERVER] Gets direction of Astro
+    ---@return Vector? direction
+    function AstroBase:getDirection()
+        local dr = self:getDriver()
+        if !dr then return end
+        return getDirection(dr, dr:getEyeAngles())
+    end
+
     ---[INTERNAL] [SERVER] Astrobot physics
     function AstroBase.hooks:Think()
         local frametime = game.getTickInterval()
         local dr = self:getDriver()
         if dr and isValid(dr) then
+            self:think()
             local eyeangles = dr:getEyeAngles()
             local dir = getDirection(dr, eyeangles)
             local speed = dr:keyDown(IN_KEY.DUCK) and self.SprintSpeed or self.Speed
@@ -266,6 +304,7 @@ if SERVER then
     net.receive("AstroInputPressed", function(_, ply)
         local ent = net.readEntity()
         local astro = ents.inited[ent:entIndex()]
+        if !astro then return end
         ---@cast astro AstroBase
         if astro.inputPressed and astro:getDriver() == ply then
             astro:inputPressed(net.readUInt(32))
@@ -275,20 +314,36 @@ if SERVER then
     net.receive("AstroInputReleased", function(_, ply)
         local ent = net.readEntity()
         local astro = ents.inited[ent:entIndex()]
+        if !astro then return end
         ---@cast astro AstroBase
         if astro.inputReleased and astro:getDriver() == ply then
             astro:inputReleased(net.readUInt(32))
         end
     end)
 
+    ---[SERVER] When Astro got damaged
+    function AstroBase:onDamage(attacker, inflictor, amount, type, pos, force) end
+
+    ---[SERVER] On Astro death
+    function AstroBase:onDeath() end
+
     ---[SERVER] Damage mechanics
     ---@param self AstroBase
     ---@param target Entity
-    function AstroBase.hooks.PostEntityTakeDamage(self, target, _, _, amount, _, pos, force)
+    function AstroBase.hooks.PostEntityTakeDamage(self, target, attacker, inflictor, amount, type, pos, force)
         if target ~= self.ent then return end
         local current = self.ent:getHealth() - amount
         self.ent:setHealth(current)
         self.ent:applyForceOffset(force, pos)
+        self:onDamage(attacker, inflictor, amount, type, pos, force)
+        if current <= 0 then
+            self:onDeath()
+        end
+    end
+
+    ---[SERVER] On remove (to remove seat)
+    function AstroBase:onRemove()
+        if isValid(self.seat) then self.seat:remove() end
     end
 else
     local Ply = player()
@@ -304,29 +359,29 @@ else
         local eyeAngles = dr:getEyeAngles()
         camera:setAngles(eyeAngles)
         pos, ang = localToWorld(self.CameraOffset, self.CameraAngle, camera:getPos(), eyeAngles)
-        local velocity = (pos - self.lastPos):getRotated(ang)
+        local velocity = self.ent:worldToLocalVector(self.lastPos - pos)
         self.lastPos = pos
-        self.fovOffset = math.lerp(0.1, self.fovOffset, velocity:getLength() / 8)
-        self.slop = math.lerp(0.2, self.slop, velocity.y / 16)
+        self.fovOffset = math.lerp(0.1, self.fovOffset, velocity:getLength() / 10)
+        self.slop = math.lerp(0.2, self.slop, velocity.y / 20)
         return {
             origin = pos,
             angles = ang:setR(self.slop),
             fov = 120 + self.fovOffset
         }
     end
-
-    local drawElements = {
-        ["CHudChat"] = true,
-        ["CHudMessage"] = true
-    }
-
-    ---[CLIENT] Draw HUD or not
-    ---@param element string
-    function AstroBase.hooks:HUDShouldDraw(element)
-        local dr = self:getDriver()
-        if dr ~= Ply then return end
-        return drawElements[element] or false
-    end
+    --
+    -- local drawElements = {
+    --     ["CHudChat"] = true,
+    --     ["CHudMessage"] = true
+    -- }
+    --
+    -- ---[CLIENT] Draw HUD or not
+    -- ---@param element string
+    -- function AstroBase.hooks:HUDShouldDraw(element)
+    --     local dr = self:getDriver()
+    --     if dr ~= Ply then return end
+    --     return drawElements[element] or false
+    -- end
 
     ---[CLIENT] Draw HUD for Astro
     function AstroBase.hooks:PostDrawHUD()
@@ -404,6 +459,24 @@ function AstroBase:getEyeTrace()
     local pos = self.ent:getPos()
     local ang = dr:getEyeAngles()
     return trace.line(pos, pos + ang:getForward() * 32768, self.filter)
+end
+
+---[SHARED] Get Astro's health
+---@return number health
+function AstroBase:getHealth()
+    return self.ent:getHealth()
+end
+
+---[SHARED] Is Astro alive
+---@return boolean isAlive
+function AstroBase:isAlive()
+    return self.ent:getHealth() > 0
+end
+
+---[SHARED] Get Astro state
+---@return number state
+function AstroBase:getState()
+    return self:getNWVar("state", nil)
 end
 
 
