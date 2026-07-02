@@ -1,129 +1,10 @@
 ---@class ents
 local ents = ents
 
----@class AstroModuleBase: BModEntity
----@field Health number Health of module
-local AstroModuleBase = {}
-AstroModuleBase.Identifier = "astromodule_base"
-AstroModuleBase.Name = "AstroModule base"
-AstroModuleBase.Model = ""
-AstroModuleBase.hooks = {}
-AstroModuleBase.Health = -1
-
----[SHARED] Initialize module hook
-function AstroModuleBase:moduleInitialize() end
-
----[SHARED] Initialize module
-function AstroModuleBase:initialize()
-    if SERVER then
-        self.ent:setHealth(self.Health)
-        self.ent:setMaxHealth(self.Health)
-    end
-    self:moduleInitialize()
-end
-
-if SERVER then
-    ---[SERVER] On activate AstroModule
-    ---@return boolean? activated Activate this module
-    function AstroModuleBase:onActivate() end
-
-    ---[SERVER] On deactivate AstroModule
-    function AstroModuleBase:onDeactivate() end
-
-    ---[SERVER] Try to activate module
-    function AstroModuleBase:activate()
-        local activate = self:onActivate()
-        if !activate then return end
-        self:setNWVar("isActive", activate and true or false)
-    end
-
-    ---[SERVER] Deactivate module
-    function AstroModuleBase:deactivate()
-        self:onDeactivate()
-        self:setNWVar("isActive", false)
-    end
-
-    ---[SERVER] When module damaged
-    function AstroModuleBase:onDamage(attacker, inflictor, amount, type, pos, force) end
-
-    ---[SERVER] On module death
-    function AstroModuleBase:onDeath() end
-
-    ---[SERVER] Damage mechanics
-    ---@param self AstroModuleBase
-    ---@param target Entity
-    function AstroModuleBase.hooks.PostEntityTakeDamage(self, target, attacker, inflictor, amount, type, pos, force)
-        if target ~= self.ent or self.Health <= 0 then return end
-        local current = self.ent:getHealth() - amount
-        self.ent:setHealth(current)
-        self.ent:applyForceOffset(force, pos)
-        self:onDamage(attacker, inflictor, amount, type, pos, force)
-        if current <= 0 then
-            self:onDeath()
-        end
-    end
-
-    ---[INTERNAL] [SERVER] Set Astro for this module
-    ---@param astro AstroBase
-    ---@param id number ID of module in astro
-    function AstroModuleBase:setAstro(astro, id)
-        self:setNWVar("LinkedAstro", astro.ent:entIndex())
-        self:setNWVar("ModuleID", id)
-    end
-else
-    function AstroModuleBase:networkVariablesUpdate(old, new)
-        if !old.LinkedAstro and new.LinkedAstro then
-            local astro = self:getAstro()
-            if !astro then return end
-            astro:clientInitializeModule(self)
-        end
-    end
-end
-
----[SHARED] Think hook
-function AstroModuleBase:think() end
-
----[SHARED] Is module active
----@return Player?
-function AstroModuleBase:isActive()
-    return self:getNWVar("isActive", false)
-end
-
----[SHARED] Get Astro
----@return AstroBase?
-function AstroModuleBase:getAstro()
-    local entId = self:getNWVar("LinkedAstro")
-    local ent = entId and ents.inited[entId] or nil
-    ---@cast ent AstroBase
-    return ent
-end
-
----[SHARED] Get module ID
----@return number?
-function AstroModuleBase:getModuleID()
-    return self:getNWVar("ModuleID")
-end
-
----[SHARED] Get module's health
----@return number health
-function AstroModuleBase:getHealth()
-    return self.ent:getHealth()
-end
-
----[SHARED] Is Astro alive
----@return boolean isAlive
-function AstroModuleBase:isAlive()
-    return self.ent:getHealth() > 0
-end
-
-ents.register(AstroModuleBase)
-
-
 
 ---@class AstroModuleCfg
----@field offset Vector Offset of this module
----@field module string Module name
----@field binds table<number, string>? Binds for module
+---@field module string?
+---@field offset Vector
 
 ---@class AstroBase: BModEntity
 ---@field SprintSpeed number Sprint speed of Astro. By default is 600
@@ -181,6 +62,8 @@ function AstroBase:initialize()
             ent:setAstro(self, i)
             modules[i] = ent
             self.filter[#self.filter+1] = ent.ent
+            v.bindsPressed = v.bindsPressed or {}
+            v.bindsReleased = v.bindsReleased or {}
         end
     else
         self.lastPos = self.ent:getPos()
@@ -307,7 +190,8 @@ if SERVER then
         if !astro then return end
         ---@cast astro AstroBase
         if astro.inputPressed and astro:getDriver() == ply then
-            astro:inputPressed(net.readUInt(32))
+            local key = net.readUInt(32)
+            astro:inputPressed(key)
         end
     end)
 
@@ -317,7 +201,8 @@ if SERVER then
         if !astro then return end
         ---@cast astro AstroBase
         if astro.inputReleased and astro:getDriver() == ply then
-            astro:inputReleased(net.readUInt(32))
+            local key = net.readUInt(32)
+            astro:inputReleased(key)
         end
     end)
 

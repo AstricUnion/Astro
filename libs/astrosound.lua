@@ -114,6 +114,7 @@ if CLIENT then
     ---@param identifier string Unique identifier of sound
     ---@param url string URL of sound
     function astrosound.preloadURL(identifier, url)
+        if !http.canRequest() then return end
         astrosound.loads = astrosound.loads + 1
         -- TODO: coroutine
         timer.simple(0.5 * astrosound.loads, function()
