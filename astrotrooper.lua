@@ -1,0 +1,50 @@
+---@name AstroTrooper
+---@author AstricUnion
+---@include astronew/libs/astrosound.lua
+---@include astronew/libs/bmodentity/entity.lua
+---@include astronew/libs/model/model.lua
+---@include astronew/libs/tween/tweens.lua
+---@include astronew/libs/beffect/effects.lua
+---@include astronew/libs/beffect/safeparticle.lua
+---@include astronew/models/astrotrooper.lua
+---@include astronew/src/astrobase.lua
+---@include astronew/src/guns.lua
+---@include astronew/entities/astroblaster.lua
+---@include astronew/entities/astrodash.lua
+---@include astronew/entities/astrotrooper.lua
+
+---@class astrosound
+astrosound = require("astronew/libs/astrosound.lua")
+
+---@class ents
+ents = require("astronew/libs/bmodentity/entity.lua")
+
+---@class model
+model = require("astronew/libs/model/model.lua")
+
+---@class tween 
+tween = require("astronew/libs/tween/tweens.lua")
+
+---@class beff
+beff = require("astronew/libs/beffect/effects.lua")
+require("astronew/libs/beffect/safeparticle.lua")
+
+---@includedir astronew/effects
+dodir("astronew/effects", {})
+
+require("astronew/models/astrotrooper.lua")
+
+require("astronew/src/astrobase.lua")
+
+---@class guns
+guns = require("astronew/src/guns.lua")
+
+require("astronew/entities/astroblaster.lua")
+require("astronew/entities/astrodash.lua")
+require("astronew/entities/astrotrooper.lua")
+
+
+if SERVER then
+    local ent = ents.create("astrotrooper")
+    ent:spawn(chip():getPos() + Vector(0, 0, 30), Angle(), true)
+end

@@ -1,46 +1,3 @@
----@name AstroTrooper
----@author AstricUnion
----@include astronew/libs/astrosound.lua
----@include astronew/libs/bmodentity/entity.lua
----@include astronew/libs/model/model.lua
----@include astronew/libs/tween/tweens.lua
----@include astronew/models/astrotrooper.lua
----@include astronew/src/astrobase.lua
----@include astronew/src/astromodule.lua
----@include astronew/src/guns.lua
----@include astronew/libs/beffect/effects.lua
----@include astronew/libs/beffect/safeparticle.lua
----@include astronew/modules/blaster.lua
----@include astronew/modules/dash.lua
-
----@class astrosound
-astrosound = require("astronew/libs/astrosound.lua")
-
----@class ents
-ents = require("astronew/libs/bmodentity/entity.lua")
-
----@class model
-model = require("astronew/libs/model/model.lua")
-
----@class tween 
-tween = require("astronew/libs/tween/tweens.lua")
-
----@class beff
-beff = require("astronew/libs/beffect/effects.lua")
-require("astronew/libs/beffect/safeparticle.lua")
-
----@includedir astronew/effects
-dodir("astronew/effects", {})
-
-require("astronew/models/astrotrooper.lua")
-require("astronew/src/astromodule.lua")
-require("astronew/src/astrobase.lua")
-require("astronew/modules/blaster.lua")
-require("astronew/modules/dash.lua")
-
----@class guns
-guns = require("astronew/src/guns.lua")
-
 if CLIENT then
     local sounds = "https://raw.githubusercontent.com/AstricUnion/AstroBots/refs/heads/main/sounds/astrotrooper/"
     astrosound.preloadURL("loop", sounds .. "Idle.mp3")
@@ -153,8 +110,3 @@ else
 end
 
 ents.register(AstroTrooper, "astrobase")
-
-if SERVER then
-    local ent = ents.create("astrotrooper")
-    ent:spawn(chip():getPos() + Vector(0, 0, 30), Angle(), true)
-end
