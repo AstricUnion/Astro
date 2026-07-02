@@ -1,6 +1,6 @@
 ---@name AstroTrooper
 ---@author AstricUnion
----@include astronew/libs/astrosound.lua
+---@include astronew/libs/astrosound/astrosound.lua
 ---@include astronew/libs/bmodentity/entity.lua
 ---@include astronew/libs/model/model.lua
 ---@include astronew/libs/tween/tweens.lua
@@ -14,7 +14,7 @@
 ---@include astronew/entities/astrotrooper.lua
 
 ---@class astrosound
-astrosound = require("astronew/libs/astrosound.lua")
+astrosound = require("astronew/libs/astrosound/astrosound.lua")
 
 ---@class ents
 ents = require("astronew/libs/bmodentity/entity.lua")

@@ -10,3 +10,6 @@
 [submodule "libs/beffect"]
 	path = libs/beffect
 	url = git@github.com:AstricUnion/BEffects
+[submodule "libs/astrosound"]
+	path = libs/astrosound
+	url = git@github.com:AstricUnion/AstroSound
