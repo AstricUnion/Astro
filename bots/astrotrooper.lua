@@ -62,6 +62,7 @@ local STATE = {
 ---@field shootFrom number Shoot from module. Relative to curtime
 ---@field dashDirection Vector
 ---@field inDash boolean 
+---@field lastDashEffect number Last dash effect
 local AstroTrooper = {}
 AstroTrooper.Identifier = "astrotrooper"
 AstroTrooper.Name = "AstroTrooper"
@@ -70,7 +71,7 @@ AstroTrooper.Model = function()
     return mdl
 end
 AstroTrooper.hooks = {}
-AstroTrooper.CameraOffset = Vector(9, 0, -4)
+AstroTrooper.CameraOffset = Vector(9, 0, -5)
 ---@type AstroModuleCfg[]
 AstroTrooper.Modules = {
     {offset = Vector(0, 40, 0), module = "astroblaster"},
@@ -83,33 +84,19 @@ if SERVER then
         self.ent:setSequence(1)
         self.ent:emitSound("npc/combine_gunship/dropship_engine_distant_loop1.wav", 75, 70, 1)
         self.shootFrom = 1
-        self.modules[3].dashEnd = function(mod)
-            timer.simple(1, function()
-                self:setState(STATE.Idle)
-            end)
+        self.modules[3].dashEnd = function(_)
+            self.ent:setCollisionGroup(COLLISION_GROUP.NONE)
+            self:setState(STATE.Idle)
+            self.ent:setNoDraw(false)
+            self.modules[1].ent:setNoDraw(false)
+            self.modules[2].ent:setNoDraw(false)
+            local eff = beff.create("quantum_burst")
+            eff:setOrigin(self.ent:getPos())
+            eff:setNormal(self.ent:getAngles():getForward())
+            eff:setScale(3)
+            eff:play()
         end
         self:setState(STATE.Idle)
-    end
-
-    ---[SERVER] Set next dash time
-    ---@param nextDash number Relative to curtime
-    function AstroTrooper:setNextDash(nextDash)
-        self:setNWVar("NextDash", nextDash)
-    end
-
-    local function createDashEffectHolo(offset, parent)
-        local holo = hologram.create(parent:localToWorld(offset), Angle(), "models/hunter/plates/plate.mdl")
-        if !holo then return end
-        holo:setParent(parent)
-        holo:setTrails(32, 0, 2, "trails/laser", Color(255, 0, 0))
-        holo:setColor(Color(0, 0, 0, 0))
-        timer.simple(1.8, function()
-            holo:setParent(nil)
-            timer.simple(3, function()
-                holo:remove()
-            end)
-        end)
-        return holo
     end
 
     function AstroTrooper:inputPressed(button)
@@ -124,22 +111,13 @@ if SERVER then
             end
         elseif button == MOUSE.MOUSE2 then
             if !self.modules[3]:canAction("dash") then return end
-            astrosound.play {"predash", nil, self.ent}
-            for i=0, 1 do
-                local mod = self.modules[i + 1]
-                timer.simple(0.2 * i, function()
-                    if !isValid(mod) then return end
-                    mod.ent:setSequence(3)
-                end)
-            end
-            self:setState(STATE.ReadyToDash)
-            timer.simple(1, function()
-                createDashEffectHolo(Vector(0, 40, 0), self.ent)
-                createDashEffectHolo(Vector(0, -40, 0), self.ent)
-                astrosound.play {"dash", nil, self.ent}
-                self.modules[3]:sendAction("dash")
-                self:setState(STATE.Dashing)
-            end)
+            self.ent:setCollisionGroup(COLLISION_GROUP.IN_VEHICLE)
+            self.ent:setNoDraw(true)
+            self.modules[1].ent:setNoDraw(true)
+            self.modules[2].ent:setNoDraw(true)
+            astrosound.play {"dash", nil, self.ent}
+            self.modules[3]:sendAction("dash")
+            self:setState(STATE.Dashing)
         end
     end
 
@@ -160,12 +138,18 @@ else
         l1:draw()
         l2:draw()
     end
-end
 
----[SHARED] Get next dash time
----@return number nextDash
-function AstroTrooper:getNextDash()
-    return self:getNWVar("NextDash", 0)
+    function AstroTrooper:think()
+        local cur = timer.curtime()
+        if self:getState() == STATE.Dashing and (self.lastDashEffect or 0) < cur then
+            local dashMod = self.modules[3]
+            local eff = beff.create("quantum_burst")
+            eff:setOrigin(self.ent:getPos())
+            eff:setNormal(dashMod:getDirection())
+            eff:play()
+            self.lastDashEffect = cur + 0.1
+        end
+    end
 end
 
 ents.register(AstroTrooper, "astrobase")

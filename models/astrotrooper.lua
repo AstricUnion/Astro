@@ -57,14 +57,21 @@ model.new("astrotrooper_blaster", hitbox {
             param { 0, 0.6, bone, propertyWithoutDiff, Angle(), Angle(360, 0, 0), math.easeInOutQuart},
         })
     end)
-    :addSequence("dash", 1, function(ent)
+    :addSequence("startDash", 1, function(ent)
         if ent.tween then tween.stop(ent.tween) end
         local bone = ent:getBoneEntity(ent:lookupBone("blaster"))
         if !bone then return end
-        ent.tween = tween.start(tween.new {
-            param { 0, 0.8, bone, propertyWithoutDiff, Angle(), Angle(-180, 0, 0), math.easeInOutCubic},
-            param { 2.2, 3, bone, propertyWithoutDiff, Angle(-180, 0, 0), Angle(0, 0, 0), math.easeInOutCubic},
-        })
+        ent.tween = tween.start(
+            param { 0, 0.8, bone, propertyWithoutDiff, Angle(), Angle(-180, 0, 0), math.easeInOutCubic}
+        )
+    end)
+    :addSequence("endDash", 1, function(ent)
+        if ent.tween then tween.stop(ent.tween) end
+        local bone = ent:getBoneEntity(ent:lookupBone("blaster"))
+        if !bone then return end
+        ent.tween = tween.start(
+            param { 0, 0.8, bone, propertyWithoutDiff, Angle(-180, 0, 0), Angle(0, 0, 0), math.easeInOutCubic}
+        )
     end)
 
 local mat = {[0] = "models/props_combine/metal_combinebridge001", [1] = "models/props_combine/metal_combinebridge001", [2] = "models/props_combine/metal_combinebridge001"}
@@ -126,7 +133,7 @@ model.new("astrotrooper", hitbox {
     vertex {"cylinder", Vector(0, 0, -10), Angle(0, 0, 0), Vector(20, 20, 8)},
     vertex {"cube", Vector(0, 0, 28), Angle(0, 0, 0), Vector(14, 14, 14)},
     material = "Metal",
-    mass = 1000,
+    mass = 1000
 })
     :add("body", bodyModel)
     :add("body", "rotor1", rotor1Model)

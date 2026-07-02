@@ -14,17 +14,18 @@ if SERVER then
         local dir = astro:getDirection()
         if !dir then return end
         self.dashStartTime = timer.curtime()
-        self.dashDirection = !dir:isZero() and dir or self.ent:getAngles():getForward()
+        self:setNWVar("dashDirection", !dir:isZero() and dir or self.ent:getAngles():getForward())
     end
 
     function AstroDash:think()
-        if self.dashDirection then
+        local dir = self:getDirection()
+        if dir then
             local astro = self:getAstro()
             if !astro then return end
-            astro:setVelocity(self.dashDirection * 4000)
+            astro:setVelocity(dir * 4000)
             local cur = timer.curtime()
-            if cur - self.dashStartTime >= 1.4 then
-                self.dashDirection = nil
+            if cur - self.dashStartTime >= 1 then
+                self:setNWVar("dashDirection", nil)
                 self:setNextAction("dash", cur + 3)
                 self:dashEnd()
             end
@@ -33,6 +34,13 @@ if SERVER then
 
     ---[SERVER] Hook on dash end
     function AstroDash:dashEnd() end
+end
+
+
+---[SHARED] Get direction of dash
+---@return Vector?
+function AstroDash:getDirection()
+    return self:getNWVar("dashDirection")
 end
 
 ents.register(AstroDash, "astromodule_base")
