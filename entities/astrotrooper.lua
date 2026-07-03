@@ -35,6 +35,7 @@ AstroTrooper.Modules = {
     {offset = Vector(0, -40, 0), module = "astroblaster"},
     {offset = Vector(), module = "astrodash"}
 }
+AstroTrooper.SeatOffset = Vector(50, 0, 0)
 
 if SERVER then
     function AstroTrooper:astroInitialize()
