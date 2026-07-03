@@ -45,13 +45,10 @@ if SERVER then
             local trace_result = trace.line(pos, pos + v.velocity * tick, v.ignore, MASK.SHOT_HULL)
             if trace_result.Hit or cur - v.startedAt > v.timeout then
                 v.ent:setPos(trace_result.HitPos)
-                v.ent:setNoDraw(true)
+                v.ent:remove()
                 guns.projectiles[i] = nil
                 if !trace_result.HitSky then
                     game.blastDamage(trace_result.HitPos, v.radius, v.damage)
-                    timer.simple(5, function()
-                        v.ent:remove()
-                    end)
                     local eff = beff.create("projectile_explosion")
                     eff:setOrigin(pos)
                     eff:setNormal(v.velocity:getNormalized())

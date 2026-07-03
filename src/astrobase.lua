@@ -403,18 +403,13 @@ if SERVER then
         self:seatToAstro()
     end
 else
-    local guiMat = material.create("UnlitGeneric")
-    guiMat:setTextureURL("$basetexture", "https://raw.githubusercontent.com/AstricUnion/Astro/refs/heads/main/textures/gui.png")
-    guiMat:setInt("$flags", 256)
     local Ply = player()
 
     ---[CLIENT] Calc view for Astro
     function AstroBase.hooks:CalcView(pos, ang)
         local dr = self:getDriver()
         if dr ~= Ply then return end
-        local cameraId = self.ent:lookupBone("camera")
-        if !cameraId then return end
-        local camera = self.ent:getBoneEntity(cameraId)
+        local camera = self.ent:getBoneEntity(self.ent:lookupBone("camera"))
         if !camera then return end
         local eyeAngles = dr:getEyeAngles()
         camera:setAngles(eyeAngles)
@@ -443,13 +438,61 @@ else
     --     return drawElements[element] or false
     -- end
 
+    local function pushMask(mask)
+        render.clearStencil()
+        render.setStencilEnable(true)
+
+        render.setStencilWriteMask(1)
+        render.setStencilTestMask(1)
+
+        render.setStencilFailOperation(STENCIL.REPLACE)
+        render.setStencilPassOperation(STENCIL.ZERO)
+        render.setStencilZFailOperation(STENCIL.ZERO)
+        render.setStencilCompareFunction(STENCIL.NEVER)
+        render.setStencilReferenceValue(1)
+
+        mask()
+
+        render.setStencilFailOperation(STENCIL.ZERO)
+        render.setStencilPassOperation(STENCIL.REPLACE)
+        render.setStencilZFailOperation(STENCIL.ZERO)
+        render.setStencilCompareFunction(STENCIL.EQUAL)
+        render.setStencilReferenceValue(0)
+    end
+
+    local function popMask()
+        render.setStencilEnable(false)
+        render.clearStencil()
+    end
+
+    local function equilateralTriangle(x, y, a)
+        a = a * 0.5
+        local h = 0.866025 * a
+        render.drawTriangle(x - a, y + h, x, y - h, x + a, y + h)
+    end
+
+    local function equilateralTriangleButRotated(x, y, a)
+        a = a * 0.5
+        local h = 0.866025 * a
+        render.drawTriangle(x - a, y - h, x + a, y - h, x, y + h)
+    end
+
     ---[CLIENT] Draw HUD for Astro
     function AstroBase.hooks:PostDrawHUD()
         local dr = self:getDriver()
         if dr ~= Ply then return end
-        render.setMaterial(guiMat)
-            render.drawTexturedRect(0, 0, 1024, 1024)
-        render.setMaterial(nil)
+        local sw, sh = render.getGameResolution()
+        render.setColor(Color(255, 70, 70, 50))
+        pushMask(function()
+            equilateralTriangle(sw / 2, sh / 2 - 4, 28 + self.fovOffset * 3)
+            local scale = 33 + self.fovOffset * 5
+            equilateralTriangleButRotated(sw / 2, sh / 2 - 4 + 0.27 * scale, scale)
+        end)
+        equilateralTriangle(sw / 2, sh / 2 - 5, 33 + self.fovOffset * 3)
+        popMask()
+
+        render.setColor(Color(255, 20, 20, 200))
+        equilateralTriangleButRotated(sw / 2, sh / 2, 6)
     end
 
     ---[CLIENT] Hook on render offscreen
