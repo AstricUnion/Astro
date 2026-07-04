@@ -29,7 +29,7 @@ if SERVER then
             velocity = angle:getForward() * startVelocity,
             ignore = ignore,
             damage = damage or 60,
-            radius = radius or 80,
+            radius = radius or 200,
             timeout = timeout or 3,
             startedAt = timer.curtime()
         }

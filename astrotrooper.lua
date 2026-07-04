@@ -7,6 +7,7 @@
 ---@include astronew/libs/beffect/effects.lua
 ---@include astronew/libs/beffect/safeparticle.lua
 ---@include astronew/models/astrotrooper.lua
+---@include astronew/src/astrogui.lua
 ---@include astronew/src/astrobase.lua
 ---@include astronew/src/guns.lua
 ---@include astronew/entities/astroblaster.lua
@@ -29,6 +30,9 @@ tween = require("astronew/libs/tween/tweens.lua")
 beff = require("astronew/libs/beffect/effects.lua")
 require("astronew/libs/beffect/safeparticle.lua")
 
+---@class astrogui
+astrogui = require("astronew/src/astrogui.lua")
+
 ---@includedir astronew/effects
 dodir("astronew/effects", {})
 
@@ -46,5 +50,5 @@ require("astronew/entities/astrotrooper.lua")
 
 if SERVER then
     local ent = ents.create("astrotrooper")
-    ent:spawn(chip():getPos() + Vector(0, 0, 30), Angle(), true)
+    ent:spawn(chip():getPos() + Vector(0, 0, 30), Angle(), false)
 end

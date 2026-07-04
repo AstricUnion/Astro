@@ -62,10 +62,17 @@ if SERVER then
         if state ~= STATE.Idle then return end
         if button == MOUSE.MOUSE1 then
             local mod = self.modules[self.shootFrom]
-            mod:sendAction("shoot")
+            local firstAlive = mod:isAlive()
+            if firstAlive then
+                mod:sendAction("shoot")
+            end
             local newId = self.shootFrom == 1 and 2 or 1
-            if self.modules[newId]:isAlive() then
+            local newMod = self.modules[newId]
+            if newMod:isAlive() then
                 self.shootFrom = newId
+                if !firstAlive then
+                    newMod:sendAction("shoot")
+                end
             end
         elseif button == MOUSE.MOUSE2 then
             if !self.modules[3]:canAction("dash") then return end
@@ -106,6 +113,18 @@ else
             eff:setNormal(dashMod:getDirection())
             eff:play()
             self.lastDashEffect = cur + 0.1
+        end
+    end
+
+    local contrastProperty = {
+        set = function(obj, toSet) obj.contrast = toSet end,
+        get = function(obj) return obj.contrast end
+    }
+    function AstroTrooper:networkVariablesUpdate(old, new)
+        if old.state ~= STATE.Dashing and new.state == STATE.Dashing then
+            tween.start(
+                tween.param {0, 1.5, self, contrastProperty, 2, 1, math.easeOutSine}
+            )
         end
     end
 end

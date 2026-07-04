@@ -73,8 +73,9 @@ if SERVER then
     ---@param self AstroModuleBase
     ---@param target Entity
     function AstroModuleBase.hooks.PostEntityTakeDamage(self, target, attacker, inflictor, amount, type, pos, force)
-        if target ~= self.ent or self.Health <= 0 then return end
-        local current = self.ent:getHealth() - amount
+        local health = self.ent:getHealth()
+        if self.Health <= 0 or target ~= self.ent or health <= 0 then return end
+        local current = health - amount
         self.ent:setHealth(current)
         self.ent:applyForceOffset(force, pos)
         self:onDamage(attacker, inflictor, amount, type, pos, force)
@@ -140,7 +141,6 @@ ents.register(AstroModuleBase)
 ---@field SeatOffset Vector Offset of seat
 ---@field SeatAngle Angle Angle offset of seat
 ---@field SeatVisible boolean Made seat visible
----@field seat Vehicle Seat for astro driver
 ---@field velocity Vector Velocity of this Astro
 ---@field physobj PhysObj Physics object of this Astro
 ---@field modules AstroModuleBase[] Initialized modules of astro
@@ -148,6 +148,8 @@ ents.register(AstroModuleBase)
 ---@field lastPos Vector Last position to calculate FOV
 ---@field fovOffset number Current FOV offset. Will be lerp-ed
 ---@field slop number Current slop offset. Will be lerp-ed
+---@field contrast number
+---@field color number
 local AstroBase = {}
 AstroBase.Identifier = "astrobase"
 AstroBase.Name = "Base Astro"
@@ -180,6 +182,7 @@ function AstroBase:initialize()
         seat:setNoDraw(!self.SeatVisible)
         self:setNWVar("AstroSeat", seat:entIndex())
         self:seatToAstro()
+        seat:setParent(self.ent)
         self.physobj = self.ent:getPhysicsObject()
         self.velocity = Vector()
         local pos, ang = self.ent:getPos(), self.ent:getAngles()
@@ -197,6 +200,8 @@ function AstroBase:initialize()
         self.lastPos = self.ent:getPos()
         self.fovOffset = 0
         self.slop = 0
+        self.contrast = 1
+        self.color = 1
     end
     self.modules = modules
     self:astroInitialize()
@@ -246,7 +251,8 @@ if SERVER then
         if vehicle ~= seat then return end
         self:setNWVar("AstroDriver", ply:getUserID())
         self.physobj:enableGravity(false)
-        seat:setPos(seatPinPoint:localToWorld(Vector(16384, 0, 0)))
+        seat:setFrozen(true)
+        seat:setPos(Vector(15000, 0, 0))
         seat:setAngles(Angle())
         seat:setParent(seatPinPoint)
         enableHud(ply, true)
@@ -379,8 +385,9 @@ if SERVER then
     ---@param self AstroBase
     ---@param target Entity
     function AstroBase.hooks.PostEntityTakeDamage(self, target, attacker, inflictor, amount, type, pos, force)
-        if target ~= self.ent then return end
-        local current = self.ent:getHealth() - amount
+        local health = self.ent:getHealth()
+        if target ~= self.ent or health <= 0 then return end
+        local current = health - amount
         self.ent:setHealth(current)
         self.ent:applyForceOffset(force, pos)
         self:onDamage(attacker, inflictor, amount, type, pos, force)
@@ -438,33 +445,6 @@ else
     --     return drawElements[element] or false
     -- end
 
-    local function pushMask(mask)
-        render.clearStencil()
-        render.setStencilEnable(true)
-
-        render.setStencilWriteMask(1)
-        render.setStencilTestMask(1)
-
-        render.setStencilFailOperation(STENCIL.REPLACE)
-        render.setStencilPassOperation(STENCIL.ZERO)
-        render.setStencilZFailOperation(STENCIL.ZERO)
-        render.setStencilCompareFunction(STENCIL.NEVER)
-        render.setStencilReferenceValue(1)
-
-        mask()
-
-        render.setStencilFailOperation(STENCIL.ZERO)
-        render.setStencilPassOperation(STENCIL.REPLACE)
-        render.setStencilZFailOperation(STENCIL.ZERO)
-        render.setStencilCompareFunction(STENCIL.EQUAL)
-        render.setStencilReferenceValue(0)
-    end
-
-    local function popMask()
-        render.setStencilEnable(false)
-        render.clearStencil()
-    end
-
     local function equilateralTriangle(x, y, a)
         a = a * 0.5
         local h = 0.866025 * a
@@ -477,22 +457,45 @@ else
         render.drawTriangle(x - a, y - h, x + a, y - h, x, y + h)
     end
 
+    local screenSpace = material.load("models/screenspace")
+
     ---[CLIENT] Draw HUD for Astro
-    function AstroBase.hooks:PostDrawHUD()
+    ---@param self AstroBase
+    function AstroBase.hooks.DrawHUD(self)
         local dr = self:getDriver()
         if dr ~= Ply then return end
         local sw, sh = render.getGameResolution()
+        print(self.contrast)
+        render.setMaterialEffectColorModify(screenSpace, {
+            colour = self.color, addr = 0, addg = 0, addb = 0,
+            contrast = self.contrast, brightness = 0,
+            mulr = 0, mulg = 0, mulb = 0
+        })
+        render.drawTexturedRect(0, 0, sw, sh)
+
+        local halfW, halfH = sw / 2, sh / 2
+        render.setColor(Color(255, 70, 70, 30))
+        local radius = 180
+        local rectEndH = radius * 0.6
+        render.enableScissorRect(halfW - radius, halfH - rectEndH, halfW + radius, halfH + rectEndH)
+        render.drawCircle(halfW, halfH, radius)
+        render.drawCircle(halfW, halfH, radius - 1)
+        render.disableScissorRect()
+
         render.setColor(Color(255, 70, 70, 50))
-        pushMask(function()
-            equilateralTriangle(sw / 2, sh / 2 - 4, 28 + self.fovOffset * 3)
+        astrogui.pushScissorMask(function()
+            equilateralTriangle(halfW, halfH - 4, 28 + self.fovOffset * 3)
             local scale = 33 + self.fovOffset * 5
             equilateralTriangleButRotated(sw / 2, sh / 2 - 4 + 0.27 * scale, scale)
         end)
-        equilateralTriangle(sw / 2, sh / 2 - 5, 33 + self.fovOffset * 3)
-        popMask()
+        equilateralTriangle(halfW, halfH - 5, 33 + self.fovOffset * 3)
+        astrogui.popScissorMask()
 
         render.setColor(Color(255, 20, 20, 200))
-        equilateralTriangleButRotated(sw / 2, sh / 2, 6)
+        equilateralTriangleButRotated(halfW, halfH, 6)
+
+        local hp = self:getHealth()
+        astrogui.drawProgressBar(halfW - 128, halfH + 100, 252, 24, hp / self.Health, "HP", string.format("%s/%s", hp, self.Health))
     end
 
     ---[CLIENT] Hook on render offscreen
