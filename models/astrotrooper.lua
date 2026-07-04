@@ -120,7 +120,7 @@ local headModel = part {
 }
 model.new("astrotrooper_head", part {
     hitbox {
-        vertex {"cube", Vector(0, 0, 28), Angle(0, 0, 0), Vector(14, 14, 14)},
+        vertex {"cube", Vector(0, 0, 5), Angle(0, 0, 0), Vector(14, 14, 14)},
         material = "Metal",
         mass = 200,
     },

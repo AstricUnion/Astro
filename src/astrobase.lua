@@ -91,6 +91,9 @@ if SERVER then
         self:setNWVar("LinkedAstro", astro.ent:entIndex())
         self:setNWVar("ModuleID", id)
     end
+else
+    ---[CLIENT] Draw HUD for module
+    function AstroModuleBase:drawHUD(x, y) end
 end
 
 ---[SHARED] Think hook
@@ -148,8 +151,8 @@ ents.register(AstroModuleBase)
 ---@field lastPos Vector Last position to calculate FOV
 ---@field fovOffset number Current FOV offset. Will be lerp-ed
 ---@field slop number Current slop offset. Will be lerp-ed
----@field contrast number
----@field color number
+---@field fade number
+---@field fadeColor Color
 local AstroBase = {}
 AstroBase.Identifier = "astrobase"
 AstroBase.Name = "Base Astro"
@@ -200,8 +203,8 @@ function AstroBase:initialize()
         self.lastPos = self.ent:getPos()
         self.fovOffset = 0
         self.slop = 0
-        self.contrast = 1
-        self.color = 1
+        self.fade = 0
+        self.fadeColor = Color()
     end
     self.modules = modules
     self:astroInitialize()
@@ -223,7 +226,7 @@ function AstroBase:inputReleased(button, bind) end
 if SERVER then
     local seatPinPoint = hologram.create(Vector(), Angle(), "models/editor/axis_helper_thick.mdl")
     if !seatPinPoint then return end
-    seatPinPoint:setLocalAngularVelocity(Angle(500, 500, 500))
+    -- seatPinPoint:setLocalAngularVelocity(Angle(500, 500, 500))
 
     function AstroBase:seatToAstro()
         local seat = self:getSeat()
@@ -251,10 +254,10 @@ if SERVER then
         if vehicle ~= seat then return end
         self:setNWVar("AstroDriver", ply:getUserID())
         self.physobj:enableGravity(false)
-        seat:setFrozen(true)
-        seat:setPos(Vector(15000, 0, 0))
-        seat:setAngles(Angle())
         seat:setParent(seatPinPoint)
+        seat:setFrozen(true)
+        seat:setPos(Vector(10000, 0, 0))
+        seat:setAngles(Angle())
         enableHud(ply, true)
         ply:setViewEntity(self.ent)
     end
@@ -344,7 +347,7 @@ if SERVER then
             self.velocity = math.lerpVector(self.VelocityRatio, self.velocity, dir * speed * 100 * frametime)
             self.physobj:setVelocity(self.velocity)
             local localVel = self.physobj:getLocalVelocity()
-            local ang = self.ent:worldToLocalAngles(Angle(eyeangles.p, eyeangles.y, (localVel.y / -speed) * 2))
+            local ang = self.ent:worldToLocalAngles(Angle(eyeangles.p, eyeangles.y, (localVel.y / -speed) * 4))
             local angvel = ang:getQuaternion():getRotationVector() - self.ent:getAngleVelocity() / 5
             self.physobj:addAngleVelocity(angvel)
             for _, v in ipairs(self.modules) do
@@ -402,6 +405,9 @@ if SERVER then
         if seat and isValid(seat) then
             self:seatToAstro()
             seat:remove()
+            local dr = self:getDriver()
+            if !dr then return end
+            self.hooks.PlayerLeaveVehicle(self, dr, seat)
         end
     end
 
@@ -457,7 +463,10 @@ else
         render.drawTriangle(x - a, y - h, x + a, y - h, x, y + h)
     end
 
-    local screenSpace = material.load("models/screenspace")
+    ---[CLIENT] Draw HUD hook
+    ---@param sw number Screen width
+    ---@param sh number Screen height
+    function AstroBase:onDrawHUD(sw, sh) end
 
     ---[CLIENT] Draw HUD for Astro
     ---@param self AstroBase
@@ -465,16 +474,11 @@ else
         local dr = self:getDriver()
         if dr ~= Ply then return end
         local sw, sh = render.getGameResolution()
-        print(self.contrast)
-        render.setMaterialEffectColorModify(screenSpace, {
-            colour = self.color, addr = 0, addg = 0, addb = 0,
-            contrast = self.contrast, brightness = 0,
-            mulr = 0, mulg = 0, mulb = 0
-        })
-        render.drawTexturedRect(0, 0, sw, sh)
+        render.setColor(Color(self.fadeColor.r, self.fadeColor.g, self.fadeColor.b, self.fade * 255))
+        render.drawRectFast(0, 0, sw, sh)
 
         local halfW, halfH = sw / 2, sh / 2
-        render.setColor(Color(255, 70, 70, 30))
+        render.setColor(Color(255, 70, 70, 100))
         local radius = 180
         local rectEndH = radius * 0.6
         render.enableScissorRect(halfW - radius, halfH - rectEndH, halfW + radius, halfH + rectEndH)
@@ -482,20 +486,22 @@ else
         render.drawCircle(halfW, halfH, radius - 1)
         render.disableScissorRect()
 
-        render.setColor(Color(255, 70, 70, 50))
+        render.setColor(Color(255, 70, 70, 150))
         astrogui.pushScissorMask(function()
             equilateralTriangle(halfW, halfH - 4, 28 + self.fovOffset * 3)
             local scale = 33 + self.fovOffset * 5
             equilateralTriangleButRotated(sw / 2, sh / 2 - 4 + 0.27 * scale, scale)
         end)
         equilateralTriangle(halfW, halfH - 5, 33 + self.fovOffset * 3)
-        astrogui.popScissorMask()
+        astrogui.popStencilMask()
 
         render.setColor(Color(255, 20, 20, 200))
         equilateralTriangleButRotated(halfW, halfH, 6)
 
         local hp = self:getHealth()
         astrogui.drawProgressBar(halfW - 128, halfH + 100, 252, 24, hp / self.Health, "HP", string.format("%s/%s", hp, self.Health))
+
+        self:onDrawHUD(sw, sh)
     end
 
     ---[CLIENT] Hook on render offscreen
@@ -506,11 +512,9 @@ else
         self:renderOffscreen()
         local dr = self:getDriver()
         if !dr or dr == Ply then return end
-        local cameraId = self.ent:lookupBone("camera")
-        if !cameraId then return end
-        local camera = self.ent:getBoneEntity(cameraId)
+        local camera = self.ent:getBoneEntity(self.ent:lookupBone("camera"))
         if !camera then return end
-        camera:setAngles(self:getEyeAngles())
+        camera:setAngles()
     end
 
     ---[INTERNAL] [CLIENT] Astrobot think for client

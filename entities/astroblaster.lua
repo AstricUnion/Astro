@@ -1,5 +1,4 @@
 ---@class AstroBlaster: AstroModuleBase
----@field ammo number
 local AstroBlaster = {}
 AstroBlaster.Identifier = "astroblaster"
 AstroBlaster.Name = "AstroBlaster"
@@ -17,10 +16,6 @@ local projectileModel = function()
 end
 
 if SERVER then
-    function AstroBlaster:moduleInitialize()
-        self.ammo = 4
-    end
-
     function AstroBlaster:onAction(action)
         if action ~= "shoot" then return end
         local cur = timer.curtime()
@@ -30,32 +25,42 @@ if SERVER then
             guns.createProjectile(pos, angs, projectileModel, filter or {self.ent})
             astrosound.play {"blaster", nil, self.ent}
         end
+        local ammo = self:getAmmo()
         if self:isAlive() then
             local astro = self:getAstro()
             if !astro then return end
             self:setNextAction("shoot", cur + 0.3)
             self.ent:setSequence(1)
-            self.ammo = self.ammo - 1
+            self:setAmmo(ammo - 1)
+            ammo = ammo - 1
             astro.ent:applyForceOffset(angs:getForward() * 50, astro.ent:worldToLocal(pos))
             astro:addVelocity(-angs:getForward() * 30)
             proj(astro.filter)
-            if self.ammo <= 0 then
+            if ammo <= 0 then
                 self:setNextAction("shoot", cur + 1.3)
                 astrosound.play {"reload", nil, self.ent}
                 timer.simple(0.3, function()
                     self.ent:setSequence(2)
-                    self.ammo = 4
+                    timer.simple(0.5, function()
+                        self:setAmmo(4)
+                    end)
                 end)
             end
         else
-            if self.ammo <= 0 then
+            if ammo <= 0 then
                 return
             end
             self:setNextAction("shoot", cur + 0.5)
-            self.ammo = self.ammo - 1
+            self:setAmmo(ammo - 1)
             proj()
             self.ent:addVelocity(-angs:getForward() * 200)
         end
+    end
+
+    ---[SERVER] Set ammo of blaster
+    ---@param ammo number
+    function AstroBlaster:setAmmo(ammo)
+        self:setNWVar("Ammo", ammo)
     end
 
     ---@param self AstroBlaster
@@ -80,6 +85,7 @@ if SERVER then
     function AstroBlaster:onDeath()
         local astro = self:getAstro()
         if !astro then return end
+        self.ent:setFrozen(false)
         local pos = self.ent:getPos()
         self.ent:setParent(nil)
         self.ent:setPos(pos)
@@ -93,6 +99,25 @@ if SERVER then
         exp:play("Explosion")
         astro.ent:emitSound("WaterExplosionEffect.Sound")
     end
+else
+    function AstroBlaster:drawHUD(x, y)
+        if !self:isAlive() then return end
+        local sw, sh = render.getGameResolution()
+        local hp = self:getHealth()
+        local moduleId = self:getModuleID()
+        local ammo = self:getAmmo()
+        local isRight = x > sw / 2
+        astrogui.drawProgressBarSections(x - 46, y, 92, 40, 16, ammo / 4, !isRight and "AMMO" or "", isRight and "AMMO" or "", true, isRight)
+        local text = "BLASTER_" .. moduleId
+        local hpText = string.format("%s/%s", hp, self.Health)
+        astrogui.drawProgressBar(x - 82 + 32 * (isRight and 1 or -1), y - 28, 164, 24, hp / self.Health, !isRight and text or hpText, isRight and text or hpText)
+    end
+end
+
+---[SHARED] Get ammo of blaster
+---@return number ammo
+function AstroBlaster:getAmmo()
+    return self:getNWVar("Ammo", 4)
 end
 
 ents.register(AstroBlaster, "astromodule_base")

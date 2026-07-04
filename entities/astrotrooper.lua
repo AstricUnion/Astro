@@ -40,7 +40,6 @@ AstroTrooper.SeatOffset = Vector(50, 0, 0)
 if SERVER then
     function AstroTrooper:astroInitialize()
         self.ent:setSequence(1)
-        self.ent:emitSound("npc/combine_gunship/dropship_engine_distant_loop1.wav", 75, 70, 1)
         self.shootFrom = 1
         self.modules[3].dashEnd = function(_)
             self.ent:setCollisionGroup(COLLISION_GROUP.NONE)
@@ -77,12 +76,11 @@ if SERVER then
         elseif button == MOUSE.MOUSE2 then
             if !self.modules[3]:canAction("dash") then return end
             self.ent:setCollisionGroup(COLLISION_GROUP.IN_VEHICLE)
-            self.ent:setNoDraw(true)
-            self.modules[1].ent:setNoDraw(true)
-            self.modules[2].ent:setNoDraw(true)
             astrosound.play {"dash", nil, self.ent}
             self.modules[3]:sendAction("dash")
             self:setState(STATE.Dashing)
+        elseif button == KEY.B then
+            self.ent:applyDamage(1000)
         end
     end
 
@@ -90,11 +88,42 @@ if SERVER then
         for _, v in ipairs(self.modules) do
             v.ent:applyDamage(v:getHealth())
         end
-        self:remove()
+        timer.simple(0.1, function()
+            if !isValid(self) then return end
+            local pos = self.ent:getPos()
+            local ang = self.ent:getAngles()
+            local velocity = self.ent:getVelocity()
+            self:remove()
+            local headMdl = model.create("astrotrooper_head")
+            if !headMdl then return end
+            headMdl:setPos(pos + ang:getUp() * 28)
+            headMdl:setAngles(ang)
+            headMdl:addVelocity(velocity + ang:getUp() * 200)
+            local bodyMdl = model.create("astrotrooper_body")
+            if !bodyMdl then return end
+            bodyMdl:setPos(pos)
+            bodyMdl:setAngles(ang)
+            bodyMdl:addVelocity(velocity)
+            game.blastDamage(pos, 200, 60)
+            local eff = beff.create("projectile_explosion")
+            eff:setOrigin(pos)
+            eff:setScale(3)
+            eff:play()
+        end)
     end
+
 else
+    local Ply = player()
     local l1 = light.create(Vector(), 80, 10, Color(255, 0, 0))
     local l2 = light.create(Vector(), 80, 10, Color(255, 0, 0))
+
+    function AstroTrooper:astroInitialize()
+        astrosound.play {"loop", nil, self.ent, looping = true}
+    end
+
+    function AstroTrooper.hooks:AstroSoundPreloaded(identifier)
+        if identifier == "loop" then astrosound.play {identifier, nil, self.ent, looping = true} end
+    end
 
     function AstroTrooper:renderOffscreen()
         if !self:getDriver() then return end
@@ -116,16 +145,18 @@ else
         end
     end
 
-    local contrastProperty = {
-        set = function(obj, toSet) obj.contrast = toSet end,
-        get = function(obj) return obj.contrast end
-    }
     function AstroTrooper:networkVariablesUpdate(old, new)
         if old.state ~= STATE.Dashing and new.state == STATE.Dashing then
-            tween.start(
-                tween.param {0, 1.5, self, contrastProperty, 2, 1, math.easeOutSine}
-            )
+            self.modules[1].ent:setNoDraw(true)
+            self.modules[2].ent:setNoDraw(true)
+            self.ent:setNoDraw(true)
         end
+    end
+
+    function AstroTrooper:onDrawHUD(sw, sh)
+        self.modules[1]:drawHUD(sw / 2 - 256, sh / 2)
+        self.modules[2]:drawHUD(sw / 2 + 256, sh / 2)
+        self.modules[3]:drawHUD(sw / 2, sh / 2 + 128)
     end
 end
 

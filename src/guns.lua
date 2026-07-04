@@ -42,6 +42,11 @@ if SERVER then
         local cur = timer.curtime()
         for i, v in pairs(guns.projectiles) do
             local pos = v.ent:getPos()
+            local newIgnore = {}
+            for _, ent in ipairs(v.ignore) do
+                if isValid(ent) then newIgnore[#newIgnore+1] = ent end
+            end
+            v.ignore = newIgnore
             local trace_result = trace.line(pos, pos + v.velocity * tick, v.ignore, MASK.SHOT_HULL)
             if trace_result.Hit or cur - v.startedAt > v.timeout then
                 v.ent:setPos(trace_result.HitPos)
