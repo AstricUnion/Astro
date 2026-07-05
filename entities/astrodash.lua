@@ -1,6 +1,6 @@
 ---@class AstroDash: AstroModuleBase
----@field dashDirection Vector
----@field dashStartTime number
+---@field dashStartTime number?
+---@field dashTime number?
 local AstroDash = {}
 AstroDash.Identifier = "astrodash"
 AstroDash.Name = "AstroDash"
@@ -8,13 +8,17 @@ AstroDash.hooks = {}
 
 if SERVER then
     function AstroDash:onAction(action)
-        if action ~= "dash" then return end
-        local astro = self:getAstro()
-        if !astro then return end
-        local dir = astro:getDirection()
-        if !dir then return end
-        self.dashStartTime = timer.curtime()
-        self:setNWVar("dashDirection", !dir:isZero() and dir or self.ent:getAngles():getForward())
+        if action == "dash" then
+            local astro = self:getAstro()
+            if !astro then return end
+            local dir = astro:getDirection()
+            if !dir then return end
+            self.dashStartTime = timer.curtime()
+            self.dashTime = 1
+            self:setNWVar("dashDirection", !dir:isZero() and dir or self.ent:getAngles():getForward())
+        elseif action == "addToDash" and self.dashTime then
+            self.dashTime = self.dashTime + game.getTickInterval() / 2
+        end
     end
 
     local world = game.getWorld()
@@ -29,13 +33,21 @@ if SERVER then
             for _, v in ipairs(toDamage) do
                 local permitted, _ = hasPermission("entities.applyDamage", v)
                 if permitted and v ~= world and !table.hasValue(astro.filter, v) then
-                    v:applyDamage(10, astro.ent, self.ent)
+                    v:applyDamage(25, astro.ent, self.ent)
                 end
             end
             local cur = timer.curtime()
             local interval = game.getTickInterval()
-            local nextPos = pos + dir * (interval * 4000 + 512)
-            if cur - self.dashStartTime >= 1 or !nextPos:isInWorld() then
+            local remain = self.dashTime - (cur - self.dashStartTime)
+            local remainVel = remain * 4000
+            local endPos = pos + dir * remainVel
+            local tr = trace.line(pos, endPos, astro.filter)
+            local cantDash = false
+            if tr.Hit then
+                local canPos = tr.HitPos + dir * (interval * math.min(4000 + 1024, remainVel))
+                cantDash = !canPos:isInWorld()
+            end
+            if remain <= 0 or cantDash then
                 self:setNWVar("dashDirection", nil)
                 self:setNextAction("dash", cur + 3)
                 self:setNWVar("nextDash", cur + 3)

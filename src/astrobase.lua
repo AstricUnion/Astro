@@ -187,6 +187,7 @@ function AstroBase:initialize()
         self:seatToAstro()
         seat:setParent(self.ent)
         self.physobj = self.ent:getPhysicsObject()
+        self.physobj:addGameFlags(FVPHYSICS.NO_IMPACT_DMG)
         self.velocity = Vector()
         local pos, ang = self.ent:getPos(), self.ent:getAngles()
         for i, v in ipairs(self.Modules) do
@@ -226,6 +227,7 @@ function AstroBase:inputReleased(button, bind) end
 if SERVER then
     local seatPinPoint = hologram.create(Vector(), Angle(), "models/editor/axis_helper_thick.mdl")
     if !seatPinPoint then return end
+    seatPinPoint:setNoDraw(true)
     -- seatPinPoint:setLocalAngularVelocity(Angle(500, 500, 500))
 
     function AstroBase:seatToAstro()

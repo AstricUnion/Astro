@@ -11,8 +11,7 @@ end
 ---@enum STATE
 local STATE = {
     Idle = 0,
-    ReadyToDash = 1,
-    Dashing = 2
+    Dashing = 1
 }
 
 ---@class AstroTrooper: AstroBase
@@ -81,6 +80,14 @@ if SERVER then
             self:setState(STATE.Dashing)
         elseif button == KEY.B then
             self.ent:applyDamage(1000)
+        end
+    end
+
+    function AstroTrooper:think()
+        if self:getState() ~= STATE.Dashing then return end
+        local dr = self:getDriver()
+        if dr and dr:keyDown(IN_KEY.ATTACK2) then
+            self.modules[3]:sendAction("addToDash")
         end
     end
 
