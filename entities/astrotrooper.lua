@@ -40,14 +40,14 @@ if SERVER then
     function AstroTrooper:astroInitialize()
         self.ent:setSequence(1)
         self.shootFrom = 1
-        self.modules[3].dashEnd = function(_)
+        self.modules[3].dashEnd = function(mod)
             self:setState(STATE.Idle)
             self.ent:setNoDraw(false)
             self.modules[1].ent:setNoDraw(false)
             self.modules[2].ent:setNoDraw(false)
             local eff = beff.create("quantum_burst")
             eff:setOrigin(self.ent:getPos())
-            eff:setNormal(self.ent:getAngles():getForward())
+            eff:setNormal(mod:getDirection())
             eff:setScale(3)
             eff:play()
         end
@@ -76,6 +76,11 @@ if SERVER then
             astrosound.play {"dash", nil, self.ent}
             self.modules[3]:sendAction("dash")
             self:setState(STATE.Dashing)
+            local eff = beff.create("quantum_burst")
+            eff:setOrigin(self.ent:getPos())
+            eff:setNormal(self.modules[3]:getDirection())
+            eff:setScale(3)
+            eff:play()
         elseif button == KEY.B then
             self.ent:applyDamage(1000)
         end
@@ -136,18 +141,6 @@ else
         l2:setPos(self.ent:localToWorld(Vector(0, 0, -10)))
         l1:draw()
         l2:draw()
-    end
-
-    function AstroTrooper:think()
-        local cur = timer.curtime()
-        if self:getState() == STATE.Dashing and (self.lastDashEffect or 0) < cur then
-            local dashMod = self.modules[3]
-            local eff = beff.create("quantum_burst")
-            eff:setOrigin(self.ent:getPos())
-            eff:setNormal(dashMod:getDirection())
-            eff:play()
-            self.lastDashEffect = cur + 0.1
-        end
     end
 
     function AstroTrooper:networkVariablesUpdate(old, new)

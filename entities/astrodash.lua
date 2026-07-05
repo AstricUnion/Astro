@@ -41,10 +41,9 @@ if SERVER then
             local interval = game.getTickInterval()
             local canPos = pos + dir * (interval * 4000 + 1024)
             if remain <= 0 or !canPos:isInWorld() then
-                self:setNWVar("dashDirection", nil)
                 self:setNextAction("dash", cur + 3)
-                self:setNWVar("nextDash", cur + 3)
                 self:dashEnd()
+                self:setNWVar("dashDirection", nil)
             end
         end
     end
@@ -54,7 +53,7 @@ if SERVER then
 else
     function AstroDash:drawHUD(x, y)
         local dir = self:getDirection()
-        local percent = !dir and (1 - (math.clamp(self:getNextDash() - timer.curtime(), 0, 3) / 3)) or 0
+        local percent = !dir and (1 - (math.clamp(self:getNextAction("dash") - timer.curtime(), 0, 3) / 3)) or 0
         astrogui.drawProgressBar(x - 85, y, 170, 20, percent, "DASH_MOD", (math.ceil(percent * 100)) .. "%", true, true)
     end
 end
@@ -64,12 +63,6 @@ end
 ---@return Vector?
 function AstroDash:getDirection()
     return self:getNWVar("dashDirection")
-end
-
----[SHARED] Get next time to dash
----@return Vector?
-function AstroDash:getNextDash()
-    return self:getNWVar("nextDash", 0)
 end
 
 ents.register(AstroDash, "astromodule_base")

@@ -24,6 +24,16 @@ model.new("astrotrooper_projectile", part {
 local propertyWithoutDiff = table.copy(property.LOCALANGLES)
 propertyWithoutDiff.diff = nil
 
+local function astrosoundShot(playAt, snd, ent)
+    local isPlayed = false
+    return function(process)
+        if process < playAt then isPlayed = false return end
+        if isPlayed then return true end
+        astrosound.play {snd, nil, ent}
+        isPlayed = true
+    end
+end
+
 model.new("astrotrooper_blaster", hitbox {
     vertex {"cube", Vector(0, 0, 6), Angle(0, 0, 0), Vector(30, 8, 10)},
     vertex {"cylinder", Vector(36, 0, 2), Angle(0, 90, 0), Vector(6, 6, 8)},
@@ -39,39 +49,27 @@ model.new("astrotrooper_blaster", hitbox {
         holo { Vector(-19, 0, 12), Angle(180, 0, 0), "models/combine_dropship_container.mdl", Vector(0.12, 0.12, 0.12), color = Color(255, 40, 40), material = "models/props_combine/metal_combinebridge001" },
         holo { Vector(25, 0, 2), Angle(90, 0, 0), "models/Items/combine_rifle_ammo01.mdl", Vector(1.8, 1.8, 1.8), color = Color(255, 40, 40) },
     })
-    :addSequence("shoot", 0.5, function(ent)
+    :addSequence("shoot", 0.3, function(ent)
         if ent.tween then tween.stop(ent.tween) end
         local bone = ent:getBoneEntity(ent:lookupBone("blaster"))
         if !bone then return end
+        astrosound.play {"blaster", nil, ent}
         ent.tween = tween.start(tween.new {
             param { 0, 0.15, bone, property.LOCALPOS, Vector(), Vector(-20, 0, 0), math.easeOutCubic },
-            param { 0.15, 0.3, bone, property.LOCALPOS, Vector(-20, 0, 0), Vector(), math.easeOutCubic }
+            param { 0.15, 0.3, bone, property.LOCALPOS, Vector(-20, 0, 0), Vector(), math.easeOutCubic },
         })
     end)
     :addSequence("reload", 1, function(ent)
         if ent.tween then tween.stop(ent.tween) end
         local bone = ent:getBoneEntity(ent:lookupBone("blaster"))
         if !bone then return end
+        astrosound.play {"blaster", nil, ent}
         ent.tween = tween.start(tween.new {
-            param { 0, 0.15, bone, property.LOCALPOS, nil, Vector(), math.easeOutCubic },
-            param { 0, 0.6, bone, propertyWithoutDiff, Angle(), Angle(360, 0, 0), math.easeInOutQuart},
+            param { 0, 0.15, bone, property.LOCALPOS, Vector(), Vector(-20, 0, 0), math.easeOutCubic },
+            param { 0.15, 0.3, bone, property.LOCALPOS, Vector(-20, 0, 0), Vector(), math.easeOutCubic },
+            param { 0.3, 0.9, bone, propertyWithoutDiff, Angle(), Angle(360, 0, 0), math.easeInOutQuart},
+            astrosoundShot(0.3, "reload", ent)
         })
-    end)
-    :addSequence("startDash", 1, function(ent)
-        if ent.tween then tween.stop(ent.tween) end
-        local bone = ent:getBoneEntity(ent:lookupBone("blaster"))
-        if !bone then return end
-        ent.tween = tween.start(
-            param { 0, 0.8, bone, propertyWithoutDiff, Angle(), Angle(-180, 0, 0), math.easeInOutCubic}
-        )
-    end)
-    :addSequence("endDash", 1, function(ent)
-        if ent.tween then tween.stop(ent.tween) end
-        local bone = ent:getBoneEntity(ent:lookupBone("blaster"))
-        if !bone then return end
-        ent.tween = tween.start(
-            param { 0, 0.8, bone, propertyWithoutDiff, Angle(-180, 0, 0), Angle(0, 0, 0), math.easeInOutCubic}
-        )
     end)
 
 local mat = {[0] = "models/props_combine/metal_combinebridge001", [1] = "models/props_combine/metal_combinebridge001", [2] = "models/props_combine/metal_combinebridge001"}

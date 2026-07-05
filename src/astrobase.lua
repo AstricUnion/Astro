@@ -3,7 +3,6 @@ local ents = ents
 ---Astro module - module with physics body, like guns or arms
 ---@class AstroModuleBase: BModEntity
 ---@field Health number Health of module
----@field protected nextAction table<string, number>
 local AstroModuleBase = {}
 AstroModuleBase.Identifier = "astromodule_base"
 AstroModuleBase.Name = "AstroModule base"
@@ -24,7 +23,6 @@ function AstroModuleBase:initialize()
     if SERVER then
         self.ent:setHealth(self.Health)
         self.ent:setMaxHealth(self.Health)
-        self.nextAction = {}
     else
         timer.simple(0, function()
             if !isValid(self) then return end
@@ -45,23 +43,19 @@ if SERVER then
     ---[SERVER] Send action to module
     ---@param action string
     function AstroModuleBase:sendAction(action)
-        if (self.nextAction[action] or 0) > timer.curtime() then return end
+        if self:getNextAction(action) > timer.curtime() then return end
         local network = self:onAction(action)
+        if network then
+            net.start("AstroModuleSendAction")
+                net.writeUInt(self.ent:entIndex(), 32)
+                net.writeString(action)
+            net.send(find.allPlayers())
+        end
     end
 
     ---[SERVER] Set next cooldown for action
     function AstroModuleBase:setNextAction(action, nextAction)
-        self.nextAction[action] = nextAction
-    end
-
-    ---[SERVER] Set next cooldown for action
-    function AstroModuleBase:getNextAction(action)
-        return self.nextAction[action] or 0
-    end
-
-    ---[SERVER] Can this module made action
-    function AstroModuleBase:canAction(action)
-        return (self.nextAction[action] or 0) <= timer.curtime()
+        self:setNWVar("nextAction_" .. action, nextAction)
     end
 
     ---[SERVER] When module damaged
@@ -96,9 +90,18 @@ else
     ---[CLIENT] Draw HUD for module
     function AstroModuleBase:drawHUD(x, y) end
 
-    ---[CLIENT] On action. This hook will not work without True at server on action
+    ---[CLIENT] On action. This hook will not work without true at server on action
     ---@param action string
     function AstroModuleBase:onAction(action) end
+
+    net.receive("AstroModuleSendAction", function()
+        local entId = net.readUInt(32)
+        local ent = ents.inited[entId]
+        ---@cast ent AstroModuleBase
+        if !ent or !ent.onAction then return end
+        local action = net.readString()
+        ent:onAction(action)
+    end)
 end
 
 ---[SHARED] Think hook
@@ -129,6 +132,16 @@ end
 ---@return boolean isAlive
 function AstroModuleBase:isAlive()
     return self.ent:getHealth() > 0
+end
+
+---[SHARED] Get next cooldown for action
+function AstroModuleBase:getNextAction(action)
+    return self:getNWVar("nextAction_" .. action, 0)
+end
+
+---[SHARED] Can this module made action
+function AstroModuleBase:canAction(action)
+    return self:getNextAction(action) <= timer.curtime()
 end
 
 ents.register(AstroModuleBase)
@@ -521,7 +534,7 @@ else
         if !dr or dr == Ply then return end
         local camera = self.ent:getBoneEntity(self.ent:lookupBone("camera"))
         if !camera then return end
-        camera:setAngles()
+        camera:setAngles(dr:getEyeAngles())
     end
 
     ---[INTERNAL] [CLIENT] Astrobot think for client
