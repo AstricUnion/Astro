@@ -40,6 +40,7 @@ if CLIENT then
             particle:setColor(Color(math.rand(230, 255), lumen, lumen))
             particle:setCollide(false)
             particle:setRollDelta(10)
+            self.nextParticle = self.nextParticle + 0.01
         end
     end
 end

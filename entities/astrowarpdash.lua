@@ -16,7 +16,7 @@ if SERVER then
             if !dir then return end
             astro.ent:setCollisionGroup(COLLISION_GROUP.IN_VEHICLE)
             self.dashStartTime = timer.curtime()
-            self.dashTime = 1
+            self.dashTime = 0.5
             self:setNWVar("dashDirection", !dir:isZero() and dir or self.ent:getAngles():getForward())
             return true
         elseif action == "addToDash" and self.dashTime then
