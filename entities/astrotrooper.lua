@@ -32,7 +32,7 @@ AstroTrooper.CameraOffset = Vector(9, 0, -5)
 AstroTrooper.Modules = {
     {offset = Vector(0, 40, 0), module = "astroblaster"},
     {offset = Vector(0, -40, 0), module = "astroblaster"},
-    {offset = Vector(), module = "astrodash"}
+    {offset = Vector(), module = "astrowarpdash"}
 }
 AstroTrooper.SeatOffset = Vector(50, 0, 0)
 
@@ -41,7 +41,6 @@ if SERVER then
         self.ent:setSequence(1)
         self.shootFrom = 1
         self.modules[3].dashEnd = function(_)
-            self.ent:setCollisionGroup(COLLISION_GROUP.NONE)
             self:setState(STATE.Idle)
             self.ent:setNoDraw(false)
             self.modules[1].ent:setNoDraw(false)
@@ -74,7 +73,6 @@ if SERVER then
             end
         elseif button == MOUSE.MOUSE2 then
             if !self.modules[3]:canAction("dash") then return end
-            self.ent:setCollisionGroup(COLLISION_GROUP.IN_VEHICLE)
             astrosound.play {"dash", nil, self.ent}
             self.modules[3]:sendAction("dash")
             self:setState(STATE.Dashing)

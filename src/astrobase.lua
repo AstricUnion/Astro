@@ -39,13 +39,14 @@ end
 if SERVER then
     ---[SERVER] On action
     ---@param action string
+    ---@return boolean? network Return true to network this action
     function AstroModuleBase:onAction(action) end
 
     ---[SERVER] Send action to module
     ---@param action string
     function AstroModuleBase:sendAction(action)
         if (self.nextAction[action] or 0) > timer.curtime() then return end
-        self:onAction(action)
+        local network = self:onAction(action)
     end
 
     ---[SERVER] Set next cooldown for action
@@ -94,6 +95,10 @@ if SERVER then
 else
     ---[CLIENT] Draw HUD for module
     function AstroModuleBase:drawHUD(x, y) end
+
+    ---[CLIENT] On action. This hook will not work without True at server on action
+    ---@param action string
+    function AstroModuleBase:onAction(action) end
 end
 
 ---[SHARED] Think hook

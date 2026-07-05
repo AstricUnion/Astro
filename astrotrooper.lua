@@ -11,7 +11,7 @@
 ---@include astronew/src/astrobase.lua
 ---@include astronew/src/guns.lua
 ---@include astronew/entities/astroblaster.lua
----@include astronew/entities/astrodash.lua
+---@include astronew/entities/astrowarpdash.lua
 ---@include astronew/entities/astrotrooper.lua
 
 ---@class astrosound
@@ -44,7 +44,7 @@ require("astronew/src/astrobase.lua")
 guns = require("astronew/src/guns.lua")
 
 require("astronew/entities/astroblaster.lua")
-require("astronew/entities/astrodash.lua")
+require("astronew/entities/astrowarpdash.lua")
 require("astronew/entities/astrotrooper.lua")
 
 
