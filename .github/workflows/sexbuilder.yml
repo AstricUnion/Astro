@@ -19,7 +19,7 @@ jobs:
       uses: leafo/gh-actions-lua@v13
 
     - name: Load AstroTrooper to artifact
-    - uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@v7
       with:
         path: astrotrooper_builded.lua
         archive: false
