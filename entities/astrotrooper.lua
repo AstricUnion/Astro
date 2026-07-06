@@ -1,10 +1,10 @@
 if CLIENT then
-    local sounds = "https://raw.githubusercontent.com/AstricUnion/AstroBots/refs/heads/main/sounds/astrotrooper/"
+    local sounds = "https://raw.githubusercontent.com/AstricUnion/Astro/refs/heads/main/sounds/astrotrooper/"
     astrosound.preloadURL("loop", sounds .. "Idle.mp3")
     astrosound.preloadURL("dash", sounds .. "Dash.mp3")
-    astrosound.preloadURL("predash", sounds .. "Prepdash.mp3")
     astrosound.preloadURL("reload", sounds .. "Reload.mp3")
     astrosound.preloadURL("blaster", sounds .. "Fire.mp3")
+    astrosound.preloadURL("death", sounds .. "Dying.mp3")
 end
 
 
@@ -111,6 +111,7 @@ if SERVER then
             headMdl:addVelocity(velocity + ang:getUp() * 200)
             local bodyMdl = model.create("astrotrooper_body")
             if !bodyMdl then return end
+            astrosound.play {"death", nil, bodyMdl}
             bodyMdl:setPos(pos)
             bodyMdl:setAngles(ang)
             bodyMdl:addVelocity(velocity)
