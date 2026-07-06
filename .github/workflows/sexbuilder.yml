@@ -19,13 +19,8 @@ jobs:
     - name: Load lua
       uses: leafo/gh-actions-lua@v13
 
-    - name: Change directory to builder
-      run: cd builder
-
-    - name: debug echo
-      run: ls -a
-
     - name: Build AstroTrooper
+      working-directory: ./builder
       run: lua builder.lua astronew ../astrotrooper.lua
 
     - name: Load AstroTrooper to artifact
