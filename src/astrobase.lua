@@ -353,23 +353,31 @@ if SERVER then
         return getDirection(dr, angs)
     end
 
+    ---[SERVER] Fly hook for Astro. Will work only when driver in seat
+    ---@param dr Player
+    ---@return boolean? prevent To prevent default physics
+    function AstroBase:fly(dr) end
+
     ---[INTERNAL] [SERVER] Astrobot physics
     function AstroBase.hooks:Think()
         local frametime = game.getTickInterval()
         local dr = self:getDriver()
+        self:think()
         if dr and isValid(dr) then
-            self:think()
-            local seat = self:getSeat()
-            if !seat then return end
-            local eyeangles = seat:worldToLocalAngles(dr:getEyeAngles())
-            local dir = getDirection(dr, eyeangles)
-            local speed = dr:keyDown(IN_KEY.DUCK) and self.SprintSpeed or self.Speed
-            self.velocity = math.lerpVector(self.VelocityRatio, self.velocity, dir * speed * 100 * frametime)
-            self.physobj:setVelocity(self.velocity)
-            local localVel = self.physobj:getLocalVelocity()
-            local ang = self.ent:worldToLocalAngles(Angle(eyeangles.p, eyeangles.y, (localVel.y / -speed) * 4))
-            local angvel = ang:getQuaternion():getRotationVector() - self.ent:getAngleVelocity() / 5
-            self.physobj:addAngleVelocity(angvel)
+            local prevent = self:fly(dr)
+            if !prevent then
+                local seat = self:getSeat()
+                if !seat then return end
+                local eyeangles = seat:worldToLocalAngles(dr:getEyeAngles())
+                local dir = getDirection(dr, eyeangles)
+                local speed = dr:keyDown(IN_KEY.DUCK) and self.SprintSpeed or self.Speed
+                self.velocity = math.lerpVector(self.VelocityRatio, self.velocity, dir * speed * 100 * frametime)
+                self.physobj:setVelocity(self.velocity)
+                local localVel = self.physobj:getLocalVelocity()
+                local ang = self.ent:worldToLocalAngles(Angle(eyeangles.p, eyeangles.y, (localVel.y / -speed) * 4))
+                local angvel = ang:getQuaternion():getRotationVector() - self.ent:getAngleVelocity() / 5
+                self.physobj:addAngleVelocity(angvel)
+            end
             for _, v in ipairs(self.modules) do
                 v:think()
             end
@@ -583,10 +591,12 @@ function AstroBase:getDriver()
 end
 
 ---[SHARED] Get seat
----@return Entity?
+---@return Vehicle?
 function AstroBase:getSeat()
     local entId = self:getNWVar("AstroSeat")
-    return entId and entity(entId) or nil
+    local ent = entId and entity(entId) or nil
+    ---@cast ent Vehicle
+    return ent
 end
 
 ---[SHARED] Get astro eyes angles

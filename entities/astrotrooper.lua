@@ -16,9 +16,10 @@ local STATE = {
 
 ---@class AstroTrooper: AstroBase
 ---@field shootFrom number Shoot from module. Relative to curtime
----@field dashDirection Vector
 ---@field inDash boolean 
 ---@field lastDashEffect number Last dash effect
+---@field deathDirection Vector?
+---@field nextDeathExplosion number
 local AstroTrooper = {}
 AstroTrooper.Identifier = "astrotrooper"
 AstroTrooper.Name = "AstroTrooper"
@@ -51,6 +52,7 @@ if SERVER then
             eff:setScale(3)
             eff:play()
         end
+        self.nextDeathExplosion = 0
         self:setState(STATE.Idle)
     end
 
@@ -86,11 +88,28 @@ if SERVER then
         end
     end
 
-    function AstroTrooper:think()
+    function AstroTrooper:fly(dr)
         if self:getState() ~= STATE.Dashing then return end
-        local dr = self:getDriver()
         if dr and dr:keyDown(IN_KEY.ATTACK2) then
             self.modules[3]:sendAction("addToDash")
+        end
+    end
+
+    function AstroTrooper:think()
+        if !self:isAlive() then
+            self.physobj:addVelocity(self.deathDirection * 10)
+            local localAng = self.ent:worldToLocalAngles(self.deathDirection:getAngle())
+            local deathAngle = Vector(10, 0, 0):getRotated(localAng)
+            self.physobj:addAngleVelocity(deathAngle)
+            local cur = timer.curtime()
+            if self.nextDeathExplosion < cur then
+                if effect.canCreate() then
+                    local eff = effect.create()
+                    eff:setOrigin(self.ent:getPos())
+                    eff:play("Explosion")
+                end
+                self.nextDeathExplosion = cur + math.rand(0.1, 0.3)
+            end
         end
     end
 
@@ -98,7 +117,21 @@ if SERVER then
         for _, v in ipairs(self.modules) do
             v.ent:applyDamage(v:getHealth())
         end
-        timer.simple(0.1, function()
+        local dir = self:getDirection()
+        self.deathDirection = dir and !dir:isZero() and dir or self.ent:getEyeAngles():getForward()
+        local seat = self:getSeat()
+        if seat and isValid(seat) then
+            self:seatToAstro()
+            seat:ejectDriver()
+            seat:setCollisionGroup(COLLISION_GROUP.IN_VEHICLE)
+        end
+        local eff = beff.create("projectile_explosion")
+        eff:setOrigin(self.ent:getPos())
+        eff:setScale(2)
+        eff:play()
+        astrosound.play {"death", nil, self.ent, volume = 1, fadeMin = 100, fadeMax = 100000}
+        self.ent:setCollisionGroup(COLLISION_GROUP.WORLD)
+        self.ent:addCollisionListener(function()
             if !isValid(self) then return end
             local pos = self.ent:getPos()
             local ang = self.ent:getAngles()
@@ -111,7 +144,6 @@ if SERVER then
             headMdl:addVelocity(velocity + ang:getUp() * 200)
             local bodyMdl = model.create("astrotrooper_body")
             if !bodyMdl then return end
-            astrosound.play {"death", nil, bodyMdl}
             bodyMdl:setPos(pos)
             bodyMdl:setAngles(ang)
             bodyMdl:addVelocity(velocity)
@@ -120,11 +152,12 @@ if SERVER then
             eff:setOrigin(pos)
             eff:setScale(3)
             eff:play()
+            self.ent:removeCollisionListener()
         end)
+        self.physobj:setAngleVelocity(Vector())
     end
 
 else
-    local Ply = player()
     local l1 = light.create(Vector(), 80, 10, Color(255, 0, 0))
     local l2 = light.create(Vector(), 80, 10, Color(255, 0, 0))
 
