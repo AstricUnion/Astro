@@ -27,7 +27,7 @@ if CLIENT then
     function HitSmoke:init()
         self.emmiter = emm
         self.nextParticle = 0
-        self.endAt = timer.curtime() + math.rand(8, 12)
+        self.endAt = timer.curtime() + math.rand(18, 20)
     end
 
     function HitSmoke:think()

@@ -1,11 +1,11 @@
 if CLIENT then
     local sounds = "https://raw.githubusercontent.com/AstricUnion/Astro/refs/heads/main/sounds/astrotrooper/"
-    astrosound.preloadURL("loop", sounds .. "Idle.mp3")
-    astrosound.preloadURL("dash", sounds .. "Dash.mp3")
-    astrosound.preloadURL("olddash", sounds .. "OldDash.mp3")
+    astrosound.preloadURL("loop", sounds .. "Idle.mp")
+    astrosound.preloadURL("dash", sounds .. "TrooperDash.mp3")
     astrosound.preloadURL("reload", sounds .. "Reload.mp3")
     astrosound.preloadURL("blaster", sounds .. "Fire.mp3")
     astrosound.preloadURL("death", sounds .. "Dying.mp3")
+    astrosound.preloadURL("explode", sounds .. "DeathExplode.mp3")
 end
 
 
@@ -77,7 +77,7 @@ if SERVER then
         elseif button == MOUSE.MOUSE2 then
             if !self.modules[3]:canAction("dash") then return end
             astrosound.play {"dash", nil, self.ent}
-            astrosound.play {"olddash", nil, self.ent}
+            -- astrosound.play {"olddash", nil, self.ent}
             self.modules[3]:sendAction("dash")
             self:setState(STATE.Dashing)
             local eff = beff.create("quantum_burst")
@@ -99,19 +99,10 @@ if SERVER then
 
     function AstroTrooper:think()
         if !self:isAlive() then
-            self.physobj:addVelocity(self.deathDirection * 10)
+            self.physobj:addVelocity(self.deathDirection * 5)
             local localAng = self.ent:worldToLocalAngles(self.deathDirection:getAngle())
             local deathAngle = Vector(10, 0, 0):getRotated(localAng)
             self.physobj:addAngleVelocity(deathAngle)
-            local cur = timer.curtime()
-            if self.nextDeathExplosion < cur then
-                if effect.canCreate() then
-                    local eff = effect.create()
-                    eff:setOrigin(self.ent:getPos())
-                    eff:play("Explosion")
-                end
-                self.nextDeathExplosion = cur + math.rand(0.1, 0.3)
-            end
         end
     end
 
@@ -133,7 +124,14 @@ if SERVER then
             eff:setScale(2)
             eff:play()
         end
-        astrosound.play {"death", nil, self.ent, fadeMin = 200, fadeMax = 5000}
+        do
+            local eff = beff.create("hitsmoke")
+            eff:setEntity(self.ent)
+            eff:setFlags(1)
+            eff:setScale(2)
+            eff:play()
+        end
+        astrosound.play {"death", nil, self.ent, fadeMin = 3000, fadeMax = 50000}
         self.ent:setCollisionGroup(COLLISION_GROUP.WORLD)
         self.ent:addCollisionListener(function()
             if !isValid(self) then return end
@@ -152,7 +150,7 @@ if SERVER then
             bodyMdl:setPos(pos)
             bodyMdl:setAngles(ang)
             bodyMdl:addVelocity(velocity)
-            timer.simple(0.01, function()
+            timer.simple(0.1, function()
                 local eff = beff.create("hitsmoke")
 
                 eff:setEntity(headMdl)
@@ -165,7 +163,8 @@ if SERVER then
                 eff:play()
             end)
 
-            game.blastDamage(pos, 200, 60)
+            astrosound.play {"explode", nil, bodyMdl, volume = 2, fadeMin = 800, fadeMax = 50000}
+            astroutils.blastDamage(pos, 200, 60)
             do
                 local eff = beff.create("projectile_explosion")
                 eff:setOrigin(pos)

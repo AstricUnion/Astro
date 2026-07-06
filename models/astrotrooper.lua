@@ -54,6 +54,10 @@ model.new("astrotrooper_blaster", hitbox {
         local bone = ent:getBoneEntity(ent:lookupBone("blaster"))
         if !bone then return end
         astrosound.play {"blaster", nil, ent}
+        local eff = beff.create("blaster_muzzle")
+        eff:setEntity(ent)
+        eff:setOrigin(Vector(32, 0, 0))
+        eff:play()
         ent.tween = tween.start(tween.new {
             param { 0, 0.15, bone, property.LOCALPOS, Vector(), Vector(-20, 0, 0), math.easeOutCubic },
             param { 0.15, 0.3, bone, property.LOCALPOS, Vector(-20, 0, 0), Vector(), math.easeOutCubic },
@@ -64,6 +68,10 @@ model.new("astrotrooper_blaster", hitbox {
         local bone = ent:getBoneEntity(ent:lookupBone("blaster"))
         if !bone then return end
         astrosound.play {"blaster", nil, ent}
+        local eff = beff.create("blaster_muzzle")
+        eff:setEntity(ent)
+        eff:setOrigin(Vector(32, 0, 0))
+        eff:play()
         ent.tween = tween.start(tween.new {
             param { 0, 0.15, bone, property.LOCALPOS, Vector(), Vector(-20, 0, 0), math.easeOutCubic },
             param { 0.15, 0.3, bone, property.LOCALPOS, Vector(-20, 0, 0), Vector(), math.easeOutCubic },

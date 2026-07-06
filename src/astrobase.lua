@@ -277,7 +277,7 @@ if SERVER then
     local seatPinPoint = hologram.create(Vector(), Angle(), "models/editor/axis_helper_thick.mdl")
     if !seatPinPoint then return end
     seatPinPoint:setNoDraw(true)
-    -- seatPinPoint:setLocalAngularVelocity(Angle(500, 500, 500))
+    seatPinPoint:setLocalAngularVelocity(Angle(0, 500, 0))
 
     function AstroBase:seatToAstro()
         local seat = self:getSeat()

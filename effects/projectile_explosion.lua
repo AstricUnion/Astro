@@ -22,7 +22,6 @@ if CLIENT then
         local scale = self:getScale()
         local emm = particle.create(Vector(), false)
         local normal = self:getNormal()
-        local flags = self:getFlags()
         local holo = hologram.create(origin, Angle(), "models/holograms/hq_icosphere.mdl", Vector(scale))
         if !holo then return end
         holo:emitSound("npc/vort/vort_explode1.wav", 75, 150, 1.5)

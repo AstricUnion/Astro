@@ -24,7 +24,7 @@ end
 local AstroBlaster = {}
 AstroBlaster.Identifier = "astroblaster"
 AstroBlaster.Name = "AstroBlaster"
-AstroBlaster.Health = 2
+AstroBlaster.Health = 400
 AstroBlaster.Model = function()
     local mdl = model.create("astrotrooper_blaster")
     return mdl
@@ -117,7 +117,7 @@ if SERVER then
         local forceAng = (astroPos - pos):getAngle()
         astro:addVelocity(forceAng:getForward() * 300)
         astro.ent:applyForceOffset(-angs:getForward() * 500, astro.ent:worldToLocal(pos))
-        self.ent:applyForceCenter(angs:getForward() * 100)
+        self.ent:applyForceCenter(astro.velocity + angs:getForward() * 100)
         exp:setOrigin(pos)
         exp:play("Explosion")
         astro.ent:emitSound("WaterExplosionEffect.Sound")
