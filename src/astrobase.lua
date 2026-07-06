@@ -1,3 +1,6 @@
+---@class ents
+local ents = ents
+
 local function overrideHealth(self, ent)
     local permittedHealth = hasPermission("entities.setHealth", ent)
     local permittedMaxHealth = hasPermission("entities.setMaxHealth", ent)
@@ -18,9 +21,6 @@ local function overrideHealth(self, ent)
     end
 end
 
-
----@class ents
-local ents = ents
 ---Astro module - module with physics body, like guns or arms
 ---@class AstroModuleBase: BModEntity
 ---@field Health number Health of module
@@ -91,13 +91,19 @@ if SERVER then
     ---@param self AstroModuleBase
     ---@param target Entity
     function AstroModuleBase.hooks.PostEntityTakeDamage(self, target, attacker, inflictor, amount, type, pos, force)
+        if target ~= self.ent then return end
+        if self.ent:isValidPhys() then
+            self.ent:applyForceOffset(force, pos)
+        end
         local health = self.ent:getHealth()
-        if self.Health <= 0 or target ~= self.ent or health <= 0 then return end
+        if self.Health <= 0 or health <= 0 then return end
         local current = health - amount
         self.ent:setHealth(current)
-        self.ent:applyForceOffset(force, pos)
+        local astro = self:getAstro()
         self:onDamage(attacker, inflictor, amount, type, pos, force)
+        if astro then astro:onModuleDamage(self, attacker, inflictor, amount, type, pos, force) end
         if current <= 0 then
+            if astro then astro:onModuleDeath(self) end
             self:onDeath()
         end
     end
@@ -434,8 +440,16 @@ if SERVER then
     ---[SERVER] When Astro got damaged
     function AstroBase:onDamage(attacker, inflictor, amount, type, pos, force) end
 
+    ---[SERVER] When Astro module got damaged
+    ---@param mod AstroModuleBase
+    function AstroBase:onModuleDamage(mod, attacker, inflictor, amount, type, pos, force) end
+
     ---[SERVER] On Astro death
     function AstroBase:onDeath() end
+
+    ---[SERVER] On Astro module death
+    ---@param mod AstroModuleBase
+    function AstroBase:onModuleDeath(mod) end
 
     ---[SERVER] Damage mechanics
     ---@param self AstroBase
@@ -447,6 +461,7 @@ if SERVER then
         self.ent:setHealth(current)
         self.ent:applyForceOffset(force, pos)
         self:onDamage(attacker, inflictor, amount, type, pos, force)
+        self.ent:applyForceOffset(force, pos)
         if current <= 0 then
             self:onDeath()
         end

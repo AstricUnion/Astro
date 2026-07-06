@@ -24,7 +24,7 @@ end
 local AstroBlaster = {}
 AstroBlaster.Identifier = "astroblaster"
 AstroBlaster.Name = "AstroBlaster"
-AstroBlaster.Health = 400
+AstroBlaster.Health = 2
 AstroBlaster.Model = function()
     local mdl = model.create("astrotrooper_blaster")
     return mdl
