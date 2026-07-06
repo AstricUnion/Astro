@@ -1,3 +1,24 @@
+local function overrideHealth(self, ent)
+    local permittedHealth = hasPermission("entities.setHealth", ent)
+    local permittedMaxHealth = hasPermission("entities.setMaxHealth", ent)
+    if !(permittedHealth and permittedMaxHealth) then
+        function self.ent.setHealth(_, hp)
+            self:setNWVar("AstroHealth", hp)
+        end
+
+        function self.ent.getHealth()
+            return math.round(self:getNWVar("AstroHealth", 0))
+        end
+
+        function self.ent.setMaxHealth() end
+
+        function self.ent.getMaxHealth()
+            return self.Health
+        end
+    end
+end
+
+
 ---@class ents
 local ents = ents
 ---Astro module - module with physics body, like guns or arms
@@ -20,6 +41,8 @@ function AstroModuleBase:moduleInitialize() end
 
 ---[SHARED] Initialize module
 function AstroModuleBase:initialize()
+    -- If we have no permissions... ну блин, we need to made shit
+    overrideHealth(self, self.ent)
     if SERVER then
         self.ent:setHealth(self.Health)
         self.ent:setMaxHealth(self.Health)
@@ -194,6 +217,8 @@ function AstroBase:astroInitialize() end
 
 
 function AstroBase:initialize()
+    -- If we have no permissions... ну блин, we need to made shit
+    overrideHealth(self, self.ent)
     self.filter = {self.ent}
     local modules = {}
     if SERVER then

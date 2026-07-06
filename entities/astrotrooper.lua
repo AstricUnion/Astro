@@ -85,8 +85,6 @@ if SERVER then
             eff:setNormal(self.modules[3]:getDirection())
             eff:setScale(3)
             eff:play()
-        elseif button == KEY.B then
-            self.ent:applyDamage(1000)
         end
     end
 
@@ -131,7 +129,7 @@ if SERVER then
         eff:setOrigin(self.ent:getPos())
         eff:setScale(2)
         eff:play()
-        astrosound.play {"death", nil, self.ent}
+        astrosound.play {"death", nil, self.ent, fadeMin = 200, fadeMax = 5000}
         self.ent:setCollisionGroup(COLLISION_GROUP.WORLD)
         self.ent:addCollisionListener(function()
             if !isValid(self) then return end

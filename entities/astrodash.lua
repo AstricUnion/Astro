@@ -33,7 +33,7 @@ if SERVER then
             for _, v in ipairs(toDamage) do
                 local permitted, _ = hasPermission("entities.applyDamage", v)
                 if permitted and v ~= world and !table.hasValue(astro.filter, v) then
-                    v:applyDamage(25, astro.ent, self.ent)
+                    astroutils.applyDamage(v, 25, astro.ent, self.ent)
                 end
             end
             local cur = timer.curtime()

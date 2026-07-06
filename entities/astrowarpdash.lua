@@ -35,9 +35,8 @@ if SERVER then
             local toDamage = find.inSphere(pos, 128)
             for _, v in ipairs(toDamage) do
                 if !isValid(v) or v == world then goto cont end
-                local permitted, _ = hasPermission("entities.applyDamage", v)
-                if permitted and !table.hasValue(astro.filter, v) then
-                    v:applyDamage(25, astro.ent, self.ent)
+                if !table.hasValue(astro.filter, v) then
+                    astroutils.applyDamage(v, 25, astro.ent, self.ent)
                 end
                 ::cont::
             end
