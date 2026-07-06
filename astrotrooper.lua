@@ -6,10 +6,11 @@
 ---@include astronew/libs/tween/tweens.lua
 ---@include astronew/libs/beffect/effects.lua
 ---@include astronew/libs/beffect/safeparticle.lua
----@include astronew/models/astrotrooper.lua
----@include astronew/src/astrogui.lua
+---@include astronew/libs/utils.lua
+---@include astronew/libs/projectile.lua
+---@include astronew/libs/astrogui.lua
 ---@include astronew/src/astrobase.lua
----@include astronew/src/guns.lua
+---@include astronew/models/astrotrooper.lua
 ---@include astronew/entities/astroblaster.lua
 ---@include astronew/entities/astrowarpdash.lua
 ---@include astronew/entities/astrotrooper.lua
@@ -31,7 +32,13 @@ beff = require("astronew/libs/beffect/effects.lua")
 require("astronew/libs/beffect/safeparticle.lua")
 
 ---@class astrogui
-astrogui = require("astronew/src/astrogui.lua")
+astrogui = require("astronew/libs/astrogui.lua")
+
+---@class astroutils
+astroutils = require("astronew/libs/utils.lua")
+
+---@class projectile
+projectile = require("astronew/libs/projectile.lua")
 
 ---@includedir astronew/effects
 dodir("astronew/effects", {})
@@ -39,9 +46,6 @@ dodir("astronew/effects", {})
 require("astronew/models/astrotrooper.lua")
 
 require("astronew/src/astrobase.lua")
-
----@class guns
-guns = require("astronew/src/guns.lua")
 
 require("astronew/entities/astroblaster.lua")
 require("astronew/entities/astrowarpdash.lua")

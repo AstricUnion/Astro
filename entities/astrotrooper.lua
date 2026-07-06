@@ -86,7 +86,7 @@ if SERVER then
             eff:setScale(3)
             eff:play()
         elseif button == KEY.B then
-            self.ent:applyDamage(1000)
+            self.ent:applyDamage(self.Health)
         end
     end
 
@@ -127,11 +127,13 @@ if SERVER then
             seat:ejectDriver()
             seat:setCollisionGroup(COLLISION_GROUP.IN_VEHICLE)
         end
-        local eff = beff.create("projectile_explosion")
-        eff:setOrigin(self.ent:getPos())
-        eff:setScale(2)
-        eff:play()
-        astrosound.play {"death", nil, self.ent}
+        do
+            local eff = beff.create("projectile_explosion")
+            eff:setOrigin(self.ent:getPos())
+            eff:setScale(2)
+            eff:play()
+        end
+        astrosound.play {"death", nil, self.ent, fadeMin = 200, fadeMax = 5000}
         self.ent:setCollisionGroup(COLLISION_GROUP.WORLD)
         self.ent:addCollisionListener(function()
             if !isValid(self) then return end
@@ -144,21 +146,45 @@ if SERVER then
             headMdl:setPos(pos + ang:getUp() * 28)
             headMdl:setAngles(ang)
             headMdl:addVelocity(velocity + ang:getUp() * 200)
+
             local bodyMdl = model.create("astrotrooper_body")
             if !bodyMdl then return end
             bodyMdl:setPos(pos)
             bodyMdl:setAngles(ang)
             bodyMdl:addVelocity(velocity)
+            timer.simple(0.01, function()
+                local eff = beff.create("hitsmoke")
+
+                eff:setEntity(headMdl)
+                eff:setFlags(1)
+                eff:play()
+
+                eff:setEntity(bodyMdl)
+                eff:setFlags(1)
+                eff:setScale(2)
+                eff:play()
+            end)
+
             game.blastDamage(pos, 200, 60)
-            local eff = beff.create("projectile_explosion")
-            eff:setOrigin(pos)
-            eff:setScale(3)
-            eff:play()
+            do
+                local eff = beff.create("projectile_explosion")
+                eff:setOrigin(pos)
+                eff:setScale(3)
+                eff:play()
+            end
             self.ent:removeCollisionListener()
         end)
         self.physobj:setAngleVelocity(Vector())
     end
 
+    function AstroTrooper:onModuleDeath(mod)
+        local id = mod:getModuleID()
+        local offset = self.Modules[id].offset
+        local eff = beff.create("hitsmoke")
+        eff:setEntity(self.ent)
+        eff:setOrigin(offset)
+        eff:play()
+    end
 else
     local l1 = light.create(Vector(), 80, 10, Color(255, 0, 0))
     local l2 = light.create(Vector(), 80, 10, Color(255, 0, 0))

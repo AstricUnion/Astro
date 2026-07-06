@@ -107,10 +107,13 @@ model.new("astrotrooper_body", part {
     rotor2Model
 })
 
-local headModel = part {
-    holo { Vector(0, 0, 0), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.75, 0.75, 0.75), noLight = true, color = Color(0, 0, 0), material = "models/debug/debugwhite" },
+local eyeModel = part {
     holo { Vector(9, 0, 0), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.3, 0.55, 0.55), noLight = true, color = Color(255, 40, 40), material = "models/debug/debugwhite" },
     holo { Vector(12, 0, 0), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.18, 0.4, 0.4), noLight = true, color = Color(255, 255, 255), material = "models/debug/debugwhite" },
+}
+
+local headModel = part {
+    holo { Vector(0, 0, 0), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.75, 0.75, 0.75), noLight = true, color = Color(0, 0, 0), material = "models/debug/debugwhite" },
     holo { Vector(0, 0, 0), Angle(-90, 180, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.22, 0.22, 0.16), color = Color(255, 40, 40) },
     holo { Vector(0, 0, 0), Angle(-90, 0, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.22, 0.22, 0.16), color = Color(255, 40, 40) },
     holo { Vector(5, 0, -5), Angle(-50, 180, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.22, 0.22, 0.16), color = Color(255, 0, 0) },
@@ -138,6 +141,7 @@ model.new("astrotrooper", hitbox {
     :add("body", "rotor2", rotor2Model)
     :add("camera", rig(Vector(0, 0, 25), Angle()))
     :add("camera", "head", headModel)
+    :add("head", "eye", eyeModel)
     :addSequence("idle", 0.5, function(ent)
         if ent.tween then tween.stop(ent.tween) end
 

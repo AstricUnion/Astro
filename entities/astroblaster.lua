@@ -1,19 +1,36 @@
+if SERVER then
+    ---@class AstroProjectile: ProjectileBase
+    local AstroProjectile = {}
+    AstroProjectile.Identifier = "astroprojectile"
+    AstroProjectile.Model = function()
+        local mdl = model.create("astrotrooper_projectile")
+        mdl:setTrails(54, 0, 0.3, "trails/laser", Color(255, 0, 0))
+        return mdl
+    end
+
+    function AstroProjectile:onHit(tr)
+        astroutils.blastDamage(tr.HitPos, 200, 60)
+        local eff = beff.create("projectile_explosion")
+        eff:setOrigin(tr.HitPos)
+        eff:setScale(1)
+        eff:play()
+    end
+
+    projectile.register(AstroProjectile)
+end
+
+
 ---@class AstroBlaster: AstroModuleBase
 local AstroBlaster = {}
 AstroBlaster.Identifier = "astroblaster"
 AstroBlaster.Name = "AstroBlaster"
-AstroBlaster.Health = 400
+AstroBlaster.Health = 2
 AstroBlaster.Model = function()
     local mdl = model.create("astrotrooper_blaster")
     return mdl
 end
 AstroBlaster.hooks = {}
 
-local projectileModel = function()
-    local mdl = model.create("astrotrooper_projectile")
-    mdl:setTrails(54, 0, 0.3, "trails/laser", Color(255, 0, 0))
-    return mdl
-end
 
 function AstroBlaster:onAction(action)
     if action ~= "shoot" then return end
@@ -21,7 +38,7 @@ function AstroBlaster:onAction(action)
     local angs = self.ent:getAngles()
     local pos = self.ent:getPos()
     local function proj(filter)
-        guns.createProjectile(pos, angs, projectileModel, filter or {self.ent})
+        projectile.create("astroprojectile", pos, angs, filter or {self.ent})
     end
     local ammo = self:getAmmo()
     if self:isAlive() then
