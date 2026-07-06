@@ -14,8 +14,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
       
-    - name: Build and minify code of AstroTrooper
+    - name: Load lua
       uses: leafo/gh-actions-lua@v13
+
+    - name: Build AstroTrooper
       run: lua builder/builder.lua astronew astrotrooper.lua
 
     - name: Load AstroTrooper to artifact
