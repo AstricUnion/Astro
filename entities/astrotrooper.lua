@@ -2,6 +2,7 @@ if CLIENT then
     local sounds = "https://raw.githubusercontent.com/AstricUnion/Astro/refs/heads/main/sounds/astrotrooper/"
     astrosound.preloadURL("loop", sounds .. "Idle.mp3")
     astrosound.preloadURL("dash", sounds .. "Dash.mp3")
+    astrosound.preloadURL("olddash", sounds .. "OldDash.mp3")
     astrosound.preloadURL("reload", sounds .. "Reload.mp3")
     astrosound.preloadURL("blaster", sounds .. "Fire.mp3")
     astrosound.preloadURL("death", sounds .. "Dying.mp3")
@@ -76,6 +77,7 @@ if SERVER then
         elseif button == MOUSE.MOUSE2 then
             if !self.modules[3]:canAction("dash") then return end
             astrosound.play {"dash", nil, self.ent}
+            astrosound.play {"olddash", nil, self.ent}
             self.modules[3]:sendAction("dash")
             self:setState(STATE.Dashing)
             local eff = beff.create("quantum_burst")
@@ -129,7 +131,7 @@ if SERVER then
         eff:setOrigin(self.ent:getPos())
         eff:setScale(2)
         eff:play()
-        astrosound.play {"death", nil, self.ent, volume = 1, fadeMin = 100, fadeMax = 100000}
+        astrosound.play {"death", nil, self.ent}
         self.ent:setCollisionGroup(COLLISION_GROUP.WORLD)
         self.ent:addCollisionListener(function()
             if !isValid(self) then return end
