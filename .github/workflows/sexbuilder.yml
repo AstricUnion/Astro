@@ -7,15 +7,19 @@ on:
     branches: [ main ]
 
 jobs:
-  hello-world:
+  sex-build:
     runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
       
-    - name: Say Hello
-      run: echo "Hello, GitHub Actions! This is my first workflow!"
-      
-    - name: Show date
-      run: date
+    - name: Build and minify code of AstroTrooper
+      run: lua builder/builder.lua astronew astrotrooper.lua
+      uses: leafo/gh-actions-lua@v13
+
+    - name: Load AstroTrooper to artifact
+    - uses: actions/upload-artifact@v7
+      with:
+        path: astrotrooper_builded.lua
+        archive: false

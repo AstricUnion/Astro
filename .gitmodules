@@ -13,3 +13,6 @@
 [submodule "libs/astrosound"]
 	path = libs/astrosound
 	url = git@github.com:AstricUnion/AstroSound
+[submodule "builder"]
+	path = builder
+	url = https://github.com/AstricUnion/SEXBuilder
