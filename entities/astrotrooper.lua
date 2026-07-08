@@ -85,8 +85,6 @@ if SERVER then
             eff:setNormal(self.modules[3]:getDirection())
             eff:setScale(3)
             eff:play()
-        elseif button == KEY.B then
-            self.ent:applyDamage(self.Health)
         end
     end
 
