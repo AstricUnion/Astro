@@ -197,7 +197,6 @@ else
     end
 
     function AstroTrooper:renderOffscreen()
-        if !self:getDriver() then return end
         l1:setPos(self.ent:localToWorld(Vector(0, 0, 20)))
         l2:setPos(self.ent:localToWorld(Vector(0, 0, -10)))
         l1:draw()

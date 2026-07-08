@@ -595,7 +595,7 @@ else
     function AstroBase.hooks:RenderOffscreen()
         self:renderOffscreen()
         local dr = self:getDriver()
-        if !dr or dr == Ply then return end
+        if !dr then return end
         local camera = self.ent:getBoneEntity(self.ent:lookupBone("camera"))
         if !camera then return end
         camera:setAngles(dr:getEyeAngles())
