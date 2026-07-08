@@ -32,14 +32,18 @@ ProjectileBase.Timeout = 3
 ---@param tr TraceResult
 function ProjectileBase:onHit(tr) end
 
----[SERVER] Hook on hit
-function ProjectileBase:think(cur, delta)
+---[SERVER] Hook on think
+function ProjectileBase:think() end
+
+---[INTERNAL] [SERVER] Hook on think
+function ProjectileBase:internalThink(cur, delta)
     local pos = self.ent:getPos()
     local newIgnore = {}
     for _, ent in ipairs(self.ignore) do
         if isValid(ent) then newIgnore[#newIgnore+1] = ent end
     end
     self.ignore = newIgnore
+    self:think()
     local trace_result = trace.line(pos, pos + self.velocity * delta, self.ignore, MASK.SHOT_HULL)
     if trace_result.Hit or cur - self.startedAt > self.Timeout then
         self.ent:remove()
@@ -92,7 +96,7 @@ hook.add("Think", "GunsProjectiles", function()
     local delta = game.getTickInterval()
     local cur = timer.curtime()
     for _, v in pairs(projectile.inited) do
-        v:think(cur, delta)
+        v:internalThink(cur, delta)
     end
 end)
 

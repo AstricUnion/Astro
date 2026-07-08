@@ -215,6 +215,7 @@ ents.register(AstroModuleBase)
 ---@field lastPos Vector Last position to calculate FOV
 ---@field fovOffset number Current FOV offset. Will be lerp-ed
 ---@field slop number Current slop offset. Will be lerp-ed
+---@field cameraBone Entity? Camera bone
 ---@field fade number
 ---@field fadeColor Color
 local AstroBase = {}
@@ -272,6 +273,7 @@ function AstroBase:initialize()
         self.slop = 0
         self.fade = 0
         self.fadeColor = Color()
+        self.cameraBone = self.ent.modelBones and self.ent:getBoneEntity(self.ent:lookupBone("camera"))
     end
     self.modules = modules
     self:astroInitialize()
@@ -294,7 +296,7 @@ if SERVER then
     local seatPinPoint = hologram.create(Vector(), Angle(), "models/editor/axis_helper_thick.mdl")
     if !seatPinPoint then return end
     seatPinPoint:setNoDraw(true)
-    seatPinPoint:setLocalAngularVelocity(Angle(0, 500, 0))
+    seatPinPoint:setLocalAngularVelocity(Angle(500, 500, 500))
 
     function AstroBase:seatToAstro()
         local seat = self:getSeat()
@@ -324,7 +326,7 @@ if SERVER then
         self.physobj:enableGravity(false)
         seat:setParent(seatPinPoint)
         seat:setFrozen(true)
-        seat:setPos(Vector(10000, 0, 0))
+        seat:setPos(Vector(16000, 0, 0))
         seat:setAngles(Angle())
         enableHud(ply, true)
         ply:setViewEntity(self.ent)
@@ -413,11 +415,12 @@ if SERVER then
         local dr = self:getDriver()
         self:think()
         if dr and isValid(dr) then
+            local seat = self:getSeat()
+            if !seat then return end
+            seat:setAngles(Angle())
             local prevent = self:fly(dr)
             if !prevent then
-                local seat = self:getSeat()
-                if !seat then return end
-                local eyeangles = seat:worldToLocalAngles(dr:getEyeAngles())
+                local eyeangles = dr:getEyeAngles()
                 local dir = getDirection(dr, eyeangles)
                 local speed = dr:keyDown(IN_KEY.DUCK) and self.SprintSpeed or self.Speed
                 self.velocity = math.lerpVector(self.VelocityRatio, self.velocity, dir * speed * 100 * frametime)
@@ -508,11 +511,8 @@ else
     function AstroBase.hooks:CalcView(pos, ang)
         local dr = self:getDriver()
         if dr ~= Ply then return end
-        local camera = self.ent:getBoneEntity(self.ent:lookupBone("camera"))
-        if !camera then return end
         local eyeAngles = dr:getEyeAngles()
-        camera:setAngles(eyeAngles)
-        pos, ang = localToWorld(self.CameraOffset, self.CameraAngle, camera:getPos(), eyeAngles)
+        pos, ang = localToWorld(self.CameraOffset, self.CameraAngle, self.cameraBone and self.cameraBone:getPos() or pos, eyeAngles)
         local velocity = self.ent:worldToLocalVector(self.lastPos - pos)
         self.lastPos = pos
         self.fovOffset = math.lerp(0.1, self.fovOffset, velocity:getLength() / 10)
@@ -523,7 +523,7 @@ else
             fov = 120 + self.fovOffset
         }
     end
-    --
+
     -- local drawElements = {
     --     ["CHudChat"] = true,
     --     ["CHudMessage"] = true
@@ -590,10 +590,9 @@ else
     function AstroBase.hooks:RenderOffscreen()
         self:renderOffscreen()
         local dr = self:getDriver()
-        if !dr or dr ~= Ply then return end
-        local camera = self.ent:getBoneEntity(self.ent:lookupBone("camera"))
-        if !camera then return end
-        camera:setAngles(dr:getEyeAngles())
+        if !dr then return end
+        if !self.cameraBone then return end
+        self.cameraBone:setAngles(dr:getEyeAngles())
     end
 
     ---[INTERNAL] [CLIENT] Astrobot think for client
@@ -655,9 +654,7 @@ end
 function AstroBase:getEyeAngles()
     local dr = self:getDriver()
     if !dr then return end
-    local seat = self:getSeat()
-    if !seat then return end
-    return seat:worldToLocalAngles(dr:getEyeAngles())
+    return dr:getEyeAngles()
 end
 
 ---[SHARED] Get Astro eye trace

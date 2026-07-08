@@ -111,7 +111,7 @@ if SERVER then
             v.ent:applyDamage(v:getHealth())
         end
         local dir = self:getDirection()
-        self.deathDirection = dir and !dir:isZero() and dir or self.ent:getEyeAngles():getForward()
+        self.deathDirection = dir and !dir:isZero() and dir or self.ent:getAngles():getForward()
         local seat = self:getSeat()
         if seat and isValid(seat) then
             self:seatToAstro()

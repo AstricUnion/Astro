@@ -3,9 +3,21 @@ if SERVER then
     local AstroProjectile = {}
     AstroProjectile.Identifier = "astroprojectile"
     AstroProjectile.Model = function()
+        local trailHolo = hologram.create(Vector(), Angle(), "models/hunter/plates/plate.mdl")
+        if !trailHolo then return end
+        trailHolo:setNoDraw(true)
+        -- TODO: made trail lib or something, to made slow-delete trails
+        trailHolo:setTrails(54, 0, 0.3, "trails/laser", Color(255, 0, 0))
         local mdl = model.create("astrotrooper_projectile")
-        mdl:setTrails(54, 0, 0.3, "trails/laser", Color(255, 0, 0))
+        mdl.trailHolo = trailHolo
         return mdl
+    end
+
+    function AstroProjectile:think()
+        local trailHolo = self.ent.trailHolo
+        if isValid(trailHolo) then
+            trailHolo:setPos(self.ent:getPos())
+        end
     end
 
     function AstroProjectile:onHit(tr)
@@ -14,6 +26,13 @@ if SERVER then
         eff:setOrigin(tr.HitPos)
         eff:setScale(1)
         eff:play()
+        local trailHolo = self.ent.trailHolo
+        if isValid(trailHolo) then
+            timer.simple(0.5, function()
+                if !isValid(trailHolo) then return end
+                trailHolo:remove()
+            end)
+        end
     end
 
     projectile.register(AstroProjectile)
