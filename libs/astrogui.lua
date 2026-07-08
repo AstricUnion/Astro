@@ -71,7 +71,7 @@ local function progressBarOutline(x, y, w, h, leftText, rightText, textBottom)
     render.drawSimpleText(x, y + yOffset, leftText, nil, vAlign)
     render.drawSimpleText(x + w, y + yOffset, rightText, TEXT_ALIGN.RIGHT, vAlign)
     astrogui.pushScissorMask(function()
-        render.drawRectFast(x + 4, y, w - 8, h)
+        render.drawRect(x + 4, y, w - 8, h)
     end)
     render.drawRectOutline(x, y, w, h, 2)
     astrogui.popStencilMask()
@@ -88,18 +88,17 @@ end
 ---@param textBottom boolean?
 ---@param centerBar boolean?
 function astrogui.drawProgressBar(x, y, w, h, progress, leftText, rightText, textBottom, centerBar)
-    progress = math.clamp(progress, 0, 1)
     render.setMaterial(mat)
     render.setColor(Color(255, 70, 70, 30))
-    render.drawTexturedRectFast(x + 8, y + 4, w - 16, h - 8)
+    render.drawTexturedRect(x + 8, y + 4, w - 16, h - 8)
 
     local progressWidth = (w - 16) * progress
     render.setColor(Color(255, 70, 70, 100))
     local offset = (centerBar and (w - 16) / 2 - progressWidth / 2 or 0) + 8
-    render.drawRectFast(x + offset, y + 4, progressWidth, h - 8)
+    render.drawRect(x + offset, y + 4, progressWidth, h - 8)
     render.setColor(Color(255, 20, 20, 200))
     render.setMaterial(mat)
-    render.drawTexturedRectFast(x + offset, y + 4, progressWidth, h - 8)
+    render.drawTexturedRect(x + offset, y + 4, progressWidth, h - 8)
     progressBarOutline(x, y, w, h, leftText or "", rightText or "", textBottom)
 end
 
@@ -115,25 +114,25 @@ end
 ---@param textBottom boolean
 ---@param mirror boolean?
 function astrogui.drawProgressBarSections(x, y, w, h, sectionW, progress, leftText, rightText, textBottom, mirror)
-    progress = math.clamp(progress, 0, 1)
-    progress = mirror and 1 - progress or progress
     local fullW = sectionW + 4
     local count = math.floor((w - 24) / fullW)
-    for i=0, count do
-        local progressCount = math.ceil((count + 1) * progress)
-        if (!mirror and i < progressCount) or (mirror and i >= progressCount) then
-            render.setColor(Color(255, 70, 70, 50))
+    astrogui.pushSelectionMask(function()
+        for i=0, count do
             render.drawRectFast(x + 8 + i * fullW, y + 4, sectionW, h - 8)
-            render.setColor(Color(255, 20, 20, 200))
-            render.setMaterial(mat)
-            render.drawTexturedRectFast(x + 8 + i * fullW, y + 4, sectionW, h - 8)
-        else
-            render.setColor(Color(255, 70, 70, 30))
-            render.setMaterial(mat)
-            render.drawTexturedRectFast(x + 8 + i * fullW, y + 4, sectionW, h - 8)
         end
-    end
+    end)
+    render.setMaterial(mat)
+    render.setColor(Color(255, 70, 70, 30))
+    render.drawTexturedRect(x + 8, y + 4, w - 16, h - 8)
+    local progressWidth = (w - 16) * progress
+    render.setColor(Color(255, 70, 70, 100))
+    local offset = mirror and w - 8 - progressWidth or 8
+    render.drawRect(x + offset, y + 4, progressWidth, h - 8)
+    render.setColor(Color(255, 20, 20, 200))
+    render.setMaterial(mat)
+    render.drawTexturedRect(x + offset, y + 4, progressWidth, h - 8)
     progressBarOutline(x, y, w, h, leftText or "", rightText or "", textBottom)
+    astrogui.popStencilMask()
 end
 
 return astrogui

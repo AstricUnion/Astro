@@ -46,15 +46,16 @@ function AstroModuleBase:initialize()
     if SERVER then
         self.ent:setHealth(self.Health)
         self.ent:setMaxHealth(self.Health)
+        self:moduleInitialize()
     else
         timer.simple(0, function()
             if !isValid(self) then return end
             local astro = self:getAstro()
             if !astro then return end
             astro:clientInitializeModule(self)
+            self:moduleInitialize()
         end)
     end
-    self:moduleInitialize()
 end
 
 if SERVER then
@@ -340,6 +341,7 @@ if SERVER then
         self.physobj:enableGravity(true)
         ply:setViewEntity(nil)
         enableHud(ply, false)
+        self:seatToAstro()
     end
 
     ---[SERVER] Get fly velocity of Astro
@@ -562,21 +564,14 @@ else
         render.drawRectFast(0, 0, sw, sh)
 
         local halfW, halfH = sw / 2, sh / 2
-        render.setColor(Color(255, 70, 70, 100))
-        local radius = 180
-        local rectEndH = radius * 0.6
-        render.enableScissorRect(halfW - radius, halfH - rectEndH, halfW + radius, halfH + rectEndH)
-        render.drawCircle(halfW, halfH, radius)
-        render.drawCircle(halfW, halfH, radius - 1)
-        render.disableScissorRect()
 
         render.setColor(Color(255, 70, 70, 150))
         astrogui.pushScissorMask(function()
-            equilateralTriangle(halfW, halfH - 4, 28 + self.fovOffset * 3)
-            local scale = 33 + self.fovOffset * 5
+            equilateralTriangle(halfW, halfH - 4, 28)
+            local scale = 33
             equilateralTriangleButRotated(sw / 2, sh / 2 - 4 + 0.27 * scale, scale)
         end)
-        equilateralTriangle(halfW, halfH - 5, 33 + self.fovOffset * 3)
+        equilateralTriangle(halfW, halfH - 5, 33)
         astrogui.popStencilMask()
 
         render.setColor(Color(255, 20, 20, 200))
@@ -595,7 +590,7 @@ else
     function AstroBase.hooks:RenderOffscreen()
         self:renderOffscreen()
         local dr = self:getDriver()
-        if !dr then return end
+        if !dr or dr ~= Ply then return end
         local camera = self.ent:getBoneEntity(self.ent:lookupBone("camera"))
         if !camera then return end
         camera:setAngles(dr:getEyeAngles())

@@ -21,6 +21,8 @@ end
 
 
 ---@class AstroBlaster: AstroModuleBase
+---@field modulePoint Entity
+---@field astroBody Entity
 local AstroBlaster = {}
 AstroBlaster.Identifier = "astroblaster"
 AstroBlaster.Name = "AstroBlaster"
@@ -123,17 +125,18 @@ if SERVER then
         astro.ent:emitSound("WaterExplosionEffect.Sound")
     end
 else
-    function AstroBlaster:renderOffscreen()
-        if !self:isAlive() then return end
+    function AstroBlaster:moduleInitialize()
         local astro = self:getAstro()
         if !astro then return end
+        self.astroBody = astro.ent:getBoneEntity(astro.ent:lookupBone("body"))
+        self.modulePoint = self.ent:getBoneEntity(self.ent:lookupBone("module"))
+    end
+
+    function AstroBlaster:renderOffscreen()
+        if !self:isAlive() then return end
         local offset = self:getOffset()
-        local body = astro.ent:getBoneEntity(astro.ent:lookupBone("body"))
-        local modulePoint = self.ent:getBoneEntity(self.ent:lookupBone("module"))
-        if !(body and modulePoint) then return end
-        ---@cast body Hologram
-        ---@cast modulePoint Hologram
-        modulePoint:setPos(body:localToWorld(offset))
+        if !(self.astroBody and self.modulePoint and offset) then return end
+        self.modulePoint:setPos(self.astroBody:localToWorld(offset))
     end
 
     function AstroBlaster:drawHUD(x, y)
