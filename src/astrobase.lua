@@ -110,10 +110,12 @@ if SERVER then
 
     ---[INTERNAL] [SERVER] Set Astro for this module
     ---@param astro AstroBase
-    ---@param id number ID of module in astro
-    function AstroModuleBase:setAstro(astro, id)
+    ---@param id number ID of module in Astro
+    ---@param offset Vector Offset of Astro
+    function AstroModuleBase:setAstro(astro, id, offset)
         self:setNWVar("LinkedAstro", astro.ent:entIndex())
         self:setNWVar("ModuleID", id)
+        self:setNWVar("AstroOffset", offset)
     end
 else
     ---[CLIENT] Draw HUD for module
@@ -131,6 +133,14 @@ else
         local action = net.readString()
         ent:onAction(action)
     end)
+
+    ---[CLIENT] Hook on render offscreen
+    function AstroModuleBase:renderOffscreen() end
+
+    ---[CLIENT] Effects for Astro module
+    function AstroModuleBase.hooks:RenderOffscreen()
+        self:renderOffscreen()
+    end
 end
 
 ---[SHARED] Think hook
@@ -149,6 +159,12 @@ end
 ---@return number?
 function AstroModuleBase:getModuleID()
     return self:getNWVar("ModuleID")
+end
+
+---[SHARED] Get module offset of astro
+---@return Vector
+function AstroModuleBase:getOffset()
+    return self:getNWVar("AstroOffset")
 end
 
 ---[SHARED] Get module's health
@@ -243,7 +259,7 @@ function AstroBase:initialize()
             local ent = ents.create(v.module)
             ---@cast ent AstroModuleBase
             local localPos, localAng = localToWorld(v.offset, Angle(), pos, ang)
-            ent:setAstro(self, i)
+            ent:setAstro(self, i, v.offset)
             ent:spawn(localPos, localAng, false)
             ent.ent:setParent(self.ent)
             modules[i] = ent
@@ -283,8 +299,8 @@ if SERVER then
         local seat = self:getSeat()
         if !seat then return end
         seat:setParent(nil)
-        seat:setPos(self.ent:localToWorld(Vector(50, 0, 0)))
-        seat:setAngles(self.ent:localToWorldAngles(Angle(0, -90, 0)))
+        seat:setPos(self.ent:localToWorld(self.SeatOffset))
+        seat:setAngles(self.ent:localToWorldAngles(self.SeatAngle))
         seat:setParent(self.ent)
     end
 
@@ -405,7 +421,7 @@ if SERVER then
                 self.velocity = math.lerpVector(self.VelocityRatio, self.velocity, dir * speed * 100 * frametime)
                 self.physobj:setVelocity(self.velocity)
                 local localVel = self.physobj:getLocalVelocity()
-                local ang = self.ent:worldToLocalAngles(Angle(eyeangles.p, eyeangles.y, (localVel.y / -speed) * 4))
+                local ang = self.ent:worldToLocalAngles(Angle(eyeangles.p + (localVel.x / speed) * 6, eyeangles.y, (localVel.y / -speed) * 4))
                 local angvel = ang:getQuaternion():getRotationVector() - self.ent:getAngleVelocity() / 5
                 self.physobj:addAngleVelocity(angvel)
             end

@@ -1,7 +1,3 @@
----@name Astro Trooper Model
----@author Ratyuha
----@shared
-
 ---@class tween
 local tween = tween
 local param = tween.param
@@ -40,7 +36,8 @@ model.new("astrotrooper_blaster", hitbox {
     material = "Metal",
     mass = 200,
 })
-    :add("blaster", part {
+    :add("module", rig())
+    :add("module", "blaster", part {
         holo { Vector(-5, 0, 2), nil, "models/hunter/blocks/cube025x025x025.mdl", color = Color(255, 0, 0, 0) },
         holo { Vector(-28, 0, -2), Angle(180, 90, 90), "models/props_combine/combinethumper001a.mdl", Vector(0.08, 0.08, 0.12), color = Color(255, 40, 40), material = "models/props_combine/metal_combinebridge001" },
         holo { Vector(-28, 0, 6), Angle(0, 90, 90), "models/props_combine/combinethumper001a.mdl", Vector(0.08, 0.08, 0.12), color = Color(255, 40, 40), material = "models/props_combine/metal_combinebridge001" },
@@ -150,7 +147,7 @@ model.new("astrotrooper", hitbox {
     :add("camera", rig(Vector(0, 0, 25), Angle()))
     :add("camera", "head", headModel)
     :add("head", "eye", eyeModel)
-    :addSequence("idle", 0.5, function(ent)
+    :addSequence("idle", 0, function(ent)
         if ent.tween then tween.stop(ent.tween) end
 
         local head = ent:getBoneEntity(ent:lookupBone("head"))

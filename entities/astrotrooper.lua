@@ -9,7 +9,7 @@ if CLIENT then
 end
 
 
----@enum STATE
+---@enum TROOPERSTATE
 local STATE = {
     Idle = 0,
     Dashing = 1

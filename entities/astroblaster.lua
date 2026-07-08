@@ -123,6 +123,19 @@ if SERVER then
         astro.ent:emitSound("WaterExplosionEffect.Sound")
     end
 else
+    function AstroBlaster:renderOffscreen()
+        if !self:isAlive() then return end
+        local astro = self:getAstro()
+        if !astro then return end
+        local offset = self:getOffset()
+        local body = astro.ent:getBoneEntity(astro.ent:lookupBone("body"))
+        local modulePoint = self.ent:getBoneEntity(self.ent:lookupBone("module"))
+        if !(body and modulePoint) then return end
+        ---@cast body Hologram
+        ---@cast modulePoint Hologram
+        modulePoint:setPos(body:localToWorld(offset))
+    end
+
     function AstroBlaster:drawHUD(x, y)
         if !self:isAlive() then return end
         local sw, sh = render.getGameResolution()
