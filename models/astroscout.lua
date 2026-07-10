@@ -163,33 +163,27 @@ model.new("astroscout_leftarm", hitbox {
     })
     :add("shoulder", "forearm", part { -- laser base
         rig ( Vector(0, 85, 0), Angle(0, 0, 0) ),
-        holo { Vector(0, 89, -2), Angle(90, 90, 0), "models/hunter/tubes/circle2x2.mdl", Vector(0.5, 0.5, 6), color = mainColor, material = metalMat },
-        holo { Vector(0, 157, -2), Angle(90, 90, 0), "models/hunter/tubes/circle2x2.mdl", Vector(0.46, 0.46, 5.5), color = mainColor, material = metalMat },
-        -- laserTube(0),
-        -- laserTube(45),
-        -- laserTube(90),
-        -- laserTube(135),
-        -- laserTube(180),
-        -- laserTube(-135),
-        -- laserTube(-90),
-        -- laserTube(-45)
+        holo { Vector(0, 85, -2), Angle(90, 90, 0), "models/props_combine/combine_mine01.mdl", Vector(2, 2, 3), color = mainColor, material = metalMat },
+        holo { Vector(0, 185, -2), Angle(-90, 90, 0), "models/props_combine/combine_mine01.mdl", Vector(1.8, 1.8, 2), color = mainColor, material = metalMat },
+        holo { Vector(0, 90, 19), Angle(90, 90, 0), "models/props_combine/combine_light002a.mdl", Vector(0.75, 1, 2), color = mainColor, material = metalMat },
+        holo { Vector(0, 90, -22.5), Angle(-90, 90, 180), "models/props_combine/combine_light002a.mdl", Vector(0.75, 1, 2), color = mainColor, material = metalMat },
+        holo { Vector(21, 90, -2), Angle(180, 0, -90), "models/props_combine/combine_light002a.mdl", Vector(0.75, 1, 2), color = mainColor, material = metalMat },
+        holo { Vector(-21, 90, -2), Angle(0, 0, -90), "models/props_combine/combine_light002a.mdl", Vector(0.75, 1, 2), color = mainColor, material = metalMat },
+        holo { Vector(0, 180, -2), Angle(0, 90, 0), "models/props_silo/ventilationduct02large.mdl", Vector(0.4, 0.8, 0.8), color = mainColor, material = metalMat },
+        holo { Vector(0, 190, -2), Angle(90, 90, 0), "models/hunter/tubes/circle2x2.mdl", Vector(0.3, 0.3, 1), noLight = true, color = mainColor, material = whiteMat },
+        holo { Vector(0, 194, -2), Angle(90, 90, 0), "models/hunter/tubes/circle2x2.mdl", Vector(0.2, 0.2, 1), noLight = true, color = mainColor, material = whiteMat },
     })
-    :add("forearm", "tube", part { -- inner tube
-        rig ( Vector(0, 38, -2), Angle(0, 0, 0) ),
-        holo { Vector(0, 38, -2), Angle(90, 90, 0), "models/hunter/tubes/circle2x2.mdl", Vector(0.28, 0.28, 18), noLight = true, color = mainColor, material = whiteMat },
-        holo { Vector(0, 38, 10.5), Angle(90, 90, 0), "models/hunter/tubes/circle2x2.mdl", Vector(0.04, 0.04, 18), color = mainColor, material = metalMat },
-        holo { Vector(0, 38, -15.5), Angle(90, 90, 0), "models/hunter/tubes/circle2x2.mdl", Vector(0.04, 0.04, 18), color = mainColor, material = metalMat },
-        holo { Vector(-13, 38, -2), Angle(90, 90, 0), "models/hunter/tubes/circle2x2.mdl", Vector(0.04, 0.04, 18), color = mainColor, material = metalMat },
-        holo { Vector(13, 38, -2), Angle(90, 90, 0), "models/hunter/tubes/circle2x2.mdl", Vector(0.04, 0.04, 18), color = mainColor, material = metalMat },
-    })
-    :add("forearm", "prongs", part { -- prongs
-        rig ( Vector(0, 80, -2), Angle(0, 0, 0) ),
-        holo { Vector(0, 80, -2), Angle(90, 90, 0), "models/hunter/tubes/tube1x1x1.mdl", Vector(0.7, 0.7, 0.15), color = mainColor, material = metalMat },
-        holo { Vector(0, 80, -2), Angle(90, 90, 0), "models/hunter/tubes/circle2x2.mdl", Vector(0.3, 0.3, 3), noLight = true, color = mainColor, material = whiteMat },
-        -- prong(0),
-        -- prong(90),
-        -- prong(180),
-        -- prong(-90)
+    :add("forearm", "tube", part { -- inner tube 
+        rig ( Vector(0, 38, -2), Angle() ),
+        holo { Vector(0, 80, -2), Angle(0, 0, 90), "models/hunter/tubes/tube1x1x2.mdl", Vector(0.55, 0.55, 0.6), noLight = true, color = mainColor, material = whiteMat },
+        holo { Vector(0, 50, 13), Angle(270, 90, 0), "models/props_combine/breenlight.mdl", Vector(1, 1.6, 4), color = mainColor, material = metalMat },
+        holo { Vector(0, 50, -17), Angle(90, 90, 180), "models/props_combine/breenlight.mdl", Vector(1, 1.6, 4), color = mainColor, material = metalMat },
+        holo { Vector(15, 50, -2), Angle(0, 0, 90), "models/props_combine/breenlight.mdl", Vector(1, 1.6, 4), color = mainColor, material = metalMat },
+        holo { Vector(-15, 50, -2), Angle(180, 0, 90), "models/props_combine/breenlight.mdl", Vector(1, 1.6, 4), color = mainColor, material = metalMat },
+        holo { Vector(9, 50, 7), Angle(315, 0, 90), "models/props_combine/breenlight.mdl", Vector(1, 1.6, 4), color = mainColor, material = metalMat },
+        holo { Vector(-9, 50, 7), Angle(225, 0, 90), "models/props_combine/breenlight.mdl", Vector(1, 1.6, 4), color = mainColor, material = metalMat },
+        holo { Vector(-9, 50, -11), Angle(135, 0, 90), "models/props_combine/breenlight.mdl", Vector(1, 1.6, 4), color = mainColor, material = metalMat },
+        holo { Vector(9, 50, -11), Angle(45, 0, 90), "models/props_combine/breenlight.mdl", Vector(1, 1.6, 4), color = mainColor, material = metalMat },
     })
     :addSequence("idle", 0, function(ent)
         if ent.tween then tween.stop(ent.tween) end
