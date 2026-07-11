@@ -30,6 +30,8 @@ local function astrosoundShot(playAt, snd, ent)
     end
 end
 
+
+-- i don't transfer it to layers, because it not requires
 model.new("astrotrooper_blaster", hitbox {
     vertex {"cube", Vector(0, 0, 6), Angle(0, 0, 0), Vector(30, 8, 10)},
     vertex {"cylinder", Vector(36, 0, 2), Angle(0, 90, 0), Vector(6, 6, 8)},
@@ -47,7 +49,6 @@ model.new("astrotrooper_blaster", hitbox {
         holo { Vector(25, 0, 2), Angle(90, 0, 0), "models/Items/combine_rifle_ammo01.mdl", Vector(1.8, 1.8, 1.8), color = Color(255, 40, 40) },
     })
     :addSequence("shoot", 0.3, function(ent)
-        if ent.tween then tween.stop(ent.tween) end
         local bone = ent:getBoneEntity(ent:lookupBone("blaster"))
         if !bone then return end
         astrosound.play {"blaster", nil, ent}
@@ -55,13 +56,12 @@ model.new("astrotrooper_blaster", hitbox {
         eff:setEntity(ent)
         eff:setOrigin(Vector(32, 0, 0))
         eff:play()
-        ent.tween = tween.start(tween.new {
+        return tween.new {
             param { 0, 0.15, bone, property.LOCALPOS, Vector(), Vector(-20, 0, 0), math.easeOutCubic },
             param { 0.15, 0.3, bone, property.LOCALPOS, Vector(-20, 0, 0), Vector(), math.easeOutCubic },
-        })
+        }
     end)
     :addSequence("reload", 1, function(ent)
-        if ent.tween then tween.stop(ent.tween) end
         local bone = ent:getBoneEntity(ent:lookupBone("blaster"))
         if !bone then return end
         astrosound.play {"blaster", nil, ent}
@@ -69,12 +69,12 @@ model.new("astrotrooper_blaster", hitbox {
         eff:setEntity(ent)
         eff:setOrigin(Vector(32, 0, 0))
         eff:play()
-        ent.tween = tween.start(tween.new {
+        return tween.new {
             param { 0, 0.15, bone, property.LOCALPOS, Vector(), Vector(-20, 0, 0), math.easeOutCubic },
             param { 0.15, 0.3, bone, property.LOCALPOS, Vector(-20, 0, 0), Vector(), math.easeOutCubic },
             param { 0.3, 0.9, bone, propertyWithoutDiff, Angle(), Angle(360, 0, 0), math.easeInOutQuart},
             astrosoundShot(0.3, "reload", ent)
-        })
+        }
     end)
 
 local mat = {[0] = "models/props_combine/metal_combinebridge001", [1] = "models/props_combine/metal_combinebridge001", [2] = "models/props_combine/metal_combinebridge001"}
@@ -148,15 +148,13 @@ model.new("astrotrooper", hitbox {
     :add("camera", "head", headModel)
     :add("head", "eye", eyeModel)
     :addSequence("idle", 0, function(ent)
-        if ent.tween then tween.stop(ent.tween) end
-
         local head = ent:getBoneEntity(ent:lookupBone("head"))
         local camera = ent:getBoneEntity(ent:lookupBone("camera"))
         local body = ent:getBoneEntity(ent:lookupBone("body"))
         local rotor1 = ent:getBoneEntity(ent:lookupBone("rotor1"))
         local rotor2 = ent:getBoneEntity(ent:lookupBone("rotor2"))
 
-        ent.tween = tween.start(tween.new {
+        return tween.new {
             function(process)
                 if !(isValid(body) and isValid(camera)) then return true end
                 local fraction = math.min(process / 4, 1)
@@ -184,5 +182,5 @@ model.new("astrotrooper", hitbox {
                 rotor1:setLocalAngles(rotor1:getLocalAngles() + Angle(0, 200 * delta, 0))
                 rotor2:setLocalAngles(rotor2:getLocalAngles() + Angle(0, -200 * delta, 0))
             end
-        }, true)
+        }
     end)
