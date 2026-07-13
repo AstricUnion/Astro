@@ -14,26 +14,31 @@ local rig = model.rig
 local mainColor = Color(255, 40, 40)
 local metalMat = "models/props_combine/metal_combinebridge001"
 local whiteMat = "models/debug/debugwhite"
---
+
 -- local function circlePos(ang, radius, pos)
 --     local rad = math.rad(ang)
 --     return Vector(math.sin(rad)*radius, 0, math.cos(rad)*radius)+pos
 -- end
 
--- local function prong(ang)
---     local prongHolo = part {
---         rig ( Vector(-1.5, 242, 24) ),
---         holo { Vector(-1.5, 242, 48), Angle(145, 90, -90), "models/props_combine/combine_barricade_bracket01a.mdl", Vector(1.4, 1, 1), color = mainColor, material = metalMat },
---     )
---     prongHolo:setLocalAngles(Angle(-ang, 0, 0))
---     return Holo(prongHolo)
--- end
-
--- local function laserTube(ang)
---     local pos = circlePos(ang, 18.5, Vector(-3, 208, 24))
---     return holo { pos, Angle(90, 90, 0), "models/hunter/tubes/circle2x2.mdl", Vector(0.06, 0.06, 18), color = mainColor, material = metalMat },
--- end
-
+local function prongs()
+    local rigFun = rig()
+    local holoFun = holo { Vector(0, 110, 56), Angle(-50, 90, 180), "models/props_combine/combine_bridge.mdl", Vector(0.14, 0.04, 0.08), color = mainColor, material = metalMat }
+    local part = 360 / 3 -- ме
+    return function()
+        local rg = rigFun()
+        if !rg then return end -- просто привычка, чтобы luals не ругался
+        for i=0, 3 do
+            local ang = i * part
+            local mdl = holoFun()
+            if !mdl then goto cont end
+            -- теперь можно присобачить усик к ригу, а риг провернуть
+            mdl:setParent(rg) -- если все правильно
+            rg:setAngles(Angle(ang, 0, 0)) -- меняем угол для следующей холки
+            ::cont::
+        end
+        return rg
+    end
+end
 
 local function circleProperty(radiusX, radiusY)
     radiusY = radiusY or radiusX
@@ -162,7 +167,7 @@ model.new("astroscout_leftarm", hitbox {
         holo { Vector(0, -16, 4), Angle(220, -270, 180), "models/props_combine/combine_barricade_med02a.mdl", Vector(0.4, 0.4, 0.4), color = mainColor },
     })
     :add("shoulder", "forearm", part { -- laser base
-        rig ( Vector(0, 85, 0), Angle(0, 0, 0) ),
+        rig ( Vector(0, 85, 0), Angle() ),
         holo { Vector(0, 85, -2), Angle(90, 90, 0), "models/props_combine/combine_mine01.mdl", Vector(2, 2, 3), color = mainColor, material = metalMat },
         holo { Vector(0, 185, -2), Angle(-90, 90, 0), "models/props_combine/combine_mine01.mdl", Vector(1.8, 1.8, 2), color = mainColor, material = metalMat },
         holo { Vector(0, 90, 19), Angle(90, 90, 0), "models/props_combine/combine_light002a.mdl", Vector(0.75, 1, 2), color = mainColor, material = metalMat },
@@ -184,6 +189,10 @@ model.new("astroscout_leftarm", hitbox {
         holo { Vector(-9, 50, 7), Angle(225, 0, 90), "models/props_combine/breenlight.mdl", Vector(1, 1.6, 4), color = mainColor, material = metalMat },
         holo { Vector(-9, 50, -11), Angle(135, 0, 90), "models/props_combine/breenlight.mdl", Vector(1, 1.6, 4), color = mainColor, material = metalMat },
         holo { Vector(9, 50, -11), Angle(45, 0, 90), "models/props_combine/breenlight.mdl", Vector(1, 1.6, 4), color = mainColor, material = metalMat },
+    })
+    :add("forearm", "prongs", part {
+       rig ( Vector(0, 80, 0), Angle() ),
+       prongs ()
     })
     :addSequence("idle", 0, function(ent)
         if ent.tween then tween.stop(ent.tween) end
