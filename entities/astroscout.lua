@@ -53,7 +53,7 @@ if SERVER then
     end
 else
     function AstroScout:astroInitialize()
-        self.ent:setSequence(1)
+        -- self.ent:setSequence(1)
         -- timer.simple(3, function()
             -- self.ent:setSequence(1)
         --     local mod = self.modules[2]

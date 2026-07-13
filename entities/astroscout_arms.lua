@@ -15,7 +15,7 @@ end
 if SERVER then
 else
     function AstroScoutLeftArm:moduleInitialize()
-        self.ent:setSequence(1)
+        -- self.ent:setSequence(1)
     end
 
     function AstroScoutLeftArm:renderOffscreen()
@@ -61,7 +61,7 @@ end
 if SERVER then
 else
     function AstroScoutRightArm:moduleInitialize()
-        self.ent:setSequence(1)
+        -- self.ent:setSequence(1)
     end
 
     function AstroScoutRightArm:renderOffscreen()

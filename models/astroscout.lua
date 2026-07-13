@@ -87,25 +87,19 @@ model.new("astroscout_rightarm", hitbox {
         holo { Vector(33, -125, -8), Angle(0, -25, -90), "models/props_combine/breenlight.mdl", Vector(2.8, 2.8, 1.5), color = mainColor, material = metalMat },
     })
     :addSequence("idle", 0, function(ent)
-        if ent.tween then tween.stop(ent.tween) end
-
         local shoulder = ent:getBoneEntity(ent:lookupBone("shoulder"))
         local forearm = ent:getBoneEntity(ent:lookupBone("forearm"))
         local shoulderStartAngle = Angle(40, 10, 60)
         local forearmStartAngle = Angle(0, 115, 0)
-        if !ent.tween then
-            shoulder:setLocalAngles(shoulderStartAngle)
-            forearm:setLocalAngles(forearmStartAngle)
-        end
 
-        ent.tween = tween.start(tween.new {
+        return tween.new {
             param { 0, 4, shoulder, circleProperty(2), nil, 1},
-            param { 0, 2, shoulder, property.LOCALANGLES, nil, shoulderStartAngle, math.easeInOutSine },
-            param { 0, 2, forearm, property.LOCALANGLES, nil, forearmStartAngle, math.easeInOutSine },
+            param { 0, 2, shoulder, property.LOCALANGLES, Angle(35, 10, 58), shoulderStartAngle, math.easeInOutSine },
+            param { 0, 2, forearm, property.LOCALANGLES, Angle(0, 110, 0), forearmStartAngle, math.easeInOutSine },
 
             param { 2, 4, shoulder, property.LOCALANGLES, shoulderStartAngle, Angle(35, 10, 58), math.easeInOutSine },
             param { 2, 4, forearm, property.LOCALANGLES, forearmStartAngle, Angle(0, 110, 0), math.easeInOutSine },
-        }, true)
+        }
     end)
     :addSequence("attack1", 0.5, function(ent)
         if ent.tween then tween.stop(ent.tween) end
@@ -113,7 +107,7 @@ model.new("astroscout_rightarm", hitbox {
         local shoulder = ent:getBoneEntity(ent:lookupBone("shoulder"))
         local forearm = ent:getBoneEntity(ent:lookupBone("forearm"))
 
-        ent.tween = tween.start(tween.new {
+        return tween.new {
             param { 0, 0.3, shoulder, property.LOCALANGLES, nil, Angle(0, -60, 0), math.easeInOutCubic },
             param { 0.05, 0.3, forearm, property.LOCALANGLES, nil, Angle(0, 150, -30), math.easeInCubic },
             --
@@ -124,7 +118,7 @@ model.new("astroscout_rightarm", hitbox {
             param { 0.45, 0.65, forearm, property.LOCALANGLES, nil, Angle(0, 115, 0), math.easeOutSine },
             -- param { 0, 0.5, shoulder, property.LOCALANGLES, nil, Angle(), math.easeInOutSine },
             -- param { 0, 0.5, forearm, property.LOCALANGLES, nil, Angle(), math.easeInOutSine },
-        })
+        }
     end)
     -- мне лень переносить когти, потому что это не критически важная часть, может и потерпеть
     -- :add("hand", "claws", part {
@@ -197,14 +191,14 @@ model.new("astroscout_leftarm", hitbox {
             forearm:setLocalAngles(forearmStartAngle)
         end
 
-        ent.tween = tween.start(tween.new {
+        return tween.new {
             param { 0, 4, shoulder, circleProperty(2), nil, 1},
             param { 0, 2, shoulder, property.LOCALANGLES, nil, shoulderStartAngle, math.easeInOutSine },
             param { 0, 2, forearm, property.LOCALANGLES, nil, forearmStartAngle, math.easeInOutSine },
 
             param { 2, 4, shoulder, property.LOCALANGLES, shoulderStartAngle, Angle(35, -10, -58), math.easeInOutSine },
             param { 2, 4, forearm, property.LOCALANGLES, forearmStartAngle, Angle(0, -110, 0), math.easeInOutSine },
-        }, true)
+        }
     end)
     :addSequence("startLaser", 1, function(ent)
         if ent.tween then tween.stop(ent.tween) end
@@ -212,21 +206,21 @@ model.new("astroscout_leftarm", hitbox {
         local shoulder = ent:getBoneEntity(ent:lookupBone("shoulder"))
         local forearm = ent:getBoneEntity(ent:lookupBone("forearm"))
 
-        ent.tween = tween.start(tween.new {
+        return tween.new {
             param { 0, 0.5, shoulder, property.LOCALANGLES, nil, Angle(-30, -90, 0), math.easeOutQuint },
             param { 0, 0.5, forearm, property.LOCALANGLES, nil, Angle(), math.easeOutQuint }
-        })
+        }
     end)
     :addSequence("laser", 0, function(ent)
         if ent.tween then tween.stop(ent.tween) end
 
         local shoulder = ent:getBoneEntity(ent:lookupBone("shoulder"))
 
-        ent.tween = tween.start(function(process)
+        return function(process)
             local fraction = math.min(process / 0.1, 1)
             shoulder:setLocalPos(Vector(math.sin(fraction * math.pi * 2) * 2, math.rand(-1, 1), math.rand(-1, 1)))
             if fraction == 1 then return true end
-        end, true)
+        end
     end)
 
 
@@ -294,7 +288,7 @@ model.new("astroscout", part {
         local body = ent:getBoneEntity(ent:lookupBone("body"))
         local head = ent:getBoneEntity(ent:lookupBone("head"))
 
-        ent.tween = tween.start(tween.new {
+        return tween.new {
             param { 0, 4, body, circleProperty(2), nil, 1},
             param { 0, 2, body, property.LOCALANGLES, nil, Angle(2, 0, 0), math.easeInOutSine},
             param { 2, 4, body, property.LOCALANGLES, nil, Angle(), math.easeInOutSine},
@@ -302,36 +296,30 @@ model.new("astroscout", part {
             param { 0, 4, head, circleProperty(2, 1), nil, 1},
             param { 0, 2, head, property.LOCALANGLES, nil, Angle(5, 0, 0), math.easeInOutSine},
             param { 2, 4, head, property.LOCALANGLES, nil, Angle(), math.easeInOutSine},
-        }, true)
+        }
     end)
     :addSequence("attack1", 0.5, function(ent)
-        if ent.tween then tween.stop(ent.tween) end
-
         local body = ent:getBoneEntity(ent:lookupBone("body"))
 
-        ent.tween = tween.start(tween.new {
+        return tween.new {
             param { 0, 0.3, body, property.LOCALANGLES, nil, Angle(0, -30, 0), math.easeInOutQuint },
             param { 0.3, 0.5, body, property.LOCALANGLES, nil, Angle(0, 30, 0), math.easeOutQuint },
             param { 0.5, 0.6, body, property.LOCALANGLES, nil, Angle(0, 0, 0), math.easeOutQuint },
-        })
+        }
     end)
     :addSequence("startLaser", 0.7, function(ent)
-        if ent.tween then tween.stop(ent.tween) end
-
         local body = ent:getBoneEntity(ent:lookupBone("body"))
 
-        ent.tween = tween.start(tween.new {
+        return tween.new {
             param { 0, 0.7, body, property.LOCALANGLES, nil, Angle(0, -30, -5), math.easeOutQuint },
-        })
+        }
     end)
     :addSequence("laser", 0, function(ent)
-        if ent.tween then tween.stop(ent.tween) end
-
         local body = ent:getBoneEntity(ent:lookupBone("body"))
 
-        ent.tween = tween.start(tween.new {
+        return tween.new {
             param { 0, 0.1, body, property.LOCALANGLES, nil, Angle(0, -35, -5), math.easeInSine },
             param { 0.1, 0, body, property.LOCALANGLES, nil, Angle(0, -30, -5), math.easeOutSine },
-        }, true)
+        }
     end)
 
