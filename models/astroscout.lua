@@ -20,6 +20,7 @@ local whiteMat = "models/debug/debugwhite"
 --     return Vector(math.sin(rad)*radius, 0, math.cos(rad)*radius)+pos
 -- end
 
+
 local function prongs()
     local rigFun = rig()
     local holoFun = holo { Vector(0, 110, 56), Angle(-50, 90, 180), "models/props_combine/combine_bridge.mdl", Vector(0.14, 0.04, 0.08), color = mainColor, material = metalMat }
@@ -78,7 +79,7 @@ model.new("astroscout_rightarm", hitbox {
         holo { Vector(0, -105, -2), Angle(270, 90, 0), "models/props_combine/combine_mortar01b.mdl", Vector(1.2), color = mainColor },
     })
     :add("forearm", "hand", part {
-        rig ( Vector(0, -83, -2), Angle(0, -90, 0) ),
+        rig ( Vector(0, -83, -2), Angle(0, 0, 0) ),
         holo { Vector(0, -90, -2), Angle(280, 90, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.2, 0.34, 0.4), color = mainColor, material = metalMat },
         holo { Vector(0, -90, -2), Angle(-260, 90, 180), "models/props_combine/combine_booth_short01a.mdl", Vector(0.2, 0.34, 0.4), color = mainColor, material = metalMat },
         holo { Vector(-13, -135, -4), Angle(10, 90, 0), "models/props_combine/breenlight.mdl", Vector(2.8, 2.8, 2), color = mainColor, material = metalMat },
@@ -89,6 +90,24 @@ model.new("astroscout_rightarm", hitbox {
         holo { Vector(14, -125, -22), Angle(80, 90, 0), "models/props_combine/breenlight.mdl", Vector(2.8, 2.8, 1.6), color = mainColor, material = metalMat },
         holo { Vector(33, -100, -2), Angle(0, 20, -70), "models/props_combine/breenlight.mdl", Vector(2.8, 2.8, 2), color = mainColor, material = metalMat },
         holo { Vector(33, -125, -8), Angle(0, -25, -90), "models/props_combine/breenlight.mdl", Vector(2.8, 2.8, 1.5), color = mainColor, material = metalMat },
+    })
+    :add("hand", "claws", part {
+        rig ( Vector(0, 0, 30), Angle(0, -90, 0) ),
+        holo { Vector(-2, 0, 26), Angle(-90, 90, 0), "models/props_combine/combineinnerwall001a.mdl", Vector(0.06, 0.1, 0.09), color = mainColor },
+        holo {Vector(-8, 0, 26), Angle(-90, 90, 0), "models/props_combine/combineinnerwall001a.mdl", Vector(0.06, 0.1, 0.09), color = mainColor },
+        holo { Vector(-9.1, -25, 31), Angle(-90, 90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.04, 0.005, 0.125), noLight = true, color = mainColor, material = whiteMat },
+        holo { Vector(-9.1, -68.1, 34), Angle(-55, -90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.03, 0.005, 0.025), noLight = true, color = mainColor, material = whiteMat },
+        holo { Vector(-9.1, -48.1, 34.2), Angle(-55, -90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.03, 0.005, 0.025), noLight = true, color = mainColor, material = whiteMat },
+        holo { Vector(-9.1, -28.1, 34.2), Angle(-55, -90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.03, 0.005, 0.025), noLight = true, color = mainColor, material = whiteMat },
+        holo { Vector(-9.1, -8.1, 34.2), Angle(-55, -90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.03, 0.005, 0.025), noLight = true, color = mainColor, material = whiteMat },
+        holo { Vector(-9.1, 28.1, 34.2), Angle(-55, -90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.03, 0.005, 0.025), noLight = true, color = mainColor, material = whiteMat },
+        holo { Vector(2, 0, 26), Angle(-90, 90, 0), "models/props_combine/combineinnerwall001a.mdl", Vector(0.06, 0.17, 0.09), color = mainColor },
+        holo { Vector(4, -25, 31), Angle(-90, 90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.04, 0.005, 0.125), noLight = true, color = mainColor, material = whiteMat },
+        holo { Vector(4, -68.1, 34), Angle(-55, -90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.03, 0.005, 0.025), noLight = true, color = mainColor, material = whiteMat },
+        holo { Vector(4, -48.1, 34.2), Angle(-55, -90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.03, 0.005, 0.025), noLight = true, color = mainColor, material = whiteMat },
+        holo { Vector(4, -28.1, 34.2), Angle(-55, -90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.03, 0.005, 0.025), noLight = true, color = mainColor, material = whiteMat },
+        holo { Vector(4, -8.1, 34.2), Angle(-55, -90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.03, 0.005, 0.025), noLight = true, color = mainColor, material = whiteMat },
+        holo { Vector(4, 28.1, 34.2), Angle(-55, -90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.03, 0.005, 0.025), noLight = true, color = mainColor, material = whiteMat },
     })
     :addSequence("idle", 0, function(ent)
         if ent.tween then tween.stop(ent.tween) end
@@ -130,27 +149,6 @@ model.new("astroscout_rightarm", hitbox {
             -- param { 0, 0.5, forearm, property.LOCALANGLES, nil, Angle(), math.easeInOutSine },
         })
     end)
-    -- мне лень переносить когти, потому что это не критически важная часть, может и потерпеть
-    -- :add("hand", "claws", part {
-        --[[
-        rig ( Vector(-3, -170, 26), Angle(0, -90, 0) ),
-        holo { Vector(-2, -230, 48), Angle(-90, 90, 0), "models/props_combine/combineinnerwall001a.mdl", Vector(0.06, 0.1, 0.09), color = mainColor },
-        holo {Vector(-8, -230, 48), Angle(-90, 90, 0), "models/props_combine/combineinnerwall001a.mdl", Vector(0.06, 0.1, 0.09), color = mainColor },
-        holo { Vector(-9.1, -255, 53), Angle(-90, 90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.04, 0.005, 0.125), noLight = true, color = mainColor, material = whiteMat },
-        holo { Vector(-9.1, -298.1, 56), Angle(-55, -90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.03, 0.005, 0.025), noLight = true, color = mainColor, material = whiteMat },
-        holo { Vector(-9.1, -278.1, 56.2), Angle(-55, -90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.03, 0.005, 0.025), noLight = true, color = mainColor, material = whiteMat },
-        holo { Vector(-9.1, -258.1, 56.2), Angle(-55, -90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.03, 0.005, 0.025), noLight = true, color = mainColor, material = whiteMat },
-        holo { Vector(-9.1, -238.1, 56.2), Angle(-55, -90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.03, 0.005, 0.025), noLight = true, color = mainColor, material = whiteMat },
-        holo { Vector(-9.1, -218.1, 56.2), Angle(-55, -90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.03, 0.005, 0.025), noLight = true, color = mainColor, material = whiteMat },
-        holo { Vector(2, -230, 48), Angle(-90, 90, 0), "models/props_combine/combineinnerwall001a.mdl", Vector(0.06, 0.17, 0.09), color = mainColor },
-        holo { Vector(4, -255, 53), Angle(-90, 90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.04, 0.005, 0.125), noLight = true, color = mainColor, material = whiteMat },
-        holo { Vector(4, -298.1, 56), Angle(-55, -90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.03, 0.005, 0.025), noLight = true, color = mainColor, material = whiteMat },
-        holo { Vector(4, -278.1, 56.2), Angle(-55, -90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.03, 0.005, 0.025), noLight = true, color = mainColor, material = whiteMat },
-        holo { Vector(4, -258.1, 56.2), Angle(-55, -90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.03, 0.005, 0.025), noLight = true, color = mainColor, material = whiteMat },
-        holo { Vector(4, -238.1, 56.2), Angle(-55, -90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.03, 0.005, 0.025), noLight = true, color = mainColor, material = whiteMat },
-        holo { Vector(4, -218.1, 56.2), Angle(-55, -90, 0), "models/props_combine/combineinnerwallcluster1024_001a.mdl", Vector(0.03, 0.005, 0.025), noLight = true, color = mainColor, material = whiteMat },
-        --]]
-    -- })
 
 
 model.new("astroscout_leftarm", hitbox {
