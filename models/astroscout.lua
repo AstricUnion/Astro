@@ -23,17 +23,16 @@ local whiteMat = "models/debug/debugwhite"
 local function prongs()
     local rigFun = rig()
     local holoFun = holo { Vector(0, 110, 56), Angle(-50, 90, 180), "models/props_combine/combine_bridge.mdl", Vector(0.14, 0.04, 0.08), color = mainColor, material = metalMat }
-    local part = 360 / 3 -- ме
+    local part = 360 / 3
     return function()
         local rg = rigFun()
-        if !rg then return end -- просто привычка, чтобы luals не ругался
+        if !rg then return end
         for i=0, 3 do
             local ang = i * part
             local mdl = holoFun()
             if !mdl then goto cont end
-            -- теперь можно присобачить усик к ригу, а риг провернуть
-            mdl:setParent(rg) -- если все правильно
-            rg:setAngles(Angle(ang, 0, 0)) -- меняем угол для следующей холки
+            mdl:setParent(rg)
+            rg:setAngles(Angle(ang, 0, 0))
             ::cont::
         end
         return rg
@@ -170,10 +169,10 @@ model.new("astroscout_leftarm", hitbox {
         rig ( Vector(0, 85, 0), Angle() ),
         holo { Vector(0, 85, -2), Angle(90, 90, 0), "models/props_combine/combine_mine01.mdl", Vector(2, 2, 3), color = mainColor, material = metalMat },
         holo { Vector(0, 185, -2), Angle(-90, 90, 0), "models/props_combine/combine_mine01.mdl", Vector(1.8, 1.8, 2), color = mainColor, material = metalMat },
-        holo { Vector(0, 90, 19), Angle(90, 90, 0), "models/props_combine/combine_light002a.mdl", Vector(0.75, 1, 2), color = mainColor, material = metalMat },
-        holo { Vector(0, 90, -22.5), Angle(-90, 90, 180), "models/props_combine/combine_light002a.mdl", Vector(0.75, 1, 2), color = mainColor, material = metalMat },
-        holo { Vector(21, 90, -2), Angle(180, 0, -90), "models/props_combine/combine_light002a.mdl", Vector(0.75, 1, 2), color = mainColor, material = metalMat },
-        holo { Vector(-21, 90, -2), Angle(0, 0, -90), "models/props_combine/combine_light002a.mdl", Vector(0.75, 1, 2), color = mainColor, material = metalMat },
+        holo { Vector(0, 90, 16), Angle(90, 90, 0), "models/props_combine/combine_light002a.mdl", Vector(0.75, 1, 2), color = mainColor, material = metalMat },
+        holo { Vector(0, 90, -19.5), Angle(-90, 90, 180), "models/props_combine/combine_light002a.mdl", Vector(0.75, 1, 2), color = mainColor, material = metalMat },
+        holo { Vector(18, 90, -2), Angle(180, 0, -90), "models/props_combine/combine_light002a.mdl", Vector(0.75, 1, 2), color = mainColor, material = metalMat },
+        holo { Vector(-18, 90, -2), Angle(0, 0, -90), "models/props_combine/combine_light002a.mdl", Vector(0.75, 1, 2), color = mainColor, material = metalMat },
         holo { Vector(0, 180, -2), Angle(0, 90, 0), "models/props_silo/ventilationduct02large.mdl", Vector(0.4, 0.8, 0.8), color = mainColor, material = metalMat },
         holo { Vector(0, 190, -2), Angle(90, 90, 0), "models/hunter/tubes/circle2x2.mdl", Vector(0.3, 0.3, 1), noLight = true, color = mainColor, material = whiteMat },
         holo { Vector(0, 194, -2), Angle(90, 90, 0), "models/hunter/tubes/circle2x2.mdl", Vector(0.2, 0.2, 1), noLight = true, color = mainColor, material = whiteMat },
