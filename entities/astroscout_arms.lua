@@ -15,7 +15,7 @@ end
 if SERVER then
 else
     function AstroScoutLeftArm:moduleInitialize()
-        -- self.ent:setSequence(1)
+        self.ent:setSequence(1)
     end
 
     function AstroScoutLeftArm:renderOffscreen()
@@ -49,10 +49,7 @@ AstroScoutRightArm.hooks = {}
 function AstroScoutRightArm:onAction(action)
     if action == "attack" then
         if CLIENT then
-            self.ent:setSequence(2)
-            timer.simple(1, function()
-                self.ent:setSequence(1)
-            end)
+            self.ent:setSequence(2, 1)
         end
         return true
     end
@@ -61,7 +58,7 @@ end
 if SERVER then
 else
     function AstroScoutRightArm:moduleInitialize()
-        -- self.ent:setSequence(1)
+        self.ent:setSequence(1)
     end
 
     function AstroScoutRightArm:renderOffscreen()
@@ -73,7 +70,9 @@ else
         if !(body and modulePoint) then return end
         ---@cast body Hologram
         ---@cast modulePoint Hologram
-        modulePoint:setPos(body:localToWorld(offset))
+        local pos, ang = localToWorld(offset, Angle(), body:getPos(), body:getAngles())
+        modulePoint:setPos(pos)
+        modulePoint:setAngles(ang)
     end
 end
 

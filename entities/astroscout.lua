@@ -35,7 +35,7 @@ if SERVER then
 
     function AstroScout:inputPressed(button)
         if button == MOUSE.MOUSE1 then
-            self.ent:setSequence(self.ent:lookupSequence("attack1"))
+            self.ent:setSequence(self.ent:lookupSequence("attack1"), 1)
             self.modules[1]:sendAction("attack")
         end
     end
@@ -53,16 +53,7 @@ if SERVER then
     end
 else
     function AstroScout:astroInitialize()
-        -- self.ent:setSequence(1)
-        -- timer.simple(3, function()
-            -- self.ent:setSequence(1)
-        --     local mod = self.modules[2]
-        --     mod.ent:setSequence(2)
-        --     timer.simple(1, function()
-        --         self.ent:setSequence(2)
-        --         mod.ent:setSequence(3)
-        --     end)
-        -- end)
+        self.ent:setSequence(1)
     end
     -- local l1 = light.create(Vector(), 80, 10, Color(255, 0, 0))
     -- local l2 = light.create(Vector(), 80, 10, Color(255, 0, 0))
