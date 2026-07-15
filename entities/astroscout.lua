@@ -36,7 +36,7 @@ if SERVER then
     function AstroScout:inputPressed(button)
         if button == MOUSE.MOUSE1 then
             self.ent:setSequence(self.ent:lookupSequence("attack1"), 1)
-            self.modules[1]:sendAction("attack")
+            self.modules[1]:sendAction("attack1")
         end
     end
 

@@ -16,6 +16,14 @@ import mathutils
 import math
 
 
+propertyName = {
+    "location": "Pos",
+    "rotation_euler": "Ang",
+    "rotation_quaternion": "Ang",
+    "scale": "Scale", 
+}
+
+
 class GRAPH_OT_fcurve_to_starfall(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
     """FCurve to StarfallEx"""
 
@@ -45,6 +53,7 @@ class GRAPH_OT_fcurve_to_starfall(bpy.types.Operator, bpy_extras.io_utils.Export
                 string_list.append("{" + (", ".join(keyframe_string_list)) + "}")
             last = keyframe
             frame = keyframe.co.x
+        if len(string_list) < 2: return "", None
         return "{" + (", ".join(string_list)) + "}", frame / fps
 
     @classmethod
@@ -57,7 +66,7 @@ class GRAPH_OT_fcurve_to_starfall(bpy.types.Operator, bpy_extras.io_utils.Export
             string_list.append(f"[{index+1}] = {fcurve_string}")
             max_time = duration if duration > max_time else max_time
         if len(string_list) == 0: return ""
-        return "fcurveParam {0, " + str(max_time) + ", " + bone_name + ", property, \"" + fcurve_type + "\", {" + (", ".join(string_list)) + "}}"
+        return "fcurveParam {0, " + str(max_time) + ", " + bone_name + ", " + bone_name + propertyName[fcurve_type] + ", \"" + fcurve_type + "\", {" + (", ".join(string_list)) + "}}"
 
     def execute(self, context):
         fcurves = context.selected_visible_fcurves
@@ -88,23 +97,28 @@ class GRAPH_OT_fcurve_to_starfall(bpy.types.Operator, bpy_extras.io_utils.Export
         f.close()
 
         return {"FINISHED"}
-    
-class VIEW3D_OT_rig_from_gmod(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
-    """Import rig from GMod"""
 
-    bl_idname = "view3d.rig_from_gmod"
-    bl_label = "Import rig"
+    
+class VIEW3D_OT_model_from_gmod(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
+    """Import model from library"""
+
+    bl_idname = "view3d.model_from_gmod"
+    bl_label = "Import model"
     bl_options = {"REGISTER", "UNDO"}
-    filename_ext = ".txt"
+    filename_ext = ".sexmdl"
     file_path: bpy.props.StringProperty(name="Path to import", subtype='FILE_PATH')
 
     def execute(self, context):
+        bpy.ops.wm.obj_import(filepath=self.filepath)
+        bpy.ops.object.select_all(action='SELECT')
+        bpy.ops.transform.rotate(value=math.radians(90), orient_axis='X')
         text = None
         with open(self.filepath, "r", encoding='utf-8') as f:
             text = f.read()
         if not text:
             self.report({'ERROR'}, "File is empty!")
             return {"CANCELLED"}
+        text
         objects = context.selected_objects
         if len(objects) == 0:
             self.report({'ERROR'}, "You don't selected any objects for rig!")
@@ -118,7 +132,8 @@ class VIEW3D_OT_rig_from_gmod(bpy.types.Operator, bpy_extras.io_utils.ImportHelp
         bones = []
         for i, line in enumerate(text.splitlines()):
             if line == "": continue
-            parameters = line.split(";")
+            if not line.startswith("#"): break
+            parameters = line.replace("#", "").split(";")
             boneName = None
             boneOffset = None
             boneAngles = None
@@ -132,16 +147,15 @@ class VIEW3D_OT_rig_from_gmod(bpy.types.Operator, bpy_extras.io_utils.ImportHelp
                 try:
                     boneParent = parameters[3]
                 except IndexError:
-                    boneParent = "bone0"
+                    boneParent = "origin"
             except IndexError:
                 self.report({'ERROR'}, f"Line {i}: Incorrect parameters. Expected bone;offset;angles(;parent)")
                 return {"CANCELLED"}
-            if boneName == "bone0":
+            if not armature:
                 bpy.ops.object.armature_add(enter_editmode=True, align='WORLD', location=boneOffset)
                 armature = context.active_object
-                context.active_bone.name = "bone0"
-                bonesByName[boneName] = armature.data.edit_bones[0]
-                continue
+                context.active_bone.name = "origin"
+                bonesByName["origin"] = armature.data.edit_bones[0]
             edit_bones = armature.data.edit_bones
             if not edit_bones:
                 self.report({'ERROR'}, f"Not in edit mode to edit bones (wtf, developer is stupid)")
@@ -164,15 +178,9 @@ class VIEW3D_OT_rig_from_gmod(bpy.types.Operator, bpy_extras.io_utils.ImportHelp
             obj.parent_bone = boneName
             obj.parent_type = 'BONE'
         
-        for i in range(0, len(bones)):
-            bone = bones[i]
-            boneNext = None
-            try:
-                boneNext = bones[i+1]
-            except IndexError:
-                break
-            if bone.tail == boneNext.head:
-                boneNext.use_connect = True
+        bpy.ops.object.mode_set(mode='POSE')
+        bpy.ops.pose.select_all(action='SELECT')
+        bpy.ops.pose.rotation_mode_set(type='XYZ')        
 
         return {"FINISHED"}
 
@@ -202,21 +210,21 @@ class VIEW3D_PT_starfall_panel(bpy.types.Panel):  # class naming convention ‘C
 
     def draw(self, context):
         row = self.layout.row()
-        row.operator("view3d.rig_from_gmod", text="Import generated rig with GMod")
+        row.operator("view3d.model_from_gmod", text="Import model from StarfallEx")
 
 
 def register():
     bpy.utils.register_class(GRAPH_PT_starfall_panel)
     bpy.utils.register_class(VIEW3D_PT_starfall_panel)
     bpy.utils.register_class(GRAPH_OT_fcurve_to_starfall)
-    bpy.utils.register_class(VIEW3D_OT_rig_from_gmod)
+    bpy.utils.register_class(VIEW3D_OT_model_from_gmod)
 
 
 def unregister():
     bpy.utils.unregister_class(GRAPH_PT_starfall_panel)
     bpy.utils.unregister_class(VIEW3D_PT_starfall_panel)
     bpy.utils.unregister_class(GRAPH_OT_fcurve_to_starfall)
-    bpy.utils.unregister_class(VIEW3D_OT_rig_from_gmod)
+    bpy.utils.unregister_class(VIEW3D_OT_model_from_gmod)
 
 
 if __name__ == "__main__":
