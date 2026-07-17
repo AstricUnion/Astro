@@ -40,6 +40,7 @@ model.new("astrotrooper_blaster", hitbox {
 })
     :add("module", rig())
     :add("module", "blaster", part {
+        rig(),
         holo { Vector(-5, 0, 2), nil, "models/hunter/blocks/cube025x025x025.mdl", color = Color(255, 0, 0, 0) },
         holo { Vector(-28, 0, -2), Angle(180, 90, 90), "models/props_combine/combinethumper001a.mdl", Vector(0.08, 0.08, 0.12), color = Color(255, 40, 40), material = "models/props_combine/metal_combinebridge001" },
         holo { Vector(-28, 0, 6), Angle(0, 90, 90), "models/props_combine/combinethumper001a.mdl", Vector(0.08, 0.08, 0.12), color = Color(255, 40, 40), material = "models/props_combine/metal_combinebridge001" },
@@ -93,11 +94,12 @@ local bodyModel = part {
     holo { Vector(0, -40, 12), Angle(-150, -90, 0), "models/props_combine/combine_barricade_med02a.mdl", Vector(0.15, 0.18, 0.18), color = Color(255, 40, 40) },
 }
 local rotor1Model = part {
+    rig(),
     holo { Vector(0, 0, -11), nil, "models/props_phx/wheels/moped_tire.mdl", Vector(1.8, 1.8, 2.2), color = Color(255, 40, 40), material = mat},
     holo { Vector(0, 0, -10), Angle(90, 0, 0), "models/props_c17/pulleywheels_large01.mdl", Vector(1.2, 1, 1), color = Color(255, 40, 40), material = mat }
 }
 local rotor2Model = part {
-    rig(Vector(0, 0, -6)),
+    rig(),
     holo { Vector(0, 0, -6), Angle(0, 0, 90), "models/props_wasteland/wheel03a.mdl", Vector(0.27, 0.18, 0.27), color = Color(255, 40, 40) },
 }
 model.new("astrotrooper_body", part {
@@ -113,6 +115,7 @@ model.new("astrotrooper_body", part {
 })
 
 local eyeModel = part {
+    rig(),
     holo { Vector(9, 0, 0), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.3, 0.55, 0.55), noLight = true, color = Color(255, 40, 40), material = "models/debug/debugwhite" },
     holo { Vector(12, 0, 0), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.18, 0.4, 0.4), noLight = true, color = Color(255, 255, 255), material = "models/debug/debugwhite" },
 }
@@ -178,7 +181,7 @@ model.new("astrotrooper", hitbox {
                 if process > 4 then
                     return true
                 end
-                local delta = game.serverFrameTime()
+                local delta = timer.frametime()
                 rotor1:setLocalAngles(rotor1:getLocalAngles() + Angle(0, 200 * delta, 0))
                 rotor2:setLocalAngles(rotor2:getLocalAngles() + Angle(0, -200 * delta, 0))
             end

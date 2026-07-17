@@ -184,7 +184,6 @@ if SERVER then
     end
 else
     local l1 = light.create(Vector(), 80, 10, Color(255, 0, 0))
-    local l2 = light.create(Vector(), 80, 10, Color(255, 0, 0))
 
     function AstroTrooper:astroInitialize()
         astrosound.play {"loop", nil, self.ent, looping = true}
@@ -196,12 +195,10 @@ else
 
     function AstroTrooper:renderOffscreen()
         l1:setPos(self.ent:localToWorld(Vector(0, 0, 20)))
-        l2:setPos(self.ent:localToWorld(Vector(0, 0, -10)))
         l1:draw()
-        l2:draw()
     end
 
-    function AstroTrooper:networkVariablesUpdate(old, new)
+    function AstroTrooper:astroNetworkVariablesUpdate(old, new)
         if old.state ~= STATE.Dashing and new.state == STATE.Dashing then
             self.modules[1].ent:setNoDraw(true)
             self.modules[2].ent:setNoDraw(true)

@@ -35,8 +35,21 @@ if SERVER then
 
     function AstroScout:inputPressed(button)
         if button == MOUSE.MOUSE1 then
-            self.ent:setSequence(self.ent:lookupSequence("attack1"), 1)
-            self.modules[1]:sendAction("attack1")
+            if !self.modules[1]:canAction("punch") then return end
+            self.ent:setSequence(self.ent:lookupSequence("punch"), 1)
+            self.modules[1]:sendAction("punch")
+        elseif button == MOUSE.MOUSE2 then
+            if !self.modules[1]:canAction("swing") then return end
+            self.ent:setSequence(self.ent:lookupSequence("swing"), 1)
+            self.modules[1]:sendAction("swing")
+        elseif button == KEY.R then
+            if !self.modules[2]:canAction("startLaser") then return end
+            self.ent:setSequence(self.ent:lookupSequence("startLaser"), 2)
+            timer.simple(0.5, function()
+                if !isValid(self) then return end
+                self.ent:setSequence(self.ent:lookupSequence("laser"), 2)
+            end)
+            self.modules[2]:sendAction("startLaser")
         end
     end
 
@@ -55,8 +68,7 @@ else
     function AstroScout:astroInitialize()
         self.ent:setSequence(1)
     end
-    -- local l1 = light.create(Vector(), 80, 10, Color(255, 0, 0))
-    -- local l2 = light.create(Vector(), 80, 10, Color(255, 0, 0))
+    local l1 = light.create(Vector(), 80, 10, Color(255, 0, 0))
 
     -- function AstroScout:astroInitialize()
     --     astrosound.play {"loop", nil, self.ent, looping = true}
@@ -66,13 +78,10 @@ else
     --     if identifier == "loop" then astrosound.play {identifier, nil, self.ent, looping = true} end
     -- end
 
-    -- function AstroScout:renderOffscreen()
-    --     if !self:getDriver() then return end
-    --     l1:setPos(self.ent:localToWorld(Vector(0, 0, 20)))
-    --     l2:setPos(self.ent:localToWorld(Vector(0, 0, -10)))
-    --     l1:draw()
-    --     l2:draw()
-    -- end
+    function AstroScout:renderOffscreen()
+        l1:setPos(self.ent:localToWorld(Vector(0, 0, 30)))
+        l1:draw()
+    end
 end
 
 ents.register(AstroScout, "astrobase")

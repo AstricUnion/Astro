@@ -24,6 +24,7 @@ end
 ---Astro module - module with physics body, like guns or arms
 ---@class AstroModuleBase: BModEntity
 ---@field Health number Health of module
+---@field moduleBone Entity? Module bone. Can be nil
 local AstroModuleBase = {}
 AstroModuleBase.Identifier = "astromodule_base"
 AstroModuleBase.Name = "AstroModule base"
@@ -52,6 +53,7 @@ function AstroModuleBase:initialize()
             if !isValid(self) then return end
             local astro = self:getAstro()
             if !astro then return end
+            self.moduleBone = self.ent:getBoneEntity(self.ent:lookupBone("module"))
             astro:clientInitializeModule(self)
             self:moduleInitialize()
         end)
@@ -208,6 +210,7 @@ ents.register(AstroModuleBase)
 ---@field SeatOffset Vector Offset of seat
 ---@field SeatAngle Angle Angle offset of seat
 ---@field SeatVisible boolean Made seat visible
+---@field driver Player Driver of this Astro
 ---@field velocity Vector Velocity of this Astro
 ---@field physobj PhysObj Physics object of this Astro
 ---@field modules AstroModuleBase[] Initialized modules of astro
@@ -215,9 +218,9 @@ ents.register(AstroModuleBase)
 ---@field lastPos Vector Last position to calculate FOV
 ---@field fovOffset number Current FOV offset. Will be lerp-ed
 ---@field slop number Current slop offset. Will be lerp-ed
----@field cameraBone Entity? Camera bone
----@field fade number
----@field fadeColor Color
+---@field cameraBone Entity Camera bone
+---@field headBone Entity Head bone
+---@field bodyBone Entity Body bone
 local AstroBase = {}
 AstroBase.Identifier = "astrobase"
 AstroBase.Name = "Base Astro"
@@ -271,9 +274,9 @@ function AstroBase:initialize()
         self.lastPos = self.ent:getPos()
         self.fovOffset = 0
         self.slop = 0
-        self.fade = 0
-        self.fadeColor = Color()
-        self.cameraBone = self.ent.modelBones and self.ent:getBoneEntity(self.ent:lookupBone("camera"))
+        self.cameraBone = self.ent:getBoneEntity(self.ent:lookupBone("camera")) or throw("You have no camera bone in your model!")
+        self.headBone = self.ent:getBoneEntity(self.ent:lookupBone("head")) or throw("You have no head bone in your model!")
+        self.bodyBone = self.ent:getBoneEntity(self.ent:lookupBone("body")) or throw("You have no body bone in your model!")
     end
     self.modules = modules
     self:astroInitialize()
@@ -289,7 +292,6 @@ function AstroBase:inputPressed(button, bind) end
 ---[SHARED] On input released
 ---@param button KEY Key enum
 function AstroBase:inputReleased(button, bind) end
-
 
 
 if SERVER then
@@ -311,7 +313,7 @@ if SERVER then
     ---@param ply Player
     ---@param key IN
     function AstroBase.hooks.KeyPress(self, ply, key)
-        if key ~= IN_KEY.USE or ply ~= self:getDriver() then return end
+        if key ~= IN_KEY.USE or ply ~= self.driver then return end
         self:seatToAstro()
     end
 
@@ -328,6 +330,7 @@ if SERVER then
         seat:setFrozen(true)
         seat:setPos(Vector(16000, 0, 0))
         seat:setAngles(Angle())
+        self.driver = ply
         enableHud(ply, true)
         ply:setViewEntity(self.ent)
     end
@@ -340,6 +343,7 @@ if SERVER then
         if !seat then return end
         if vehicle ~= seat then return end
         self:setNWVar("AstroDriver", nil)
+        self.driver = nil
         self.physobj:enableGravity(true)
         ply:setViewEntity(nil)
         enableHud(ply, false)
@@ -396,7 +400,7 @@ if SERVER then
     ---[SERVER] Gets direction of Astro
     ---@return Vector? direction
     function AstroBase:getDirection()
-        local dr = self:getDriver()
+        local dr = self.driver
         if !dr then return end
         local seat = self:getSeat()
         if !seat then return end
@@ -412,7 +416,7 @@ if SERVER then
     ---[INTERNAL] [SERVER] Astrobot physics
     function AstroBase.hooks:Think()
         local frametime = game.getTickInterval()
-        local dr = self:getDriver()
+        local dr = self.driver
         self:think()
         if dr and isValid(dr) then
             local seat = self:getSeat()
@@ -494,7 +498,7 @@ if SERVER then
         if seat and isValid(seat) then
             self:seatToAstro()
             seat:remove()
-            local dr = self:getDriver()
+            local dr = self.driver
             if !dr then return end
             self.hooks.PlayerLeaveVehicle(self, dr, seat)
         end
@@ -509,33 +513,53 @@ else
 
     ---[CLIENT] Calc view for Astro
     function AstroBase.hooks:CalcView(pos, ang)
-        local dr = self:getDriver()
+        local dr = self.driver
         if dr ~= Ply then return end
         local eyeAngles = dr:getEyeAngles()
-        pos, ang = localToWorld(self.CameraOffset, self.CameraAngle, self.cameraBone and self.cameraBone:getPos() or pos, eyeAngles)
+        pos, ang = localToWorld(self.CameraOffset, self.CameraAngle, self.cameraBone:getPos(), eyeAngles)
         local velocity = self.ent:worldToLocalVector(self.lastPos - pos)
         self.lastPos = pos
         self.fovOffset = math.lerp(0.1, self.fovOffset, velocity:getLength() / 10)
         self.slop = math.lerp(0.2, self.slop, velocity.y / 20)
+        ang = (self.headBone:getLocalAnglesLayer(1) + ang)
         return {
             origin = pos,
-            angles = ang:setR(self.slop),
+            angles = ang:setR(ang.r + self.slop),
             fov = 120 + self.fovOffset
         }
     end
 
-    -- local drawElements = {
-    --     ["CHudChat"] = true,
-    --     ["CHudMessage"] = true
-    -- }
-    --
-    -- ---[CLIENT] Draw HUD or not
-    -- ---@param element string
-    -- function AstroBase.hooks:HUDShouldDraw(element)
-    --     local dr = self:getDriver()
-    --     if dr ~= Ply then return end
-    --     return drawElements[element] or false
-    -- end
+    ---[CLIENT] On network variable change
+    ---@param oldVars table<string, any> Old variables
+    ---@param vars table<string, any> New variables
+    function AstroBase:astroNetworkVariablesUpdate(oldVars, vars) end
+
+    ---[CLIENT] On network variable change
+    ---@param oldVars table<string, any> Old variables
+    ---@param vars table<string, any> New variables
+    function AstroBase:networkVariablesUpdate(oldVars, vars)
+        if oldVars.AstroDriver and !vars.AstroDriver then
+            self.driver = nil
+            self.cameraBone:setLocalAngles(Angle())
+        elseif !oldVars.AstroDriver and vars.AstroDriver then
+            self.driver = player(vars.AstroDriver)
+        end
+        self:astroNetworkVariablesUpdate(oldVars, vars)
+    end
+
+    local dontDrawElements = {
+        ["CHudHealth"] = true,
+        ["CHudBattery"] = true,
+        ["CHudwarn"] = true
+    }
+
+    ---[CLIENT] Draw HUD or not
+    ---@param element string
+    function AstroBase.hooks:HUDShouldDraw(element)
+        local dr = self.driver
+        if dr ~= Ply then return end
+        return !dontDrawElements[element]
+    end
 
     local function equilateralTriangle(x, y, a)
         a = a * 0.5
@@ -557,11 +581,9 @@ else
     ---[CLIENT] Draw HUD for Astro
     ---@param self AstroBase
     function AstroBase.hooks.DrawHUD(self)
-        local dr = self:getDriver()
+        local dr = self.driver
         if dr ~= Ply then return end
         local sw, sh = render.getGameResolution()
-        render.setColor(Color(self.fadeColor.r, self.fadeColor.g, self.fadeColor.b, self.fade * 255))
-        render.drawRectFast(0, 0, sw, sh)
 
         local halfW, halfH = sw / 2, sh / 2
 
@@ -578,7 +600,7 @@ else
         equilateralTriangleButRotated(halfW, halfH, 6)
 
         local hp = self:getHealth()
-        astrogui.drawProgressBar(halfW - 128, halfH + 100, 252, 24, hp / self.Health, "HP", string.format("%s/%s", hp, self.Health))
+        astrogui.drawProgressBar(halfW - 128, halfH + 100, 252, 24, hp / self.Health, "HP", hp .. "/" .. self.Health)
 
         self:onDrawHUD(sw, sh)
     end
@@ -589,9 +611,8 @@ else
     ---[CLIENT] Effects for head for astro
     function AstroBase.hooks:RenderOffscreen()
         self:renderOffscreen()
-        local dr = self:getDriver()
-        if !dr then return end
-        if !self.cameraBone then return end
+        local dr = self.driver
+        if !isValid(dr) then return end
         self.cameraBone:setAngles(dr:getEyeAngles())
     end
 
@@ -605,7 +626,7 @@ else
 
     ---[INTERNAL] [CLIENT] Astrobot input pressed
     function AstroBase.hooks:InputPressed(button)
-        if self:getDriver() == Ply and !input.getCursorVisible() then
+        if self.driver == Ply and !input.getCursorVisible() then
             self:inputPressed(button)
             net.start("AstroInputPressed")
                 net.writeEntity(self.ent)
@@ -616,7 +637,7 @@ else
 
     ---[INTERNAL] [CLIENT] Astrobot input released
     function AstroBase.hooks:InputReleased(button)
-        if self:getDriver() == Ply and !input.getCursorVisible() then
+        if self.driver == Ply and !input.getCursorVisible() then
             self:inputReleased(button)
             net.start("AstroInputReleased")
                 net.writeEntity(self.ent)
@@ -652,7 +673,7 @@ end
 ---[SHARED] Get astro eyes angles
 ---@return Angle?
 function AstroBase:getEyeAngles()
-    local dr = self:getDriver()
+    local dr = self.driver
     if !dr then return end
     return dr:getEyeAngles()
 end

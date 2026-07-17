@@ -167,7 +167,7 @@ else
         local isRight = x > sw / 2
         astrogui.drawProgressBarSections(x - 46, y, 92, 40, 16, ammo / 4, !isRight and "AMMO" or "", isRight and "AMMO" or "", true, isRight)
         local text = "BLASTER_" .. moduleId
-        local hpText = string.format("%s/%s", hp, self.Health)
+        local hpText = hp .. "/" .. self.Health
         astrogui.drawProgressBar(x - 82 + 32 * (isRight and 1 or -1), y - 28, 164, 24, hp / self.Health, !isRight and text or hpText, isRight and text or hpText)
     end
 end
