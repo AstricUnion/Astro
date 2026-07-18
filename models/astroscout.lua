@@ -232,7 +232,7 @@ model.new("astroscout_leftarm", hitbox {
             end
         }
     end)
-    :addSequence("startLaser", 0.5, function(ent, layer)
+    :addSequence("startLaser", 2, function(ent, layer)
         local shoulder = ent:getBoneEntity(ent:lookupBone("shoulder"))
         local forearm = ent:getBoneEntity(ent:lookupBone("forearm"))
 
@@ -243,9 +243,9 @@ model.new("astroscout_leftarm", hitbox {
             param { 0, 0.5, shoulder, shoulderAng, nil, Angle(-30, -90, 0), math.easeInOutQuint },
             param { 0, 0.5, forearm, forearmAng, nil, Angle(), math.easeInOutQuint },
             function(process)
-                local eased = math.easeOutQuart(process / 0.5) * 2
+                local eased = math.easeOutQuart(process / 2) * 5
                 ent:setPoseParameter("rotation_multiplier", 1 + eased)
-                if process > 0.5 then return true end
+                if process > 2 then return true end
             end
         }
     end)
@@ -257,6 +257,23 @@ model.new("astroscout_leftarm", hitbox {
             shoulder:setLocalPos(Vector(math.sin(fraction * math.pi * 2) * 2, math.rand(-1, 1), math.rand(-1, 1)))
             if fraction == 1 then return true end
         end
+    end)
+    :addSequence("stopLaser", 1, function(ent, layer)
+        local shoulder = ent:getBoneEntity(ent:lookupBone("shoulder"))
+        local forearm = ent:getBoneEntity(ent:lookupBone("forearm"))
+
+        local _, shoulderAng = shoulder:getPropertyForLayer(layer)
+        local _, forearmAng = forearm:getPropertyForLayer(layer)
+
+        return tween.new {
+            param { 0, 1, shoulder, shoulderAng, nil, tween.blenderRotation(19.5255, 35.631, -58.67), math.easeInOutQuint },
+            param { 0, 1, forearm, forearmAng, nil, tween.blenderRotation(-180.605, -63.6716, 164.196), math.easeInOutQuint },
+            function(process)
+                local eased = math.easeInQuart(1 - process) * 5
+                ent:setPoseParameter("rotation_multiplier", 1 + eased)
+                if process > 1 then return true end
+            end
+        }
     end)
 
 
@@ -373,8 +390,16 @@ model.new("astroscout", part {
         local _, bodyAng = body:getPropertyForLayer(layer)
 
         return tween.new {
-            param { 0, 0.05, body, bodyAng, nil, Angle(0, -35, -5), math.easeInSine },
-            param { 0.05, 0.1, body, bodyAng, nil, Angle(0, -30, -5), math.easeOutSine },
+            param { 0, 0.1, body, bodyAng, nil, Angle(0, -32, -5), math.easeInSine },
+            param { 0.1, 0.2, body, bodyAng, nil, Angle(0, -30, -5), math.easeOutSine },
+        }
+    end)
+    :addSequence("stopLaser", 1, function(ent, layer)
+        local body = ent:getBoneEntity(ent:lookupBone("body"))
+        local _, bodyAng = body:getPropertyForLayer(layer)
+
+        return tween.new {
+            param { 0, 1, body, bodyAng, nil, Angle(0, 0, 0), math.easeInOutQuint },
         }
     end)
 

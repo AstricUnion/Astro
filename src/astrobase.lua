@@ -53,7 +53,7 @@ function AstroModuleBase:initialize()
             if !isValid(self) then return end
             local astro = self:getAstro()
             if !astro then return end
-            self.moduleBone = self.ent:getBoneEntity(self.ent:lookupBone("module"))
+            self.moduleBone = self.ent.modelBones and self.ent:getBoneEntity(self.ent:lookupBone("module"))
             astro:clientInitializeModule(self)
             self:moduleInitialize()
         end)
@@ -227,7 +227,7 @@ AstroBase.Name = "Base Astro"
 AstroBase.Model = ""
 AstroBase.hooks = {}
 
-AstroBase.SprintSpeed = 600
+AstroBase.SprintSpeed = 900
 AstroBase.Speed = 400
 AstroBase.VelocityRatio = 0.04
 AstroBase.CameraOffset = Vector()

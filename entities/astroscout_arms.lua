@@ -9,12 +9,17 @@ local function parentToBone(self)
     ---@cast modulePoint Hologram
     local pos, ang = localToWorld(offset, Angle(), body:getPos(), body:getAngles())
     modulePoint:setPos(pos)
-    if self.Identifier == "astroscout_leftarm" and self.laserOn then return end
+    if self.Identifier == "astroscout_leftarm" and (self.laserOn or self.ent:getSequence(1) == 4) then
+        modulePoint:setLocalAngles(Angle())
+        return astro
+    end
     modulePoint:setAngles(ang)
+    return astro
 end
 
 ---@class AstroScoutLeftArm: AstroModuleBase
 ---@field laserOn boolean
+---@field laserEffect BEffect
 local AstroScoutLeftArm = {}
 AstroScoutLeftArm.Identifier = "astroscout_leftarm"
 AstroScoutLeftArm.Name = "AstroScout left arm"
@@ -31,12 +36,29 @@ function AstroScoutLeftArm:onAction(action)
         if CLIENT then
             self.ent:setSequence(2, 1)
             timer.simple(0.5, function()
+                if !isValid(self) or !self.laserOn then return end
                 self.ent:setSequence(3, 2)
+                self.laserEffect = beff.create("laser")
+                self.laserEffect:setScale(1.6)
+                self.laserEffect:setEntity(self.ent:getBoneEntity(self.ent:lookupBone("forearm")))
+                self.laserEffect:setStart(Vector(0, 96, -2))
+                self.laserEffect:play()
             end)
         else
             self:setNextAction("startLaser", cur + 0.5)
         end
         self.laserOn = true
+        return true
+    elseif action == "stopLaser" then
+        if CLIENT then
+            self.ent:setSequence(0, 2)
+            self.ent:setSequence(4, 1)
+            if self.laserEffect then
+                self.laserEffect:destroy()
+                self.laserEffect = nil
+            end
+        end
+        self.laserOn = false
         return true
     end
 end
@@ -47,7 +69,8 @@ if SERVER then
         if !astro then return end
         local tr = astro:getEyeTrace()
         if !tr then return end
-        self.ent:setAngles((tr.HitPos - self.ent:getPos()):getAngle())
+        local pos = self.ent:getPos()
+        self.ent:setAngles((tr.HitPos - pos):getAngle())
     end
 else
     function AstroScoutLeftArm:moduleInitialize()
@@ -55,7 +78,15 @@ else
         self.ent:setSequence(1)
     end
 
-    AstroScoutLeftArm.renderOffscreen = parentToBone
+    function AstroScoutLeftArm:renderOffscreen()
+        local astro = parentToBone(self)
+        if astro and self.laserEffect then
+            local pos = self.ent:getPos()
+            local tr = trace.line(pos, pos + self.ent:getAngles():getForward() * 32768, astro.filter)
+            if !tr then return end
+            self.laserEffect:setOrigin(tr.HitPos)
+        end
+    end
 end
 
 ents.register(AstroScoutLeftArm, "astromodule_base")

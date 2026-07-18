@@ -46,10 +46,18 @@ if SERVER then
             if !self.modules[2]:canAction("startLaser") then return end
             self.ent:setSequence(self.ent:lookupSequence("startLaser"), 2)
             timer.simple(0.5, function()
-                if !isValid(self) then return end
+                if !isValid(self) or !self.modules[2].laserOn then return end
                 self.ent:setSequence(self.ent:lookupSequence("laser"), 2)
             end)
             self.modules[2]:sendAction("startLaser")
+        end
+    end
+
+    function AstroScout:inputReleased(button)
+        if button == KEY.R then
+            if !self.modules[2]:canAction("stopLaser") then return end
+            self.ent:setSequence(self.ent:lookupSequence("stopLaser"), 2)
+            self.modules[2]:sendAction("stopLaser")
         end
     end
 
