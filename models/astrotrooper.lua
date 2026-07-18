@@ -40,6 +40,7 @@ model.new("astrotrooper_blaster", hitbox {
 })
     :add("module", rig())
     :add("module", "blaster", part {
+        --[[
         holo { Vector(-5, 0, 2), nil, "models/hunter/blocks/cube025x025x025.mdl", color = Color(255, 0, 0, 0) },
         holo { Vector(-28, 0, -2), Angle(180, 90, 90), "models/props_combine/combinethumper001a.mdl", Vector(0.08, 0.08, 0.12), color = Color(255, 40, 40), material = "models/props_combine/metal_combinebridge001" },
         holo { Vector(-28, 0, 6), Angle(0, 90, 90), "models/props_combine/combinethumper001a.mdl", Vector(0.08, 0.08, 0.12), color = Color(255, 40, 40), material = "models/props_combine/metal_combinebridge001" },
@@ -47,6 +48,14 @@ model.new("astrotrooper_blaster", hitbox {
         holo { Vector(-28, 5, 2), Angle(90, 90, 90), "models/props_combine/combinethumper001a.mdl", Vector(0.08, 0.08, 0.12), color = Color(255, 40, 40), material = "models/props_combine/metal_combinebridge001" },
         holo { Vector(-19, 0, 12), Angle(180, 0, 0), "models/combine_dropship_container.mdl", Vector(0.12, 0.12, 0.12), color = Color(255, 40, 40), material = "models/props_combine/metal_combinebridge001" },
         holo { Vector(25, 0, 2), Angle(90, 0, 0), "models/Items/combine_rifle_ammo01.mdl", Vector(1.8, 1.8, 1.8), color = Color(255, 40, 40) },
+        ]]
+        rig ( Vector(), Angle() ),
+        holo { Vector(24, 0, 4), Angle(267, 0, 0), "models/props_combine/breenpod.mdl", Vector(0.4, 0.48, 0.7), color = Color(255, 40, 40) },
+        holo { Vector(6, 0, 4), nil, "models/props_combine/combine_emitter01.mdl", Vector(1.2, 0.8, 0.4), color = Color(255, 40, 40) },
+        holo { Vector(23, 0, -4), Angle(0, 180, 0), "models/props_combine/CombineTrain01a.mdl", Vector(0.06, 0.08, 0.035), color = Color(255, 40, 40) },
+        --holo { Vector(42, 0, 2), Angle(0, 90, 0), "models/weapons/w_magnade.mdl", Vector(1.1, 1.8, 1.1), color = Color(255, 40, 40) },
+        --holo { Vector(48, 0, 0.35), nil, "models/props_wasteland/light_spotlight01_lamp.mdl", Vector(0.4, 0.45, 0.45), color = Color(255, 40, 40) },
+        holo { Vector(39, 0, 0.8), Angle(90, 0, 0), "models/Items/combine_rifle_ammo01.mdl", Vector(1.4), color = Color(255, 40, 40) },
     })
     :addSequence("shoot", 0.3, function(ent)
         local bone = ent:getBoneEntity(ent:lookupBone("blaster"))
@@ -98,7 +107,7 @@ local bodyModel = part {
 }
 local rotor1Model = part {
     rig ( Vector(), Angle() ),
-    holo { Vector(0, 0, -7), Angle(180, 0, 0), "models/props_phx/gears/bevel12.mdl", Vector(1.8, 1.8, 1), color = Color(255, 40, 40), noLight = true },
+    holo { Vector(0, 0, -7), Angle(180, 0, 0), "models/props_phx/gears/bevel12.mdl", Vector(1.8, 1.8, 1), noLight = true, color = Color(255, 40, 40) },
 }
 local rotor2Model = part {
     rig ( Vector(), Angle() ),
