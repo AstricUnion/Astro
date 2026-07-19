@@ -9,8 +9,11 @@ local function parentToBone(self)
     ---@cast modulePoint Hologram
     local pos, ang = localToWorld(offset, Angle(), body:getPos(), body:getAngles())
     modulePoint:setPos(pos)
-    if self.Identifier == "astroscout_leftarm" and (self.laserOn or self.ent:getSequence(1) == 4) then
+    if self.Identifier == "astroscout_leftarm" and self.laserOn then
         modulePoint:setLocalAngles(Angle())
+        return astro
+    elseif self.ent:getSequence(1) == 4 then
+        modulePoint:setAngles(math.lerpAngle(0.3, modulePoint:getAngles(), ang))
         return astro
     end
     modulePoint:setAngles(ang)
@@ -33,16 +36,18 @@ AstroScoutLeftArm.hooks = {}
 function AstroScoutLeftArm:onAction(action)
     local cur = timer.curtime()
     if action == "startLaser" then
+        if self.laserOn then return end
         if CLIENT then
             self.ent:setSequence(2, 1)
             timer.simple(0.5, function()
                 if !isValid(self) or !self.laserOn then return end
                 self.ent:setSequence(3, 2)
                 self.laserEffect = beff.create("laser")
-                self.laserEffect:setScale(1.6)
+                self.laserEffect:setScale(1.8)
                 self.laserEffect:setEntity(self.ent:getBoneEntity(self.ent:lookupBone("forearm")))
                 self.laserEffect:setStart(Vector(0, 96, -2))
                 self.laserEffect:play()
+                self:renderOffscreen()
             end)
         else
             self:setNextAction("startLaser", cur + 0.5)
@@ -50,6 +55,7 @@ function AstroScoutLeftArm:onAction(action)
         self.laserOn = true
         return true
     elseif action == "stopLaser" then
+        if !self.laserOn then return end
         if CLIENT then
             self.ent:setSequence(0, 2)
             self.ent:setSequence(4, 1)
@@ -64,13 +70,23 @@ function AstroScoutLeftArm:onAction(action)
 end
 
 if SERVER then
+    local world = game.getWorld()
     function AstroScoutLeftArm:think()
+        if !self.laserOn then return end
         local astro = self:getAstro()
         if !astro then return end
         local tr = astro:getEyeTrace()
         if !tr then return end
         local pos = self.ent:getPos()
         self.ent:setAngles((tr.HitPos - pos):getAngle())
+        local toDamage = find.inSphere(tr.HitPos, 24)
+        for _, v in ipairs(toDamage) do
+            if !isValid(v) or v == world then goto cont end
+            if !table.hasValue(astro.filter, v) then
+                astroutils.applyDamage(v, 5, astro.ent, self.ent)
+            end
+            ::cont::
+        end
     end
 else
     function AstroScoutLeftArm:moduleInitialize()

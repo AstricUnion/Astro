@@ -14,13 +14,34 @@ local rig = model.rig
 
 local mainColor = Color(255, 40, 40)
 local metalMat = "models/props_combine/metal_combinebridge001"
-local whiteMat = "models/debug/debugwhite"
+local whiteMat = "lights/white"
 
--- local function circlePos(ang, radius, pos)
---     local rad = math.rad(ang)
---     return Vector(math.sin(rad)*radius, 0, math.cos(rad)*radius)+pos
+-- if CLIENT then
+--     model.glowHolos = {}
+--     hook.add("RenderOffscreen", "GlowHolos", function()
+--         ---@type ViewSetup
+--         local vs = render.getViewSetup(true)
+--         local angs = vs.angles - Angle(90, 0, 0)
+--         for _, v in ipairs(model.glowHolos) do
+--             if !isValid(v) then goto cont end
+--             v:setAngles(angs)
+--             v:setPos(v.parent:localToWorld(v.glowOffset) + (vs.origin - v:getPos()):getAngle():getForward() * 32)
+--             ::cont::
+--         end
+--     end)
 -- end
 
+-- local function glowSprite(pos, mat, color, scale)
+--     return function()
+--         local hol = hologram.create(pos, Angle(), "models/holograms/plane.mdl", scale)
+--         if !hol then return end
+--         hol.glowOffset = pos
+--         hol:setMaterial(mat or "models/props_combine/cit_corebright")
+--         hol:setColor(color or Color())
+--         model.glowHolos[#model.glowHolos+1] = hol
+--         return hol
+--     end
+-- end
 
 local function prongsFun()
     local rigFun = rig()

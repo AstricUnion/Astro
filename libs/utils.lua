@@ -27,30 +27,34 @@ if SERVER then
             turr:remove()
             valid = false
         end
+        local holo
         if !valid then
             if !(prop.canSpawn() and hologram.canSpawn()) then return end
             local status
-            status, turr = pcall(prop.createSent, Vector(), Angle(90, 0, 0), "gmod_wire_turret", true, {
+            status, turr = pcall(prop.createSent, Vector(), Angle(-90, 0, 0), "gmod_wire_turret", true, {
                 damage = damage,
                 delay = 0,
                 sound = "",
                 tracer = "",
                 tracernum = 0
             })
-            local holo = hologram.create(Vector(), Angle(), "models/editor/axis_helper_thick.mdl")
+            if !status then return end
+            holo = hologram.create(Vector(), Angle(), "models/editor/axis_helper_thick.mdl")
             if !holo then return end
-            if !status then holo:remove() return end
             turr:setParent(holo)
             holo:setNoDraw(true)
-            holo:setPos(ent:getPos() + Vector(0, 0, ent:getBoundingRadius()))
             holo:setAngles(Angle())
-            holo:setParent(ent)
             turr:setNoDraw(true)
             turr:setCollisionGroup(COLLISION_GROUP.IN_VEHICLE)
             turr.holo = holo
             turr.damage = damage
             turrets[ent] = turr
+        else
+            holo = turr.holo
+            holo:setParent(ent)
         end
+        holo:setParent(ent)
+        holo:setLocalPos(Vector())
         turr.toFire = true
         wire.triggerInput(turr, "Fire", 1)
     end
