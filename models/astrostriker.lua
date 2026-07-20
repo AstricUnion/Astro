@@ -9,42 +9,44 @@ local part = model.part
 local holo = model.holo
 local rig = model.rig
 
-local function blasterCluster(offset, angle)
-    local baseHolos = {
-         { Vector(-18, 95, -15), Angle(45, 180, 90), "models/props_combine/combine_barricade_med01b.mdl", Vector(0.15, 0.25, 0.5), color = Color(255, 40, 40) },
-         { Vector(0, 123, 2), Angle(0, 180, 180), "models/props_combine/combine_train02b.mdl", Vector(0.1, 0.145, 0.05), color = Color(255, 40, 40) },
-         { Vector(0, 123, 2), Angle(0, 0, 180), "models/props_combine/combine_train02b.mdl", Vector(0.1, 0.145, 0.05), color = Color(255, 40, 40) },
-         { Vector(-12.5, 106, 17), Angle(0, 270, -90), "models/combine_dropship_container.mdl", Vector(0.225, 0.25, 0.1), color = Color(255, 40, 40) },
-         { Vector(12.5, 106, 17), Angle(0, 270, 90), "models/combine_dropship_container.mdl", Vector(0.225, 0.25, 0.1), color = Color(255, 40, 40) },
-         { Vector(0, 106, 4), Angle(0, 270, 0), "models/combine_dropship_container.mdl", Vector(0.225, 0.25, 0.1), color = Color(255, 40, 40) },
-         { Vector(0, 106, 29), Angle(0, 270, 180), "models/combine_dropship_container.mdl", Vector(0.225, 0.25, 0.1), color = Color(255, 40, 40) },
-         { Vector(0, 150, 17), Angle(90, 90, 0), "models/Items/combine_rifle_ammo01.mdl", Vector(2, 2, 2), color = Color(255, 40, 40) },
-         { Vector(0, 165, 17), Angle(90, 90, 0), "models/props_phx/wheels/magnetic_large.mdl", Vector(0.2, 0.2, 0.75), color = Color(255, 40, 40), material = "models/gibs/metalgibs/metal_gibs" },
-         { Vector(0, 165, 17), Angle(90, 90, 0), "models/props_phx/wheels/magnetic_large.mdl", Vector(0.245, 0.245, 1.1), color = Color(255, 40, 40), material = "models/gibs/metalgibs/metal_gibs" },
-         { Vector(0, 176, 17), Angle(90, 90, 0), "models/mechanics/wheels/wheel_speed_72.mdl", Vector(0.15, 0.15, 0.1), color = Color(0, 0, 0), material = "models/gibs/metalgibs/metal_gibs" },
-         { Vector(0, 176.5, 17), Angle(90, 90, 0), "models/hunter/tubes/circle2x2.mdl", Vector(0.15, 0.15, 0.1), noLight = true, color = Color(255, 0, 0), material = "models/effects/vortshield" },
-         { Vector(0, 95, 17), Angle(0, 90, 0), "models/xqm/jetengine.mdl", Vector(0.5, 1, 1), color = Color(255, 40, 40), material = "models/gibs/metalgibs/metal_gibs" },
-         { Vector(0, 100, 17), Angle(0, 180, 90), "models/props_combine/combine_mine01.mdl", Vector(0.7, 0.7, 5.1), color = Color(255, 40, 40) },
-         { Vector(0, 100, 17), Angle(-45, 180, 90), "models/props_combine/combine_mine01.mdl", Vector(0.7, 0.7, 5.1), color = Color(255, 40, 40) },
-         { Vector(0, 100, 17), Angle(45, 180, 90), "models/props_combine/combine_mine01.mdl", Vector(0.7, 0.7, 5.1), color = Color(255, 40, 40) },
-    }
+local metGibMat = {[0] = "models/gibs/metalgibs/metal_gibs", [1] = "models/gibs/metalgibs/metal_gibs", [2] = "models/gibs/metalgibs/metal_gibs"}
+-- вот тут надо очень постараться с оптимизацией. каждая лишняя холка умножается на 4
+-- я немношка убрал, но надо посмотреть со стороны именно дизайна, а не только оптимизации. строки можешь раскомментить по желанию
+local blasterHolos = part {
+    rig(),
+    -- holo { Vector(0, 153, 2), Angle(0, 180, 180), "models/props_combine/combine_train02b.mdl", Vector(0.1, 0.145, 0.05), color = Color(255, 40, 40) },
+    -- holo { Vector(0, 153, 2), Angle(0, 0, 180), "models/props_combine/combine_train02b.mdl", Vector(0.1, 0.145, 0.05), color = Color(255, 40, 40) },
+    holo { Vector(-12.5, 136, 17), Angle(0, 270, -90), "models/combine_dropship_container.mdl", Vector(0.285, 0.25, 0.1), color = Color(255, 40, 40) },
+    holo { Vector(12.5, 136, 17), Angle(0, 270, 90), "models/combine_dropship_container.mdl", Vector(0.285, 0.25, 0.1), color = Color(255, 40, 40) },
+    holo { Vector(0, 136, 4), Angle(0, 270, 0), "models/combine_dropship_container.mdl", Vector(0.285, 0.25, 0.1), color = Color(255, 40, 40) },
+    holo { Vector(0, 136, 29), Angle(0, 270, 180), "models/combine_dropship_container.mdl", Vector(0.285, 0.25, 0.1), color = Color(255, 40, 40) },
+    holo { Vector(0, 195, 17), Angle(90, 90, 0), "models/Items/combine_rifle_ammo01.mdl", Vector(2, 2, 2), color = Color(255, 40, 40) },
+    holo { Vector(0, 210, 17), Angle(90, 90, 0), "models/props_phx/wheels/magnetic_large.mdl", Vector(0.2, 0.2, 0.75), color = Color(255, 40, 40), material = metGibMat },
+    holo { Vector(0, 210, 17), Angle(90, 90, 0), "models/props_phx/wheels/magnetic_large.mdl", Vector(0.245, 0.245, 1.1), color = Color(255, 40, 40), material = metGibMat },
+    holo { Vector(0, 221, 17), Angle(90, 90, 0), "models/mechanics/wheels/wheel_speed_72.mdl", Vector(0.15, 0.15, 0.1), color = Color(0, 0, 0), material = metGibMat },
+    holo { Vector(0, 221.5, 17), Angle(90, 90, 0), "models/hunter/tubes/circle2x2.mdl", Vector(0.15, 0.15, 0.1), noLight = true, color = Color(255, 0, 0), material = "models/effects/vortshield" },
+    holo { Vector(0, 140, 17), Angle(0, 90, 0), "models/xqm/jetengine.mdl", Vector(0.5, 1, 1), color = Color(255, 40, 40), material = metGibMat },
+    -- holo { Vector(0, 145, 17), Angle(0, 180, 90), "models/props_combine/combine_mine01.mdl", Vector(0.7, 0.7, 5.1), color = Color(255, 40, 40) },
+    -- holo { Vector(0, 145, 17), Angle(-45, 180, 90), "models/props_combine/combine_mine01.mdl", Vector(0.7, 0.7, 5.1), color = Color(255, 40, 40) },
+    -- holo { Vector(0, 145, 17), Angle(45, 180, 90), "models/props_combine/combine_mine01.mdl", Vector(0.7, 0.7, 5.1), color = Color(255, 40, 40) },
+    holo { Vector(40, 95, 2.3), Angle(0, 5, -90), "models/props_combine/combine_bridge.mdl", Vector(0.1, 0.15, 0.3), color = Color(185, 30, 30), material = "models/props_canal/metalwall005b" },
+    -- holo { Vector(0, 60, 0), Angle(-22.5, 180, 90), "models/props_combine/combine_mine01.mdl", Vector(1.5, 1.5, 5.1), color = Color(255, 40, 40) },
+}
 
+local function blasterCluster(offset, angle)
     local rigFun = rig(offset, angle)
-    local part = 360 / 4
+    local frac = 360 / 4
 
     return function()
         local rg = rigFun()
         if !rg then return end
         local baseAngle = rg:getAngles()
         for i = 0, 3 do
-            local ang = i * part
+            local ang = i * frac
             rg:setAngles(baseAngle + Angle(ang, 0, 0))
-            for _, hl in ipairs(baseHolos) do
-                local holoFun = holo { hl[1], hl[2], hl[3], hl[4], color = hl.color, material = hl.material, noLight = hl.noLight }
-                local mdl = holoFun()
-                if mdl then
-                    mdl:setParent(rg)
-                end
+            local mdl = blasterHolos()
+            if mdl then
+                mdl:setParent(rg)
             end
         end
         return rg
@@ -93,12 +95,12 @@ local chassisModel = part {
  
 local hubFrontModel = part {
     rig (),
-    holo { Vector(0, 0, -30), Angle(90, 0, 0), "models/props_c17/pulleywheels_large01.mdl", Vector(1, 2, 2), color = Color(255, 40, 40), material = "models/gibs/metalgibs/metal_gibs" },
+    holo { Vector(0, 0, -30), Angle(90, 0, 0), "models/props_c17/pulleywheels_large01.mdl", Vector(1, 2, 2), color = Color(255, 40, 40), material = metGibMat },
     holo { nil, nil, "models/props_combine/combine_train02a.mdl", Vector(0.15, 0.175, 0.075), color = Color(255, 40, 40), material = "models/gibs/metalgibs/metal_gibs" },
     holo { nil, Angle(0, 180, 0), "models/props_combine/combine_train02a.mdl", Vector(0.15, 0.175, 0.075), color = Color(255, 40, 40), material = "models/gibs/metalgibs/metal_gibs" },
     holo { nil, Angle(0, 90, 0), "models/props_combine/combine_train02a.mdl", Vector(0.15, 0.175, 0.075), color = Color(255, 40, 40), material = "models/gibs/metalgibs/metal_gibs" },
     holo { nil, Angle(0, -90, 0), "models/props_combine/combine_train02a.mdl", Vector(0.15, 0.175, 0.075), color = Color(255, 40, 40), material = "models/gibs/metalgibs/metal_gibs" },
-    holo { Vector(0, 0, 22), Angle(180, 0, 0), "models/props_phx/wheels/moped_tire.mdl", Vector(3.5, 3.5, 4), color = Color(255, 40, 40), material = "models/gibs/metalgibs/metal_gibs" },
+    holo { Vector(0, 0, 22), Angle(180, 0, 0), "models/props_phx/wheels/moped_tire.mdl", Vector(3.5, 3.5, 4), color = Color(255, 40, 40), material = metGibMat },
     holo { Vector(0, 0, -20), Angle(180, 0, 0), "models/hunter/tubes/tube2x2x025d.mdl", Vector(1.2, 1.2, 0.2), color = Color(255, 40, 40), material = "models/gibs/metalgibs/metal_gibs" },
     holo { Vector(1.25, -1.25, -20), Angle(180, 0, 0), "models/hunter/tubes/tube2x2x025d.mdl", Vector(1.175, 1.175, 0.15), noLight = true, color = Color(255, 40, 40), material = "models/debug/debugwhite" },
     holo { Vector(0, 0, -20), Angle(180, 180, 0), "models/hunter/tubes/tube2x2x025d.mdl", Vector(1.2, 1.2, 0.2), color = Color(255, 40, 40), material = "models/gibs/metalgibs/metal_gibs" },
@@ -113,8 +115,8 @@ local hubRearModel = part {
     holo { Vector(1.25, -1.25, 0), Angle(180, 0, 0), "models/hunter/tubes/tube2x2x025d.mdl", Vector(0.875, 0.875, 0.15), noLight = true, color = Color(255, 40, 40), material = "models/debug/debugwhite" },
     holo { Vector(0, 0, 0), Angle(180, 180, 0), "models/hunter/tubes/tube2x2x025d.mdl", Vector(0.9, 0.9, 0.2), color = Color(255, 40, 40), material = "models/gibs/metalgibs/metal_gibs" },
     holo { Vector(-1.25, 1.25, 0), Angle(180, 180, 0), "models/hunter/tubes/tube2x2x025d.mdl", Vector(0.875, 0.875, 0.15), noLight = true, color = Color(255, 40, 40), material = "models/debug/debugwhite" },
-    holo { Vector(0, 0, 8), Angle(90, 0, 0), "models/props_c17/pulleywheels_large01.mdl", Vector(1, 2.5, 2.5), color = Color(255, 40, 40), material = "models/gibs/metalgibs/metal_gibs" },
-    holo { Vector(0, 0, 39), Angle(180, 0, 0), "models/props_phx/wheels/moped_tire.mdl", Vector(3.75, 3.75, 2), color = Color(255, 40, 40), material = "models/gibs/metalgibs/metal_gibs" },
+    holo { Vector(0, 0, 8), Angle(90, 0, 0), "models/props_c17/pulleywheels_large01.mdl", Vector(1, 2.5, 2.5), color = Color(255, 40, 40), material = metGibMat },
+    holo { Vector(0, 0, 39), Angle(180, 0, 0), "models/props_phx/wheels/moped_tire.mdl", Vector(3.75, 3.75, 2), color = Color(255, 40, 40), material = metGibMat },
     holo { Vector(0, 0, 13), Angle(0, 90, 180), "models/props_combine/combine_mine01.mdl", Vector(2.5, 2.5, 3.35), color = Color(255, 40, 40) },
     holo { Vector(45, 0, 27), Angle(0, -90, 0), "models/combine_apc_wheelcollision.mdl", Vector(0.25, 0.2, 0.1), color = Color(255, 40, 40) },
     holo { Vector(-45, 0, 27), Angle(0, 90, 0), "models/combine_apc_wheelcollision.mdl", Vector(0.25, 0.2, 0.1), color = Color(255, 40, 40) },
@@ -150,22 +152,30 @@ local headModel = part {
  
 local larmModel = part {
     rig(Vector(0, 75, 25)),
-    holo { Vector(0, 40, 2), nil, "models/props_combine/combine_train02b.mdl", Vector(0.35, 0.15, 0.175), color = Color(255, 40, 40) },
-    holo { Vector(0, 40, 2), Angle(180, 0, 0), "models/props_combine/combine_train02b.mdl", Vector(0.35, 0.15, 0.175), color = Color(255, 40, 40) },
-    holo { Vector(0, 40, 2), Angle(-90, 0, 0), "models/props_combine/combine_train02b.mdl", Vector(0.35, 0.15, 0.175), color = Color(255, 40, 40) },
-    holo { Vector(0, 40, 2), Angle(90, 0, 0), "models/props_combine/combine_train02b.mdl", Vector(0.35, 0.15, 0.175), color = Color(255, 40, 40) },
-    holo { Vector(0, 40, 2), Angle(0, 180, 0), "models/props_combine/combine_train02b.mdl", Vector(0.35, 0.15, 0.175), color = Color(255, 40, 40) },
-    holo { Vector(0, 40, 2), Angle(180, 180, 0), "models/props_combine/combine_train02b.mdl", Vector(0.35, 0.15, 0.175), color = Color(255, 40, 40) },
-    holo { Vector(0, 40, 2), Angle(-90, 180, 0), "models/props_combine/combine_train02b.mdl", Vector(0.35, 0.15, 0.175), color = Color(255, 40, 40) },
-    holo { Vector(0, 40, 2), Angle(90, 180, 0), "models/props_combine/combine_train02b.mdl", Vector(0.35, 0.15, 0.175), color = Color(255, 40, 40) },
-    holo { Vector(21, 25, 23), Angle(180, 90, -45), "models/combine_dropship_container.mdl", Vector(0.25, 0.15, 0.1), color = Color(255, 40, 40) },
-    holo { Vector(-21, 25, 23), Angle(180, 90, 45), "models/combine_dropship_container.mdl", Vector(0.25, 0.15, 0.1), color = Color(255, 40, 40) },
-    holo { Vector(21, 25, -19), Angle(180, 90, -135), "models/combine_dropship_container.mdl", Vector(0.25, 0.15, 0.1), color = Color(255, 40, 40) },
-    holo { Vector(-21, 25, -19), Angle(180, 90, 135), "models/combine_dropship_container.mdl", Vector(0.25, 0.15, 0.1), color = Color(255, 40, 40) },
-    holo { Vector(20, 14, 2), Angle(0, 0, -90), "models/props_combine/combine_barricade_med01b.mdl", Vector(0.15, 0.25, 0.5), color = Color(255, 40, 40) },
-    holo { Vector(-20, 14, 2), Angle(180, 0, -90), "models/props_combine/combine_barricade_med01b.mdl", Vector(0.15, 0.25, 0.5), color = Color(255, 40, 40) },
-    holo { Vector(0, 14, 22), Angle(-90, -90, 0), "models/props_combine/combine_barricade_med01b.mdl", Vector(0.15, 0.25, 0.5), color = Color(255, 40, 40) },
-    holo { Vector(0, 14, -18), Angle(90, 90, 0), "models/props_combine/combine_barricade_med01b.mdl", Vector(0.15, 0.25, 0.5), color = Color(255, 40, 40) },
+    holo { Vector(-30, -15, -1), Angle(180, 0, -90), "models/props_combine/combine_bridge.mdl", Vector(0.1, 0.15, 0.3), color = Color(185, 30, 30), },
+    holo { Vector(30, -15, -1), Angle(0, 0, -90), "models/props_combine/combine_bridge.mdl", Vector(0.1, 0.15, 0.3), color = Color(165, 20, 20) },
+    holo { Vector(0, -15, 29), Angle(-90, 0, -90), "models/props_combine/combine_bridge.mdl", Vector(0.1, 0.15, 0.3), color = Color(165, 20, 20) },
+    holo { Vector(0, -15, -25), Angle(90, 0, -90), "models/props_combine/combine_bridge.mdl", Vector(0.1, 0.15, 0.3), color = Color(165, 20, 20) },
+    holo { Vector(30, 125, -1), Angle(180, 180, -90), "models/props_combine/combine_bridge.mdl", Vector(0.1, 0.15, 0.3), color = Color(185, 30, 30), },
+    holo { Vector(-30, 125, -1), Angle(0, 180, -90), "models/props_combine/combine_bridge.mdl", Vector(0.1, 0.15, 0.3), color = Color(165, 20, 20) },
+    holo { Vector(0, 125, 29), Angle(-90, 180, -90), "models/props_combine/combine_bridge.mdl", Vector(0.1, 0.15, 0.3), color = Color(165, 20, 20) },
+    holo { Vector(0, 125, -25), Angle(90, 180, -90), "models/props_combine/combine_bridge.mdl", Vector(0.1, 0.15, 0.3), color = Color(165, 20, 20) },
+    holo { Vector(0, 50, 2), nil, "models/props_combine/combine_train02b.mdl", Vector(0.35, 0.175, 0.125), color = Color(255, 40, 40) },
+    holo { Vector(0, 50, 2), Angle(180, 0, 0), "models/props_combine/combine_train02b.mdl", Vector(0.35, 0.175, 0.125), color = Color(255, 40, 40) },
+    holo { Vector(0, 50, 2), Angle(-90, 0, 0), "models/props_combine/combine_train02b.mdl", Vector(0.35, 0.175, 0.125), color = Color(255, 40, 40) },
+    holo { Vector(0, 50, 2), Angle(90, 0, 0), "models/props_combine/combine_train02b.mdl", Vector(0.35, 0.175, 0.125), color = Color(255, 40, 40) },
+    holo { Vector(0, 50, 2), Angle(0, 180, 0), "models/props_combine/combine_train02b.mdl", Vector(0.35, 0.175, 0.125), color = Color(255, 40, 40) },
+    holo { Vector(0, 50, 2), Angle(180, 180, 0), "models/props_combine/combine_train02b.mdl", Vector(0.35, 0.175, 0.125), color = Color(255, 40, 40) },
+    holo { Vector(0, 50, 2), Angle(-90, 180, 0), "models/props_combine/combine_train02b.mdl", Vector(0.35, 0.175, 0.125), color = Color(255, 40, 40) },
+    holo { Vector(0, 50, 2), Angle(90, 180, 0), "models/props_combine/combine_train02b.mdl", Vector(0.35, 0.175, 0.125), color = Color(255, 40, 40) },
+    holo { Vector(17, 25, 20), Angle(180, 90, -45), "models/combine_dropship_container.mdl", Vector(0.35, 0.15, 0.1), color = Color(255, 40, 40) },
+    holo { Vector(-17, 25, 20), Angle(180, 90, 45), "models/combine_dropship_container.mdl", Vector(0.35, 0.15, 0.1), color = Color(255, 40, 40) },
+    holo { Vector(17, 25, -15), Angle(180, 90, -135), "models/combine_dropship_container.mdl", Vector(0.35, 0.15, 0.1), color = Color(255, 40, 40) },
+    holo { Vector(-17, 25, -15), Angle(180, 90, 135), "models/combine_dropship_container.mdl", Vector(0.35, 0.15, 0.1), color = Color(255, 40, 40) },
+    holo { Vector(18, 14, 2), Angle(0, 0, -90), "models/props_combine/combine_barricade_med01b.mdl", Vector(0.15, 0.25, 0.575), color = Color(255, 40, 40) },
+    holo { Vector(-18, 14, 2), Angle(180, 0, -90), "models/props_combine/combine_barricade_med01b.mdl", Vector(0.15, 0.25, 0.575), color = Color(255, 40, 40) },
+    holo { Vector(0, 14, 20), Angle(-90, -90, 0), "models/props_combine/combine_barricade_med01b.mdl", Vector(0.15, 0.25, 0.575), color = Color(255, 40, 40) },
+    holo { Vector(0, 14, -16), Angle(90, 90, 0), "models/props_combine/combine_barricade_med01b.mdl", Vector(0.15, 0.25, 0.575), color = Color(255, 40, 40) },
 }
  
 local rarmModel = part {
@@ -222,7 +232,7 @@ model.new("astrostriker", hitbox {
     :add("chassis", "hub_rear", hubRearModel)
     :add("chassis", "head", headModel)
     :add("chassis", "larm", larmModel)
-    :add("larm", "blaster1", blasterCluster(Vector(0, 175, 2), Angle(0, 0, 0)))
+    :add("larm", "blaster1", blasterCluster(Vector(0, 75, 2), Angle(0, 0, 0)))
     :add("chassis", "rarm", rarmModel)
     :add("rarm", "rarm_pod", rarmPodModel)
     :addSequence("idle", 0, function(ent)
