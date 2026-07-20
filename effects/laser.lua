@@ -50,6 +50,7 @@ if CLIENT then
     end
 
     function Laser:render()
+        if !isValid(self.ent) then return end
         local start = self.ent:localToWorld(self.offset)
         local origin = self:getOrigin() + randVector() * 2
         local scale = self:getScale()

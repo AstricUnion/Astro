@@ -63,6 +63,9 @@ function AstroScoutLeftArm:onAction(action)
                 self.laserEffect:destroy()
                 self.laserEffect = nil
             end
+            self.moduleBone:setLocalAngles(Angle())
+        else
+            self.ent:setLocalAngles(Angle())
         end
         self.laserOn = false
         return true
