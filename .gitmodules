@@ -16,6 +16,6 @@
 [submodule "builder"]
 	path = builder
 	url = https://github.com/AstricUnion/SEXBuilder
-[submodule "libs/libs/bdebug"]
-	path = libs/libs/bdebug
+[submodule "libs/bdebug"]
+	path = libs/bdebug
 	url = git@github.com:AstricUnion/BDebug
