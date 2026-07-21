@@ -1,3 +1,5 @@
+local world = game.getWorld()
+
 local function parentToBone(self)
     local astro = self:getAstro()
     if !astro then return end
@@ -73,7 +75,6 @@ function AstroScoutLeftArm:onAction(action)
 end
 
 if SERVER then
-    local world = game.getWorld()
     function AstroScoutLeftArm:think()
         if !self.laserOn then return end
         local astro = self:getAstro()
@@ -131,6 +132,32 @@ function AstroScoutRightArm:onAction(action)
         else
             self:setNextAction("punch", cur + 0.5)
             self:setNextAction("swing", cur + 0.5)
+            local astro = self:getAstro()
+            timer.simple(0.2, function()
+                 if !(isValid(astro) and isValid(self)) then return end
+                local radius = 160
+                local spheres = {
+                    self.ent:localToWorld(Vector(96, 32, 0)),
+                    self.ent:localToWorld(Vector(186, 64, 0))
+                }
+                bdebug.sphere(spheres[1], radius, 1, Color(255, 0, 0, 0))
+                bdebug.sphere(spheres[2], radius, 1, Color(255, 0, 0, 0))
+                local found = {
+                    find.inSphere(spheres[1], radius),
+                    find.inSphere(spheres[2], radius)
+                }
+                local alreadyDamaged = {}
+                for _, v in ipairs(found) do
+                    for _, target in ipairs(v) do
+                        if !isValid(target) or alreadyDamaged[target] or target == world then goto cont end
+                        if !table.hasValue(astro.filter, target) then
+                            astroutils.applyDamage(target, 350, astro.ent, self.ent)
+                            alreadyDamaged[target] = true
+                        end
+                        ::cont::
+                    end
+                end
+            end)
         end
         return true
     elseif action == "swing" then
@@ -139,6 +166,24 @@ function AstroScoutRightArm:onAction(action)
         else
             self:setNextAction("swing", cur + 1)
             self:setNextAction("punch", cur + 1)
+            local astro = self:getAstro()
+            timer.simple(0.4, function()
+                 if !(isValid(astro) and isValid(self)) then return end
+                local radius = 160
+                local pos = self.ent:localToWorld(Vector(200, 64, 0))
+                bdebug.sphere(pos, radius, 1, Color(255, 0, 0, 0))
+                local targets = find.inSphere(pos, radius)
+                local damage = 0
+                for _, target in ipairs(targets) do
+                    if !isValid(target) or target == world then goto cont end
+                    if !table.hasValue(astro.filter, target) then
+                        damage = damage + math.min(target:getHealth(), 600)
+                        astroutils.applyDamage(target, 600, astro.ent, self.ent)
+                    end
+                    ::cont::
+                end
+                astro:setHealth(math.min(astro:getHealth() + damage * 0.15, astro.Health))
+            end)
         end
         return true
     end

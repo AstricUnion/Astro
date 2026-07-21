@@ -7,6 +7,7 @@
 ---@include astronew/libs/utils.lua
 ---@include astronew/libs/projectile.lua
 ---@include astronew/libs/astrogui.lua
+---@include astronew/libs/bdebug.lua
 ---@include astronew/src/astrobase.lua
 
 ---@class astrosound
@@ -27,6 +28,9 @@ require("astronew/libs/beffect/safeparticle.lua")
 
 ---@class astrogui
 astrogui = require("astronew/libs/astrogui.lua")
+
+---@class bdebug
+bdebug = require("astronew/libs/bdebug.lua")
 
 ---@class astroutils
 astroutils = require("astronew/libs/utils.lua")

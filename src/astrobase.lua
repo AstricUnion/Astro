@@ -476,6 +476,12 @@ if SERVER then
     ---@param mod AstroModuleBase
     function AstroBase:onModuleDeath(mod) end
 
+    ---[SERVEr] Set Astro's health
+    ---@param health number
+    function AstroBase:setHealth(health)
+        self.ent:setHealth(health)
+    end
+
     ---[SERVER] Damage mechanics
     ---@param self AstroBase
     ---@param target Entity
