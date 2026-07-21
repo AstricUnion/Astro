@@ -85,6 +85,7 @@ if SERVER then
     end
 
     ---[SERVER] When module damaged
+    ---@return boolean prevent Prevent module from damage
     function AstroModuleBase:onDamage(attacker, inflictor, amount, type, pos, force) end
 
     ---[SERVER] On module death
@@ -100,10 +101,11 @@ if SERVER then
         end
         local health = self.ent:getHealth()
         if self.Health <= 0 or health <= 0 then return end
+        local prevent = self:onDamage(attacker, inflictor, amount, type, pos, force)
+        if prevent then return false end
         local current = health - amount
         self.ent:setHealth(current)
         local astro = self:getAstro()
-        self:onDamage(attacker, inflictor, amount, type, pos, force)
         if astro then astro:onModuleDamage(self, attacker, inflictor, amount, type, pos, force) end
         if current <= 0 then
             if astro then astro:onModuleDeath(self) end
@@ -463,6 +465,7 @@ if SERVER then
     end)
 
     ---[SERVER] When Astro got damaged
+    ---@return boolean prevent Prevent Astro from damage
     function AstroBase:onDamage(attacker, inflictor, amount, type, pos, force) end
 
     ---[SERVER] When Astro module got damaged
@@ -488,10 +491,11 @@ if SERVER then
     function AstroBase.hooks.PostEntityTakeDamage(self, target, attacker, inflictor, amount, type, pos, force)
         local health = self.ent:getHealth()
         if target ~= self.ent or health <= 0 then return end
+        local prevent = self:onDamage(attacker, inflictor, amount, type, pos, force)
+        if prevent then return end
         local current = health - amount
         self.ent:setHealth(current)
         self.ent:applyForceOffset(force, pos)
-        self:onDamage(attacker, inflictor, amount, type, pos, force)
         self.ent:applyForceOffset(force, pos)
         if current <= 0 then
             self:onDeath()

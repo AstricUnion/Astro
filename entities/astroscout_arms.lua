@@ -11,15 +11,22 @@ local function parentToBone(self)
     ---@cast modulePoint Hologram
     local pos, ang = localToWorld(offset, Angle(), body:getPos(), body:getAngles())
     modulePoint:setPos(pos)
-    if self.Identifier == "astroscout_leftarm" and self.laserOn then
-        modulePoint:setLocalAngles(Angle())
-        return astro
-    elseif self.ent:getSequence(1) == 4 then
-        modulePoint:setAngles(math.lerpAngle(0.3, modulePoint:getAngles(), ang))
-        return astro
+    if self.Identifier == "astroscout_leftarm" then
+        if self.laserOn then
+            modulePoint:setLocalAngles(Angle())
+            return astro
+        end
     end
     modulePoint:setAngles(ang)
     return astro
+end
+
+---@param self AstroModuleBase
+local function onDamage(self, attacker, inflictor, amount, type, pos)
+    local astro = self:getAstro()
+    if !astro then return end
+    astro.ent:applyDamage(amount, attacker, inflictor, type, pos)
+    return true
 end
 
 ---@class AstroScoutLeftArm: AstroModuleBase
@@ -32,6 +39,7 @@ AstroScoutLeftArm.Model = function()
     local mdl = model.create("astroscout_leftarm")
     return mdl
 end
+AstroScoutLeftArm.Health = 1
 AstroScoutLeftArm.hooks = {}
 
 
@@ -65,7 +73,6 @@ function AstroScoutLeftArm:onAction(action)
                 self.laserEffect:destroy()
                 self.laserEffect = nil
             end
-            self.moduleBone:setLocalAngles(Angle())
         else
             self.ent:setLocalAngles(Angle())
         end
@@ -92,6 +99,8 @@ if SERVER then
             ::cont::
         end
     end
+
+    AstroScoutLeftArm.onDamage = onDamage
 else
     function AstroScoutLeftArm:moduleInitialize()
         self.ent:setPoseParameter("rotation_multiplier", 1)
@@ -121,6 +130,7 @@ AstroScoutRightArm.Model = function()
     local mdl = model.create("astroscout_rightarm")
     return mdl
 end
+AstroScoutRightArm.Health = 1
 AstroScoutRightArm.hooks = {}
 
 
@@ -190,6 +200,7 @@ function AstroScoutRightArm:onAction(action)
 end
 
 if SERVER then
+    AstroScoutRightArm.onDamage = onDamage
 else
     function AstroScoutRightArm:moduleInitialize()
         self.ent:setSequence("idle")

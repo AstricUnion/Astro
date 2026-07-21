@@ -82,7 +82,7 @@ end
 
 
 model.new("astroscout_rightarm", hitbox {
-    vertex {"cube", Vector(0, 0, 8), nil, Vector(56, 36, 56)},
+    vertex {"cube", Vector(32, 0, -16), nil, Vector(86, 32, 32)},
     material = "Metal",
     mass = 300,
     visible = true
@@ -186,7 +186,7 @@ model.new("astroscout_rightarm", hitbox {
 
 
 model.new("astroscout_leftarm", hitbox {
-    vertex {"cube", Vector(10, 0, -10), nil, Vector(56, 24, 56)},
+    vertex {"cube", Vector(32, 0, -16), nil, Vector(86, 32, 32)},
     material = "Metal",
     mass = 300,
     visible = true
