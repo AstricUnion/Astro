@@ -36,18 +36,18 @@ if SERVER then
     function AstroScout:inputPressed(button)
         if button == MOUSE.MOUSE1 then
             if !self.modules[1]:canAction("punch") then return end
-            self.ent:setSequence(self.ent:lookupSequence("punch"), 1)
+            self.ent:setSequence("punch", 1)
             self.modules[1]:sendAction("punch")
         elseif button == MOUSE.MOUSE2 then
             if !self.modules[1]:canAction("swing") then return end
-            self.ent:setSequence(self.ent:lookupSequence("swing"), 1)
+            self.ent:setSequence("swing", 1)
             self.modules[1]:sendAction("swing")
         elseif button == KEY.R then
             if !self.modules[2]:canAction("startLaser") then return end
-            self.ent:setSequence(self.ent:lookupSequence("startLaser"), 2)
+            self.ent:setSequence("startLaser", 2)
             timer.simple(0.5, function()
                 if !isValid(self) or !self.modules[2].laserOn then return end
-                self.ent:setSequence(self.ent:lookupSequence("laser"), 2)
+                self.ent:setSequence("laser", 2)
             end)
             self.modules[2]:sendAction("startLaser")
         end
@@ -56,7 +56,7 @@ if SERVER then
     function AstroScout:inputReleased(button)
         if button == KEY.R then
             if !self.modules[2]:canAction("stopLaser") then return end
-            self.ent:setSequence(self.ent:lookupSequence("stopLaser"), 2)
+            self.ent:setSequence("stopLaser", 2)
             self.modules[2]:sendAction("stopLaser")
         end
     end

@@ -38,10 +38,10 @@ function AstroScoutLeftArm:onAction(action)
     if action == "startLaser" then
         if self.laserOn then return end
         if CLIENT then
-            self.ent:setSequence(2, 1)
+            self.ent:setSequence("startLaser", 1)
             timer.simple(0.5, function()
                 if !isValid(self) or !self.laserOn then return end
-                self.ent:setSequence(3, 2)
+                self.ent:setSequence("laser", 2)
                 self.laserEffect = beff.create("laser")
                 self.laserEffect:setScale(1.8)
                 self.laserEffect:setEntity(self.ent:getBoneEntity(self.ent:lookupBone("forearm")))
@@ -58,7 +58,7 @@ function AstroScoutLeftArm:onAction(action)
         if !self.laserOn then return end
         if CLIENT then
             self.ent:setSequence(0, 2)
-            self.ent:setSequence(4, 1)
+            self.ent:setSequence("stopLaser", 1)
             if self.laserEffect then
                 self.laserEffect:destroy()
                 self.laserEffect = nil
@@ -94,7 +94,7 @@ if SERVER then
 else
     function AstroScoutLeftArm:moduleInitialize()
         self.ent:setPoseParameter("rotation_multiplier", 1)
-        self.ent:setSequence(1)
+        self.ent:setSequence("idle")
     end
 
     function AstroScoutLeftArm:renderOffscreen()
@@ -127,7 +127,7 @@ function AstroScoutRightArm:onAction(action)
     local cur = timer.curtime()
     if action == "punch" then
         if CLIENT then
-            self.ent:setSequence(self.ent:lookupSequence("punch"), 1)
+            self.ent:setSequence("punch", 1)
         else
             self:setNextAction("punch", cur + 0.5)
             self:setNextAction("swing", cur + 0.5)
@@ -135,7 +135,7 @@ function AstroScoutRightArm:onAction(action)
         return true
     elseif action == "swing" then
         if CLIENT then
-            self.ent:setSequence(self.ent:lookupSequence("swing"), 1)
+            self.ent:setSequence("swing", 1)
         else
             self:setNextAction("swing", cur + 1)
             self:setNextAction("punch", cur + 1)
@@ -147,7 +147,7 @@ end
 if SERVER then
 else
     function AstroScoutRightArm:moduleInitialize()
-        self.ent:setSequence(1)
+        self.ent:setSequence("idle")
     end
 
     AstroScoutRightArm.renderOffscreen = parentToBone
