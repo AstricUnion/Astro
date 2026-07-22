@@ -35,23 +35,26 @@ class GRAPH_OT_fcurve_to_starfall(bpy.types.Operator, bpy_extras.io_utils.Export
     save_path: bpy.props.StringProperty(name="Path to export", subtype='FILE_PATH')
 
     @staticmethod
-    def point_to_lua(vec):
-        return "{{{:g}, {:g}}}".format(*vec)
+    def point_to_lua(vec, fcurve_type):
+        copied = vec.copy()
+        if fcurve_type == "rotation_euler":
+            copied.y = math.degrees(copied.y)
+        elif fcurve_type == "location":
+            copied.y = co * 39.37008
+        return "{{{:g}, {:g}}}".format(*copied)
         
     @classmethod
-    def fcurve_to_lua(cls, fcurve, fps):
+    def fcurve_to_lua(cls, fcurve, fps, fcurve_type):
         if len(fcurve.keyframe_points) < 2: return "", None 
         string_list = []
         frame = 0
         last = None
         for keyframe in fcurve.keyframe_points:
-            if not (last and keyframe.handle_left.y == last.handle_left.y and keyframe.co.y == last.co.y and keyframe.handle_right.y == last.handle_right.y):
-                keyframe_string_list = []
-                keyframe_string_list.append(cls.point_to_lua(keyframe.handle_left))
-                keyframe_string_list.append(cls.point_to_lua(keyframe.co))
-                keyframe_string_list.append(cls.point_to_lua(keyframe.handle_right))
-                string_list.append("{" + (", ".join(keyframe_string_list)) + "}")
-            last = keyframe
+            keyframe_string_list = []
+            keyframe_string_list.append(cls.point_to_lua(keyframe.handle_left, fcurve_type))
+            keyframe_string_list.append(cls.point_to_lua(keyframe.co, fcurve_type))
+            keyframe_string_list.append(cls.point_to_lua(keyframe.handle_right, fcurve_type))
+            string_list.append("{" + (", ".join(keyframe_string_list)) + "}")
             frame = keyframe.co.x
         if len(string_list) < 2: return "", None
         return "{" + (", ".join(string_list)) + "}", frame / fps
@@ -61,7 +64,7 @@ class GRAPH_OT_fcurve_to_starfall(bpy.types.Operator, bpy_extras.io_utils.Export
         string_list = []
         max_time = 0
         for index, fcurve in fcurves.items():
-            fcurve_string, duration = cls.fcurve_to_lua(fcurve, fps)
+            fcurve_string, duration = cls.fcurve_to_lua(fcurve, fps, fcurve_type)
             if fcurve_string == "": continue
             string_list.append(f"[{index+1}] = {fcurve_string}")
             max_time = duration if duration > max_time else max_time

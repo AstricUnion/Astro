@@ -63,13 +63,19 @@ end
 if SERVER then
     ---[SERVER] On action
     ---@param action string
-    ---@return boolean? network Return true to network this action
+    ---@return boolean? network Return true to activate and network this action
     function AstroModuleBase:onAction(action) end
+
+    ---[SERVER] On action, is module can made this action
+    ---@param action string
+    ---@return boolean? canAction Return true to allow this action
+    function AstroModuleBase:isCanAction(action) end
 
     ---[SERVER] Send action to module
     ---@param action string
+    ---@return boolean canAction
     function AstroModuleBase:sendAction(action)
-        if self:getNextAction(action) > timer.curtime() then return end
+        if self:getNextAction(action) > timer.curtime() or !self:isCanAction(action) then return false end
         local network = self:onAction(action)
         if network then
             net.start("AstroModuleSendAction")
@@ -77,6 +83,7 @@ if SERVER then
                 net.writeString(action)
             net.send(find.allPlayers())
         end
+        return true
     end
 
     ---[SERVER] Set next cooldown for action
@@ -111,6 +118,12 @@ if SERVER then
             if astro then astro:onModuleDeath(self) end
             self:onDeath()
         end
+    end
+
+    ---[SERVER] Set module state
+    ---@param state number
+    function AstroModuleBase:setState(state)
+        self:setNWVar("state", state)
     end
 
     ---[INTERNAL] [SERVER] Set Astro for this module
@@ -184,6 +197,12 @@ function AstroModuleBase:isAlive()
     return self.ent:getHealth() > 0
 end
 
+---[SHARED] Get module state
+---@return number state
+function AstroModuleBase:getState()
+    return self:getNWVar("state", nil)
+end
+
 ---[SHARED] Get next cooldown for action
 function AstroModuleBase:getNextAction(action)
     return self:getNWVar("nextAction_" .. action, 0)
@@ -191,7 +210,7 @@ end
 
 ---[SHARED] Can this module made action
 function AstroModuleBase:canAction(action)
-    return self:getNextAction(action) <= timer.curtime()
+    return self:getNextAction(action) <= timer.curtime() and self:isCanAction(action)
 end
 
 ents.register(AstroModuleBase)
@@ -493,6 +512,7 @@ if SERVER then
         if target ~= self.ent or health <= 0 then return end
         local prevent = self:onDamage(attacker, inflictor, amount, type, pos, force)
         if prevent then return end
+        health = self.ent:getHealth()
         local current = health - amount
         self.ent:setHealth(current)
         self.ent:applyForceOffset(force, pos)

@@ -12,7 +12,7 @@ local function parentToBone(self)
     local pos, ang = localToWorld(offset, Angle(), body:getPos(), body:getAngles())
     modulePoint:setPos(pos)
     if self.Identifier == "astroscout_leftarm" then
-        if self.laserOn then
+        if self:getState() == self.STATE.Laser then
             modulePoint:setLocalAngles(Angle())
             return astro
         end
@@ -30,7 +30,6 @@ local function onDamage(self, attacker, inflictor, amount, type, pos)
 end
 
 ---@class AstroScoutLeftArm: AstroModuleBase
----@field laserOn boolean
 ---@field laserEffect BEffect
 local AstroScoutLeftArm = {}
 AstroScoutLeftArm.Identifier = "astroscout_leftarm"
@@ -42,15 +41,21 @@ end
 AstroScoutLeftArm.Health = 1
 AstroScoutLeftArm.hooks = {}
 
+---@enum AstroScoutLeftArmState
+AstroScoutLeftArm.STATE = {
+    Idle = 0,
+    Laser = 1,
+    Block = 2
+}
+
 
 function AstroScoutLeftArm:onAction(action)
     local cur = timer.curtime()
     if action == "startLaser" then
-        if self.laserOn then return end
         if CLIENT then
             self.ent:setSequence("startLaser", 1)
             timer.simple(0.5, function()
-                if !isValid(self) or !self.laserOn then return end
+                if !isValid(self) or self:getState() ~= self.STATE.Laser then return end
                 self.ent:setSequence("laser", 2)
                 self.laserEffect = beff.create("laser")
                 self.laserEffect:setScale(1.8)
@@ -61,11 +66,11 @@ function AstroScoutLeftArm:onAction(action)
             end)
         else
             self:setNextAction("startLaser", cur + 0.5)
+            self:setNextAction("block", cur + 0.5)
+            self:setState(self.STATE.Laser)
         end
-        self.laserOn = true
         return true
     elseif action == "stopLaser" then
-        if !self.laserOn then return end
         if CLIENT then
             self.ent:setSequence(0, 2)
             self.ent:setSequence("stopLaser", 1)
@@ -74,16 +79,43 @@ function AstroScoutLeftArm:onAction(action)
                 self.laserEffect = nil
             end
         else
+            self:setNextAction("block", cur + 0.5)
             self.ent:setLocalAngles(Angle())
+            self:setState(self.STATE.Idle)
         end
-        self.laserOn = false
+        return true
+    elseif action == "block" then
+        if CLIENT then
+            self.ent:setSequence("block", 1)
+        else
+            self:setNextAction("block", cur + 0.5)
+            self:setNextAction("unblock", cur + 0.5)
+            self:setState(self.STATE.Block)
+        end
+        return true
+    elseif action == "unblock" then
+        if CLIENT then
+            self.ent:setSequence("unblock", 1)
+        else
+            self:setNextAction("block", cur + 0.5)
+            self:setNextAction("unblock", cur + 0.5)
+            timer.simple(0.5, function()
+                if !(isValid(self) and self:getState() == self.STATE.Block) then return end
+                self:setState(self.STATE.Idle)
+            end)
+        end
         return true
     end
+    return false
 end
 
 if SERVER then
+    function AstroScoutLeftArm:moduleInitialize()
+        self:setState(self.STATE.Idle)
+    end
+
     function AstroScoutLeftArm:think()
-        if !self.laserOn then return end
+        if self:getState() ~= self.STATE.Laser then return end
         local astro = self:getAstro()
         if !astro then return end
         local tr = astro:getEyeTrace()
@@ -99,6 +131,19 @@ if SERVER then
             ::cont::
         end
     end
+
+    local canAct = {
+        ["startLaser"] = AstroScoutLeftArm.STATE.Idle,
+        ["stopLaser"] = AstroScoutLeftArm.STATE.Laser,
+        ["block"] = AstroScoutLeftArm.STATE.Idle,
+        ["unblock"] = AstroScoutLeftArm.STATE.Block,
+    }
+
+    function AstroScoutLeftArm:isCanAction(action)
+        local st = self:getState()
+        return st == canAct[action]
+    end
+
 
     AstroScoutLeftArm.onDamage = onDamage
 else
@@ -132,6 +177,11 @@ AstroScoutRightArm.Model = function()
 end
 AstroScoutRightArm.Health = 1
 AstroScoutRightArm.hooks = {}
+AstroScoutRightArm.STATE = {
+    Idle = 0,
+    Punching = 1,
+    Block = 2
+}
 
 
 function AstroScoutRightArm:onAction(action)
@@ -140,11 +190,12 @@ function AstroScoutRightArm:onAction(action)
         if CLIENT then
             self.ent:setSequence("punch", 1)
         else
+            self:setState(self.STATE.Punching)
             self:setNextAction("punch", cur + 0.5)
             self:setNextAction("swing", cur + 0.5)
             local astro = self:getAstro()
             timer.simple(0.2, function()
-                 if !(isValid(astro) and isValid(self)) then return end
+                 if !(isValid(astro) and isValid(self) and self:getState() == self.STATE.Punching) then return end
                 local radius = 160
                 local spheres = {
                     self.ent:localToWorld(Vector(96, 32, 0)),
@@ -167,6 +218,7 @@ function AstroScoutRightArm:onAction(action)
                         ::cont::
                     end
                 end
+                self:setState(self.STATE.Idle)
             end)
         end
         return true
@@ -174,11 +226,12 @@ function AstroScoutRightArm:onAction(action)
         if CLIENT then
             self.ent:setSequence("swing", 1)
         else
+            self:setState(self.STATE.Punching)
             self:setNextAction("swing", cur + 1)
             self:setNextAction("punch", cur + 1)
             local astro = self:getAstro()
             timer.simple(0.4, function()
-                 if !(isValid(astro) and isValid(self)) then return end
+                 if !(isValid(astro) and isValid(self) and self:getState() == self.STATE.Punching) then return end
                 local radius = 160
                 local pos = self.ent:localToWorld(Vector(200, 64, 0))
                 bdebug.sphere(pos, radius, 1, Color(255, 0, 0, 0))
@@ -193,6 +246,28 @@ function AstroScoutRightArm:onAction(action)
                     ::cont::
                 end
                 astro:setHealth(math.min(astro:getHealth() + damage * 0.15, astro.Health))
+                self:setState(self.STATE.Idle)
+            end)
+        end
+        return true
+    elseif action == "block" then
+        if CLIENT then
+            self.ent:setSequence("block", 1)
+        else
+            self:setNextAction("block", cur + 0.5)
+            self:setNextAction("unblock", cur + 0.5)
+            self:setState(self.STATE.Block)
+        end
+        return true
+    elseif action == "unblock" then
+        if CLIENT then
+            self.ent:setSequence("unblock", 1)
+        else
+            self:setNextAction("block", cur + 0.5)
+            self:setNextAction("unblock", cur + 0.5)
+            timer.simple(0.5, function()
+                if !(isValid(self) and self:getState() == self.STATE.Block) then return end
+                self:setState(self.STATE.Idle)
             end)
         end
         return true
@@ -200,6 +275,22 @@ function AstroScoutRightArm:onAction(action)
 end
 
 if SERVER then
+    function AstroScoutRightArm:moduleInitialize()
+        self:setState(self.STATE.Idle)
+    end
+
+    local canAct = {
+        ["punch"] = AstroScoutRightArm.STATE.Idle,
+        ["swing"] = AstroScoutRightArm.STATE.Idle,
+        ["block"] = AstroScoutRightArm.STATE.Idle,
+        ["unblock"] = AstroScoutRightArm.STATE.Block,
+    }
+
+    function AstroScoutRightArm:isCanAction(action)
+        local st = self:getState()
+        return st == canAct[action]
+    end
+
     AstroScoutRightArm.onDamage = onDamage
 else
     function AstroScoutRightArm:moduleInitialize()
