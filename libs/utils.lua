@@ -31,9 +31,11 @@ if SERVER then
         if !valid then
             if !(prop.canSpawn() and hologram.canSpawn()) then return end
             local status
+            local cantSplit = damage < 10
             status, turr = pcall(prop.createSent, Vector(), Angle(-90, 0, 0), "gmod_wire_turret", true, {
-                damage = damage,
+                damage = cantSplit and damage or damage / 10,
                 delay = 0,
+                numbullets = cantSplit and 1 or 10,
                 sound = "",
                 tracer = "",
                 tracernum = 0

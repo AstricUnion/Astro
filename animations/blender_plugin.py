@@ -40,7 +40,7 @@ class GRAPH_OT_fcurve_to_starfall(bpy.types.Operator, bpy_extras.io_utils.Export
         if fcurve_type == "rotation_euler":
             copied.y = math.degrees(copied.y)
         elif fcurve_type == "location":
-            copied.y = co * 39.37008
+            copied.y = copied.y * 39.37008
         return "{{{:g}, {:g}}}".format(*copied)
         
     @classmethod
@@ -76,6 +76,7 @@ class GRAPH_OT_fcurve_to_starfall(bpy.types.Operator, bpy_extras.io_utils.Export
         if len(fcurves) == 0:
             self.report({"ERROR"}, "You don't selected any F-curves")
             return {"CANCELLED"}
+        bpy.ops.anim.channels_bake()
         fps = context.scene.render.fps
         bones = {}
         for fcurve in fcurves:
@@ -95,6 +96,7 @@ class GRAPH_OT_fcurve_to_starfall(bpy.types.Operator, bpy_extras.io_utils.Export
                 if lua_str != "":
                     lua_str_list.append(lua_str)
 
+        bpy.ops.ed.undo()
         f = open(self.filepath, "w", encoding='utf-8')
         f.write(",\n".join(lua_str_list))
         f.close()

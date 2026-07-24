@@ -8,7 +8,9 @@
 local STATE = {
     Idle = 0,
     Block = 1,
-    Dashing = 2
+    Punch = 2,
+    Laser = 4,
+    Dashing = 8
 }
 
 ---@class AstroScout: AstroBase
@@ -22,80 +24,205 @@ end
 AstroScout.hooks = {}
 AstroScout.CameraOffset = Vector(19, 0, -14)
 ---@type AstroModuleCfg[]
-AstroScout.Modules = {
-    {offset = Vector(-3, -85, 26), module = "astroscout_rightarm"},
-    {offset = Vector(-3, 85, 26), module = "astroscout_leftarm"}
-}
+AstroScout.Modules = {}
 AstroScout.SeatOffset = Vector(85, 0, 0)
 AstroScout.SeatVisible = true
 AstroScout.Health = 6500
+---@type table<string, fun(self: AstroScout, cur: number): boolean?>
+AstroScout.actions = {}
+
+
+local world = game.getWorld()
+
+function AstroScout.actions.punch(astro, cur)
+    if CLIENT then
+        astro.ent:setSequence("punch", 1)
+    else
+        astro:setState(bit.bor(astro:getState(), STATE.Punch))
+        astro:setNextAction("punch", cur + 0.5)
+        astro:setNextAction("swing", cur + 0.5)
+        astro:setNextAction("block", cur + 0.5)
+        timer.simple(0.2, function()
+            local st = astro:getState()
+            if !(isValid(astro) and bit.band(st, STATE.Punch) == STATE.Punch) then return end
+            local radius = 160
+            local spheres = {
+                astro.ent:localToWorld(Vector(93, -53, 0)),
+                astro.ent:localToWorld(Vector(183, -21, 0))
+            }
+            bdebug.sphere(spheres[1], radius, 1, Color(255, 0, 0, 0))
+            bdebug.sphere(spheres[2], radius, 1, Color(255, 0, 0, 0))
+            local found = {
+                find.inSphere(spheres[1], radius),
+                find.inSphere(spheres[2], radius)
+            }
+            local alreadyDamaged = {}
+            for _, v in ipairs(found) do
+                for _, target in ipairs(v) do
+                    if !isValid(target) or alreadyDamaged[target] or target == world then goto cont end
+                    if !table.hasValue(astro.filter, target) then
+                        astroutils.applyDamage(target, 350, astro.ent, astro.ent)
+                        alreadyDamaged[target] = true
+                    end
+                    ::cont::
+                end
+            end
+            astro:setState(st - STATE.Punch)
+        end)
+        return true
+    end
+end
+
+function AstroScout.actions.swing(astro, cur)
+    if CLIENT then
+        astro.ent:setSequence("swing", 1)
+    else
+        astro:setState(bit.bor(astro:getState(), STATE.Punch))
+        astro:setNextAction("swing", cur + 1)
+        astro:setNextAction("punch", cur + 1)
+        astro:setNextAction("block", cur + 1)
+        timer.simple(0.5, function()
+            local st = astro:getState()
+            if !(isValid(astro) and bit.band(st, STATE.Punch) == STATE.Punch) then return end
+            local radius = 160
+            local pos = astro.ent:localToWorld(Vector(197, -21, 0))
+            bdebug.sphere(pos, radius, 1, Color(255, 0, 0, 0))
+            local targets = find.inSphere(pos, radius)
+            local damage = 0
+            for _, target in ipairs(targets) do
+                if !isValid(target) or target == world then goto cont end
+                if !table.hasValue(astro.filter, target) then
+                    damage = damage + math.min(target:getHealth(), 600)
+                    astroutils.applyDamage(target, 600, astro.ent, astro.ent)
+                end
+                ::cont::
+            end
+            astro:setHealth(math.min(astro:getHealth() + damage * 0.15, astro.Health))
+            astro:setState(bit.band(st, bit.bnot(STATE.Punch)))
+        end)
+        return true
+    end
+end
+
+function AstroScout.actions.block(astro, cur)
+    if CLIENT then
+        astro.ent:setSequence("block", 1)
+    else
+        astro:setNextAction("block", cur + 0.5)
+        astro:setState(bit.bor(astro:getState(), STATE.Block))
+        return true
+    end
+end
+
+function AstroScout.actions.unblock(astro, cur)
+    if CLIENT then
+        astro.ent:setSequence("unblock", 1)
+    else
+        astro:setNextAction("unblock", cur + 0.5)
+        timer.simple(0.5, function()
+            local st = astro:getState()
+            if !(isValid(astro) and bit.band(st, STATE.Block) == STATE.Block) then return end
+            astro:setState(bit.band(astro:getState(), bit.bnot(STATE.Block)))
+        end)
+        return true
+    end
+end
+
+function AstroScout.actions.startLaser(astro, cur)
+    if CLIENT then
+        astro.ent:setSequence("startLaser", 1)
+        timer.simple(0.5, function()
+            if !isValid(astro) or astro:getState() ~= astro.STATE.Laser then return end
+            astro.ent:setSequence("laser", 2)
+            astro.laserEffect = beff.create("laser")
+            astro.laserEffect:setScale(1.8)
+            astro.laserEffect:setEntity(astro.ent:getBoneEntity(astro.ent:lookupBone("forearm")))
+            astro.laserEffect:setStart(Vector(0, 96, -2))
+            astro.laserEffect:play()
+            astro:renderOffscreen()
+        end)
+    else
+        astro:setNextAction("startLaser", cur + 0.5)
+        astro:setNextAction("block", cur + 0.5)
+        astro:setState(astro.STATE.Laser)
+    end
+end
+
+function AstroScout.actions.stopLaser(astro, cur)
+    if CLIENT then
+        astro.ent:setSequence(0, 2)
+        astro.ent:setSequence("stopLaser", 1)
+        if astro.laserEffect then
+            astro.laserEffect:destroy()
+            astro.laserEffect = nil
+        end
+    else
+        astro:setNextAction("block", cur + 0.5)
+        astro.ent:setLocalAngles(Angle())
+        astro:setState(astro.STATE.Idle)
+    end
+end
+
+
 
 if SERVER then
     function AstroScout:astroInitialize()
         self:setState(STATE.Idle)
     end
 
+    local canAct = {
+        ["punch"] = STATE.Idle + STATE.Laser,
+        ["swing"] = STATE.Idle + STATE.Laser,
+        ["block"] = STATE.Idle,
+        ["unblock"] = STATE.Block,
+        ["startLaser"] = STATE.Idle + STATE.Punch,
+        ["stopLaser"] = STATE.Laser,
+    }
+
+    local pressToAct = {
+        [MOUSE.MOUSE1] = "punch",
+        [MOUSE.MOUSE2] = "swing",
+        [MOUSE.MIDDLE] = "block",
+        [KEY.R] = "startLaser",
+        [KEY.G] = "dash",
+    }
+
+    local releaseToAct = {
+        [MOUSE.MIDDLE] = "unblock",
+        [KEY.R] = "stopLaser",
+    }
+
+    function AstroScout:isCanAction(action)
+        local st = self:getState()
+        local states = canAct[action]
+        return bit.bor(st, states) == states
+    end
+
     function AstroScout:inputPressed(button)
-        if button == MOUSE.MOUSE1 then
-            if self.modules[1]:sendAction("punch") then
-                self.ent:setSequence("punch", 1)
-            end
-        elseif button == MOUSE.MOUSE2 then
-            if self.modules[1]:sendAction("swing") then
-                self.ent:setSequence("swing", 1)
-            end
-        elseif button == KEY.R then
-            if self.modules[2]:sendAction("startLaser") then
-                self.ent:setSequence("startLaser", 2)
-                timer.simple(0.5, function()
-                    if !isValid(self) or !self.modules[2].laserOn then return end
-                    self.ent:setSequence("laser", 2)
-                end)
-            end
-        elseif button == MOUSE.MIDDLE then
-            if !(self.modules[1]:canAction("block") and self.modules[2]:canAction("block")) then return end
-            self:setState(STATE.Block)
-            self.ent:setSequence("block", 2)
-            self.modules[1]:sendAction("block")
-            self.modules[2]:sendAction("block")
+        local act = pressToAct[button]
+        if act then
+            self:sendAction(act)
         end
     end
 
     function AstroScout:inputReleased(button)
-        if button == KEY.R then
-            if self.modules[2]:sendAction("stopLaser") then
-                self.ent:setSequence("stopLaser", 2)
-                self.modules[2]:sendAction("stopLaser")
-            end
-        elseif button == MOUSE.MIDDLE then
-            if !(self.modules[1]:canAction("unblock") and self.modules[2]:canAction("unblock")) then return end
-            self:setState(STATE.Idle)
-            self.ent:setSequence("unblock", 2)
-            self.modules[1]:sendAction("unblock")
-            self.modules[2]:sendAction("unblock")
+        local act = releaseToAct[button]
+        if act then
+            self:sendAction(act)
         end
     end
 
     function AstroScout:onDamage(_, _, amount)
-        if self:getState() == STATE.Block then
+        if bit.band(self:getState(), STATE.Block) == STATE.Block then
             self:setHealth(self:getHealth() + amount * 0.4)
         end
     end
 
-    function AstroScout:fly(dr)
-    end
-
     function AstroScout:think()
-    end
-
-    function AstroScout:onDeath()
-    end
-
-    function AstroScout:onModuleDeath(mod)
     end
 else
     function AstroScout:astroInitialize()
-        self.ent:setSequence(1)
+        self.ent:setSequence("idle")
     end
     local l1 = light.create(Vector(), 80, 10, Color(255, 0, 0))
 

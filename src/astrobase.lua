@@ -21,9 +21,164 @@ local function overrideHealth(self, ent)
     end
 end
 
----Astro module - module with physics body, like guns or arms
----@class AstroModuleBase: BModEntity
+---Module base with damage and action support
+---@class ModuleBase: BModEntity
 ---@field Health number Health of module
+---@field actions table<string, fun(self: ModuleBase, cur: number): boolean?>
+local ModuleBase = {}
+ModuleBase.Identifier = "module_base"
+ModuleBase.Name = "Module base"
+ModuleBase.Health = -1
+ModuleBase.actions = {}
+ModuleBase.hooks = {}
+
+---[SHARED] Initialize module hook
+function ModuleBase:moduleInitialize() end
+
+---[SHARED] Initialize module
+function ModuleBase:initialize()
+    -- If we have no permissions... ну блин, we need to made shit
+    overrideHealth(self, self.ent)
+    if SERVER then
+        self.ent:setHealth(self.Health)
+        self.ent:setMaxHealth(self.Health)
+        self:moduleInitialize()
+    else
+        self:moduleInitialize()
+    end
+end
+
+if SERVER then
+    ---[SERVER] On action
+    ---@param action string Action name
+    ---@param cur number timer.curtime() value
+    ---@return boolean? network Return true to activate and network this action
+    function ModuleBase:onAction(action, cur) end
+
+    ---[SERVER] On action, is module can made this action
+    ---@param action string Action name
+    ---@return boolean? canAction Return true to allow this action
+    function ModuleBase:isCanAction(action) return true end
+
+    ---[SERVER] Send action to module
+    ---@param action string
+    ---@return boolean canAction
+    function ModuleBase:sendAction(action)
+        local cur = timer.curtime()
+        if self:getNextAction(action) > cur or !self:isCanAction(action) then return false end
+        local act = self.actions[action]
+        local network = act and act(self, cur) or self:onAction(action, cur)
+        if network then
+            net.start("ModuleSendAction")
+                net.writeUInt(self.ent:entIndex(), 32)
+                net.writeString(action)
+            net.send(find.allPlayers())
+        end
+        return true
+    end
+
+    ---[SERVER] Set next cooldown for action
+    function ModuleBase:setNextAction(action, nextAction)
+        self:setNWVar("nextAction_" .. action, nextAction)
+    end
+
+    ---[SERVER] When module damaged
+    ---@return boolean prevent Prevent module from damage
+    function ModuleBase:onDamage(attacker, inflictor, amount, type, pos, force) end
+
+    ---[SERVER] On module death
+    function ModuleBase:onDeath() end
+
+    ---[SERVER] Damage mechanics
+    ---@param self ModuleBase
+    ---@param target Entity
+    function ModuleBase.hooks.PostEntityTakeDamage(self, target, attacker, inflictor, amount, type, pos, force)
+        if target ~= self.ent then return end
+        local health = self.ent:getHealth()
+        if self.Health <= 0 or health <= 0 then return end
+        local prevent = self:onDamage(attacker, inflictor, amount, type, pos, force)
+        if prevent then return false end
+        if self.ent:isValidPhys() then
+            self.ent:applyForceOffset(force, pos)
+        end
+        local current = health - amount
+        self.ent:setHealth(current)
+        if current <= 0 then
+            self:onDeath()
+        end
+    end
+
+    ---[SERVEr] Set module health
+    ---@param health number
+    function ModuleBase:setHealth(health)
+        self.ent:setHealth(health)
+    end
+
+    ---[SERVER] Set module state
+    ---@param state number
+    function ModuleBase:setState(state)
+        self:setNWVar("state", state)
+    end
+else
+    ---[CLIENT] On action. This hook will not work without true at server on action
+    ---@param action string
+    function ModuleBase:onAction(action) end
+
+    net.receive("ModuleSendAction", function()
+        local entId = net.readUInt(32)
+        local ent = ents.inited[entId]
+        ---@cast ent AstroModuleBase
+        if !ent then return end
+        local action = net.readString()
+        local act = ent.actions[action]
+        if act then act(ent, timer.curtime()) end
+        if ent.onAction then ent:onAction(action) end
+    end)
+
+    ---[CLIENT] Hook on render offscreen
+    function ModuleBase:renderOffscreen() end
+
+    ---[CLIENT] Effects for module
+    function ModuleBase.hooks:RenderOffscreen()
+        self:renderOffscreen()
+    end
+end
+
+---[SHARED] Get module's health
+---@return number health
+function ModuleBase:getHealth()
+    return self.ent:getHealth()
+end
+
+---[SHARED] Is Astro alive
+---@return boolean isAlive
+function ModuleBase:isAlive()
+    return self.ent:getHealth() > 0
+end
+
+---[SHARED] Get module state
+---@return number state
+function ModuleBase:getState()
+    return self:getNWVar("state", nil)
+end
+
+---[SHARED] Get next cooldown for action
+function ModuleBase:getNextAction(action)
+    return self:getNWVar("nextAction_" .. action, 0)
+end
+
+---[SHARED] Can this module made action
+function ModuleBase:canAction(action)
+    return self:getNextAction(action) <= timer.curtime() and self:isCanAction(action)
+end
+
+
+ents.register(ModuleBase)
+
+
+---Astro module - module with physics body, like guns or arms
+---You are free in use of this, but I recommend use it with breakable elements
+---@class AstroModuleBase: ModuleBase
 ---@field moduleBone Entity? Module bone. Can be nil
 local AstroModuleBase = {}
 AstroModuleBase.Identifier = "astromodule_base"
@@ -37,93 +192,32 @@ end
 AstroModuleBase.hooks = {}
 AstroModuleBase.Health = -1
 
----[SHARED] Initialize module hook
-function AstroModuleBase:moduleInitialize() end
-
----[SHARED] Initialize module
-function AstroModuleBase:initialize()
-    -- If we have no permissions... ну блин, we need to made shit
-    overrideHealth(self, self.ent)
-    if SERVER then
-        self.ent:setHealth(self.Health)
-        self.ent:setMaxHealth(self.Health)
-        self:moduleInitialize()
-    else
-        timer.simple(0, function()
-            if !isValid(self) then return end
-            local astro = self:getAstro()
-            if !astro then return end
-            self.moduleBone = self.ent.modelBones and self.ent:getBoneEntity(self.ent:lookupBone("module"))
-            astro:clientInitializeModule(self)
-            self:moduleInitialize()
-        end)
-    end
-end
 
 if SERVER then
-    ---[SERVER] On action
-    ---@param action string
-    ---@return boolean? network Return true to activate and network this action
-    function AstroModuleBase:onAction(action) end
-
-    ---[SERVER] On action, is module can made this action
-    ---@param action string
-    ---@return boolean? canAction Return true to allow this action
-    function AstroModuleBase:isCanAction(action) end
-
-    ---[SERVER] Send action to module
-    ---@param action string
-    ---@return boolean canAction
-    function AstroModuleBase:sendAction(action)
-        if self:getNextAction(action) > timer.curtime() or !self:isCanAction(action) then return false end
-        local network = self:onAction(action)
-        if network then
-            net.start("AstroModuleSendAction")
-                net.writeUInt(self.ent:entIndex(), 32)
-                net.writeString(action)
-            net.send(find.allPlayers())
-        end
-        return true
-    end
-
-    ---[SERVER] Set next cooldown for action
-    function AstroModuleBase:setNextAction(action, nextAction)
-        self:setNWVar("nextAction_" .. action, nextAction)
-    end
+    ---[SERVER] When Astro module damaged
+    ---@return boolean? prevent Prevent module from damage
+    function AstroModuleBase:onModuleDamage(attacker, inflictor, amount, type, pos, force) end
 
     ---[SERVER] When module damaged
-    ---@return boolean prevent Prevent module from damage
-    function AstroModuleBase:onDamage(attacker, inflictor, amount, type, pos, force) end
-
-    ---[SERVER] On module death
-    function AstroModuleBase:onDeath() end
-
-    ---[SERVER] Damage mechanics
-    ---@param self AstroModuleBase
-    ---@param target Entity
-    function AstroModuleBase.hooks.PostEntityTakeDamage(self, target, attacker, inflictor, amount, type, pos, force)
-        if target ~= self.ent then return end
-        if self.ent:isValidPhys() then
-            self.ent:applyForceOffset(force, pos)
-        end
-        local health = self.ent:getHealth()
-        if self.Health <= 0 or health <= 0 then return end
-        local prevent = self:onDamage(attacker, inflictor, amount, type, pos, force)
-        if prevent then return false end
-        local current = health - amount
-        self.ent:setHealth(current)
+    ---@return boolean? prevent Prevent module from damage
+    function AstroModuleBase:onDamage(attacker, inflictor, amount, type, pos, force)
+        local prevent = self:onModuleDamage(attacker, inflictor, amount, type, pos, force)
+        if prevent then return true end
         local astro = self:getAstro()
-        if astro then astro:onModuleDamage(self, attacker, inflictor, amount, type, pos, force) end
-        if current <= 0 then
-            if astro then astro:onModuleDeath(self) end
-            self:onDeath()
-        end
+        if !astro then return end
+        return astro:onModuleDamage(self, attacker, inflictor, amount, type, pos, force)
     end
 
-    ---[SERVER] Set module state
-    ---@param state number
-    function AstroModuleBase:setState(state)
-        self:setNWVar("state", state)
+    ---[SERVER] On Astro module death
+    function AstroModuleBase:onModuleDeath() end
+
+    ---[SERVER] On module death
+    function AstroModuleBase:onDeath()
+        self:onModuleDeath()
+        local astro = self:getAstro()
+        if astro then
+            astro:onModuleDeath(self)
+        end
     end
 
     ---[INTERNAL] [SERVER] Set Astro for this module
@@ -136,29 +230,20 @@ if SERVER then
         self:setNWVar("AstroOffset", offset)
     end
 else
+    ---[CLIENT] Initialize module
+    function AstroModuleBase:initialize()
+        timer.simple(0, function()
+            if !isValid(self) then return end
+            local astro = self:getAstro()
+            if !astro then return end
+            self.moduleBone = self.ent.modelBones and self.ent:getBoneEntity(self.ent:lookupBone("module"))
+            astro:clientInitializeModule(self)
+            self:moduleInitialize()
+        end)
+    end
+
     ---[CLIENT] Draw HUD for module
     function AstroModuleBase:drawHUD(x, y) end
-
-    ---[CLIENT] On action. This hook will not work without true at server on action
-    ---@param action string
-    function AstroModuleBase:onAction(action) end
-
-    net.receive("AstroModuleSendAction", function()
-        local entId = net.readUInt(32)
-        local ent = ents.inited[entId]
-        ---@cast ent AstroModuleBase
-        if !ent or !ent.onAction then return end
-        local action = net.readString()
-        ent:onAction(action)
-    end)
-
-    ---[CLIENT] Hook on render offscreen
-    function AstroModuleBase:renderOffscreen() end
-
-    ---[CLIENT] Effects for Astro module
-    function AstroModuleBase.hooks:RenderOffscreen()
-        self:renderOffscreen()
-    end
 end
 
 ---[SHARED] Think hook
@@ -185,42 +270,14 @@ function AstroModuleBase:getOffset()
     return self:getNWVar("AstroOffset")
 end
 
----[SHARED] Get module's health
----@return number health
-function AstroModuleBase:getHealth()
-    return self.ent:getHealth()
-end
-
----[SHARED] Is Astro alive
----@return boolean isAlive
-function AstroModuleBase:isAlive()
-    return self.ent:getHealth() > 0
-end
-
----[SHARED] Get module state
----@return number state
-function AstroModuleBase:getState()
-    return self:getNWVar("state", nil)
-end
-
----[SHARED] Get next cooldown for action
-function AstroModuleBase:getNextAction(action)
-    return self:getNWVar("nextAction_" .. action, 0)
-end
-
----[SHARED] Can this module made action
-function AstroModuleBase:canAction(action)
-    return self:getNextAction(action) <= timer.curtime() and self:isCanAction(action)
-end
-
-ents.register(AstroModuleBase)
+ents.register(AstroModuleBase, "module_base")
 
 
 ---@class AstroModuleCfg
 ---@field module string?
 ---@field offset Vector
 
----@class AstroBase: BModEntity
+---@class AstroBase: ModuleBase
 ---@field SprintSpeed number Sprint speed of Astro. By default is 600
 ---@field Speed number Default speed of Astro. By default is 400
 ---@field VelocityRatio number Velocity ratio to lerp. By default is 0.05
@@ -264,14 +321,10 @@ AstroBase.SeatVisible = false
 function AstroBase:astroInitialize() end
 
 
-function AstroBase:initialize()
-    -- If we have no permissions... ну блин, we need to made shit
-    overrideHealth(self, self.ent)
+function AstroBase:moduleInitialize()
     self.filter = {self.ent}
     local modules = {}
     if SERVER then
-        self.ent:setHealth(self.Health)
-        self.ent:setMaxHealth(self.Health)
         local seat = prop.createSeat(Vector(), Angle(), "models/nova/airboat_seat.mdl", true)
         seat:setNoDraw(!self.SeatVisible)
         self:setNWVar("AstroSeat", seat:entIndex())
@@ -389,12 +442,6 @@ if SERVER then
         self.velocity = vel
     end
 
-    ---[SERVER] Set Astro's state
-    ---@param state number
-    function AstroBase:setState(state)
-        self:setNWVar("state", state)
-    end
-
     ---Gets key direction of player.
     ---@param ply Player
     ---@param negative_key number See IN_KEY enum
@@ -483,44 +530,13 @@ if SERVER then
         end
     end)
 
-    ---[SERVER] When Astro got damaged
-    ---@return boolean prevent Prevent Astro from damage
-    function AstroBase:onDamage(attacker, inflictor, amount, type, pos, force) end
-
     ---[SERVER] When Astro module got damaged
     ---@param mod AstroModuleBase
     function AstroBase:onModuleDamage(mod, attacker, inflictor, amount, type, pos, force) end
 
-    ---[SERVER] On Astro death
-    function AstroBase:onDeath() end
-
     ---[SERVER] On Astro module death
     ---@param mod AstroModuleBase
     function AstroBase:onModuleDeath(mod) end
-
-    ---[SERVEr] Set Astro's health
-    ---@param health number
-    function AstroBase:setHealth(health)
-        self.ent:setHealth(health)
-    end
-
-    ---[SERVER] Damage mechanics
-    ---@param self AstroBase
-    ---@param target Entity
-    function AstroBase.hooks.PostEntityTakeDamage(self, target, attacker, inflictor, amount, type, pos, force)
-        local health = self.ent:getHealth()
-        if target ~= self.ent or health <= 0 then return end
-        local prevent = self:onDamage(attacker, inflictor, amount, type, pos, force)
-        if prevent then return end
-        health = self.ent:getHealth()
-        local current = health - amount
-        self.ent:setHealth(current)
-        self.ent:applyForceOffset(force, pos)
-        self.ent:applyForceOffset(force, pos)
-        if current <= 0 then
-            self:onDeath()
-        end
-    end
 
     ---[SERVER] On remove (to remove seat)
     function AstroBase:onRemove()
@@ -635,9 +651,6 @@ else
         self:onDrawHUD(sw, sh)
     end
 
-    ---[CLIENT] Hook on render offscreen
-    function AstroBase:renderOffscreen() end
-
     ---[CLIENT] Effects for head for astro
     function AstroBase.hooks:RenderOffscreen()
         self:renderOffscreen()
@@ -717,23 +730,6 @@ function AstroBase:getEyeTrace()
     return trace.line(pos, pos + ang:getForward() * 32768, self.filter)
 end
 
----[SHARED] Get Astro's health
----@return number health
-function AstroBase:getHealth()
-    return self.ent:getHealth()
-end
 
----[SHARED] Is Astro alive
----@return boolean isAlive
-function AstroBase:isAlive()
-    return self.ent:getHealth() > 0
-end
+ents.register(AstroBase, "module_base")
 
----[SHARED] Get Astro state
----@return number state
-function AstroBase:getState()
-    return self:getNWVar("state", nil)
-end
-
-
-ents.register(AstroBase)

@@ -126,7 +126,7 @@ if SERVER then
 
     local exp = effect.create()
 
-    function AstroBlaster:onDeath()
+    function AstroBlaster:onModuleDeath()
         local astro = self:getAstro()
         if !astro then return end
         self.ent:setFrozen(false)
