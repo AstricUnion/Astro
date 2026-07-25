@@ -1,7 +1,7 @@
 ---@name AstroScout
 ---@author AstricUnion
 ---@include astronew/baseincludes.lua
----@include astronew/models/astroscout_full.lua
+---@include astronew/models/astroscout.lua
 ---@include astronew/entities/astroscout.lua
 -- -@include astronew/entities/astroscout_arms.lua
 
@@ -10,7 +10,7 @@ require("astronew/baseincludes.lua")
 ---@includedir astronew/effects
 dodir("astronew/effects", {})
 
-require("astronew/models/astroscout_full.lua")
+require("astronew/models/astroscout.lua")
 require("astronew/entities/astroscout.lua")
 -- require("astronew/entities/astroscout_arms.lua")
 

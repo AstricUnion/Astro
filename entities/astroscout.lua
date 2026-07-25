@@ -130,40 +130,65 @@ end
 
 function AstroScout.actions.startLaser(astro, cur)
     if CLIENT then
-        astro.ent:setSequence("startLaser", 1)
+        astro.ent:setSequence("startLaser", 2)
         timer.simple(0.5, function()
-            if !isValid(astro) or astro:getState() ~= astro.STATE.Laser then return end
+            if !(isValid(astro) and bit.band(astro:getState(), STATE.Laser) == STATE.Laser) then return end
             astro.ent:setSequence("laser", 2)
             astro.laserEffect = beff.create("laser")
             astro.laserEffect:setScale(1.8)
-            astro.laserEffect:setEntity(astro.ent:getBoneEntity(astro.ent:lookupBone("forearm")))
+            astro.laserEffect:setEntity(astro.ent:getBoneEntity(astro.ent:lookupBone("left_forearm")))
             astro.laserEffect:setStart(Vector(0, 96, -2))
             astro.laserEffect:play()
-            astro:renderOffscreen()
+            astro:think()
         end)
     else
         astro:setNextAction("startLaser", cur + 0.5)
         astro:setNextAction("block", cur + 0.5)
-        astro:setState(astro.STATE.Laser)
+        astro:setState(bit.bor(astro:getState(), STATE.Laser))
+        return true
     end
 end
 
 function AstroScout.actions.stopLaser(astro, cur)
     if CLIENT then
-        astro.ent:setSequence(0, 2)
-        astro.ent:setSequence("stopLaser", 1)
+        astro.ent:setSequence("stopLaser", 2)
         if astro.laserEffect then
             astro.laserEffect:destroy()
             astro.laserEffect = nil
         end
     else
         astro:setNextAction("block", cur + 0.5)
-        astro.ent:setLocalAngles(Angle())
-        astro:setState(astro.STATE.Idle)
+        astro:setState(bit.band(astro:getState(), bit.bnot(STATE.Laser)))
+        return true
     end
 end
 
-
+function AstroScout:think()
+    if bit.band(self:getState(), STATE.Laser) ~= STATE.Laser then return end
+    local tr = self:getEyeTrace()
+    if !tr then return end
+    if CLIENT then
+        local module = self.ent:getBoneEntity(self.ent:lookupBone("left_shoulder"))
+        local ang = (tr.HitPos - module:getPos()):getAngle()
+        ang = ang:rotateAroundAxis(ang:getUp(), -90)
+        local localAng = module:getParent():worldToLocalAngles(ang)
+        self.ent:setPoseParameter("laser_rotation_p", localAng.p)
+        self.ent:setPoseParameter("laser_rotation_y", localAng.y)
+        self.ent:setPoseParameter("laser_rotation_r", localAng.r)
+        if self.laserEffect then
+            self.laserEffect:setOrigin(tr.HitPos)
+        end
+    else
+        local toDamage = find.inSphere(tr.HitPos, 24)
+        for _, v in ipairs(toDamage) do
+            if !isValid(v) or v == world then goto cont end
+            if !table.hasValue(self.filter, v) then
+                astroutils.applyDamage(v, 5, self.ent, self.ent)
+            end
+            ::cont::
+        end
+    end
+end
 
 if SERVER then
     function AstroScout:astroInitialize()
@@ -171,12 +196,12 @@ if SERVER then
     end
 
     local canAct = {
-        ["punch"] = STATE.Idle + STATE.Laser,
-        ["swing"] = STATE.Idle + STATE.Laser,
-        ["block"] = STATE.Idle,
-        ["unblock"] = STATE.Block,
-        ["startLaser"] = STATE.Idle + STATE.Punch,
-        ["stopLaser"] = STATE.Laser,
+        ["punch"] = {bit.bor, STATE.Idle + STATE.Laser},
+        ["swing"] = {bit.bor, STATE.Idle + STATE.Laser},
+        ["block"] = {bit.band, STATE.Idle},
+        ["unblock"] = {bit.band, STATE.Block},
+        ["startLaser"] = {bit.bor, STATE.Idle + STATE.Punch},
+        ["stopLaser"] = {bit.band, STATE.Laser},
     }
 
     local pressToAct = {
@@ -195,7 +220,7 @@ if SERVER then
     function AstroScout:isCanAction(action)
         local st = self:getState()
         local states = canAct[action]
-        return bit.bor(st, states) == states
+        return states[1](st, states[2]) == states[2]
     end
 
     function AstroScout:inputPressed(button)
@@ -216,9 +241,6 @@ if SERVER then
         if bit.band(self:getState(), STATE.Block) == STATE.Block then
             self:setHealth(self:getHealth() + amount * 0.4)
         end
-    end
-
-    function AstroScout:think()
     end
 else
     function AstroScout:astroInitialize()
