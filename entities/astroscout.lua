@@ -10,10 +10,12 @@ local STATE = {
     Block = 1,
     Punch = 2,
     Laser = 4,
-    Dashing = 8
+    LaserOn = 8,
+    Dashing = 16
 }
 
 ---@class AstroScout: AstroBase
+---@field laserEffect Laser [CLIENT] Effect for laser
 local AstroScout = {}
 AstroScout.Identifier = "astroscout"
 AstroScout.Name = "AstroScout"
@@ -145,6 +147,15 @@ function AstroScout.actions.startLaser(astro, cur)
         astro:setNextAction("startLaser", cur + 0.5)
         astro:setNextAction("block", cur + 0.5)
         astro:setState(bit.bor(astro:getState(), STATE.Laser))
+        timer.simple(0.5, function()
+            local st = astro:getState()
+            if !(isValid(astro) and bit.band(st, STATE.Laser) == STATE.Laser) then return end
+            cur = cur + 0.5
+            local remain = math.min(cur - astro:getLaserEndTime(), 6)
+            astro:setNWVar("laserRemain", remain)
+            astro:setNWVar("laserStartTime", cur)
+            astro:setState(bit.bor(st, STATE.LaserOn))
+        end)
         return true
     end
 end
@@ -158,36 +169,104 @@ function AstroScout.actions.stopLaser(astro, cur)
         end
     else
         astro:setNextAction("block", cur + 0.5)
-        astro:setState(bit.band(astro:getState(), bit.bnot(STATE.Laser)))
+        local st = astro:getState()
+        if bit.band(st, STATE.LaserOn) == STATE.LaserOn then
+            astro:setNWVar("laserEndTime", cur - (astro:getLaserRemain() - (cur - astro:getLaserStartTime())))
+        end
+        astro:setState(bit.band(st, bit.bnot(STATE.Laser), bit.bnot(STATE.LaserOn)))
+        return true
+    end
+end
+
+function AstroScout.actions.dash(astro, cur)
+    if CLIENT then
+        astro.ent:setSequence("swing", 1)
+        timer.simple(0.4, function()
+            if !(isValid(astro) and bit.band(astro:getState(), STATE.Dashing) == STATE.Dashing) then return end
+            astro.ent:setSequence(0, 1)
+        end)
+    else
+        local dir = astro:getDirection()
+        if !dir then return end
+        astro:setState(bit.bor(astro:getState(), STATE.Dashing))
+        astro.dashStartTime = timer.curtime()
+        astro:setNWVar("dashDirection", !dir:isZero() and dir or astro.ent:getAngles():getForward())
         return true
     end
 end
 
 function AstroScout:think()
-    if bit.band(self:getState(), STATE.Laser) ~= STATE.Laser then return end
-    local tr = self:getEyeTrace()
-    if !tr then return end
-    if CLIENT then
-        local module = self.ent:getBoneEntity(self.ent:lookupBone("left_shoulder"))
-        local ang = (tr.HitPos - module:getPos()):getAngle()
-        ang = ang:rotateAroundAxis(ang:getUp(), -90)
-        local localAng = module:getParent():worldToLocalAngles(ang)
-        self.ent:setPoseParameter("laser_rotation_p", localAng.p)
-        self.ent:setPoseParameter("laser_rotation_y", localAng.y)
-        self.ent:setPoseParameter("laser_rotation_r", localAng.r)
-        if self.laserEffect then
-            self.laserEffect:setOrigin(tr.HitPos)
-        end
-    else
-        local toDamage = find.inSphere(tr.HitPos, 24)
-        for _, v in ipairs(toDamage) do
-            if !isValid(v) or v == world then goto cont end
-            if !table.hasValue(self.filter, v) then
-                astroutils.applyDamage(v, 5, self.ent, self.ent)
+    local st = self:getState()
+    local band = bit.band(st, STATE.Laser + STATE.Dashing)
+    local byStates = {
+        [STATE.Laser] = function()
+            local tr = self:getEyeTrace()
+            if !tr then return end
+            if CLIENT then
+                local module = self.ent:getBoneEntity(self.ent:lookupBone("left_shoulder"))
+                local ang = (tr.HitPos - module:getPos()):getAngle()
+                ang = ang:rotateAroundAxis(ang:getUp(), -90)
+                local localAng = module:getParent():worldToLocalAngles(ang)
+                self.ent:setPoseParameter("laser_rotation_p", localAng.p)
+                self.ent:setPoseParameter("laser_rotation_y", localAng.y)
+                self.ent:setPoseParameter("laser_rotation_r", localAng.r)
+                if self.laserEffect then
+                    self.laserEffect:setOrigin(tr.HitPos)
+                end
+            else
+                if bit.band(st, STATE.LaserOn) ~= STATE.LaserOn then return end
+                local toDamage = find.inSphere(tr.HitPos, 48)
+                for _, v in ipairs(toDamage) do
+                    if !isValid(v) or v == world then goto cont end
+                    if !table.hasValue(self.filter, v) then
+                        astroutils.applyDamage(v, 20, self.ent, self.ent)
+                    end
+                    ::cont::
+                end
+                local fromStart = timer.curtime() - self:getLaserStartTime()
+                if fromStart > self:getLaserRemain() then
+                    self:sendAction("stopLaser")
+                end
             end
-            ::cont::
+        end,
+        [STATE.Dashing] = function()
+            local dir = self:getDashDirection()
+            if dir then
+                if SERVER then
+                    self:setVelocity(dir * 4000)
+                    local pos = self.ent:getPos()
+                    local cur = timer.curtime()
+                    local remain = 1.8 - (cur - self.dashStartTime)
+                    local interval = game.getTickInterval()
+                    local endPos = pos + dir * (interval * 16000)
+                    local canPos = trace.hull(pos, endPos, Vector(-40), Vector(40), self.filter)
+                    if remain <= 0 or canPos.Hit then
+                        self:setVelocity(dir)
+                        self:setNextAction("dash", cur + 3)
+                        self:setNextAction("block", cur + 0.5)
+                        self:setNextAction("punch", cur + 0.5)
+                        self:setNextAction("swing", cur + 0.5)
+                        self:setNWVar("dashDirection", nil)
+                        self.ent:setSequence("swing", 1, 0.4)
+                        local radius = 160
+                        local hitPos = self.ent:localToWorld(Vector(197, -21, 0))
+                        bdebug.sphere(hitPos, radius, 1, Color(255, 0, 0, 0))
+                        local targets = find.inSphere(hitPos, radius)
+                        for _, target in ipairs(targets) do
+                            if !isValid(target) or target == world then goto cont end
+                            if !table.hasValue(self.filter, target) then
+                                astroutils.applyDamage(target, 1200, self.ent, self.ent)
+                            end
+                            ::cont::
+                        end
+                        self:setState(bit.band(st, bit.bnot(STATE.Dashing)))
+                    end
+                end
+            end
         end
-    end
+    }
+    local fun = byStates[band]
+    if fun then fun() end
 end
 
 if SERVER then
@@ -196,12 +275,13 @@ if SERVER then
     end
 
     local canAct = {
-        ["punch"] = {bit.bor, STATE.Idle + STATE.Laser},
-        ["swing"] = {bit.bor, STATE.Idle + STATE.Laser},
-        ["block"] = {bit.band, STATE.Idle},
+        ["punch"] = {bit.bor, STATE.Idle + STATE.Laser + STATE.LaserOn},
+        ["swing"] = {bit.bor, STATE.Idle + STATE.Laser + STATE.LaserOn},
+        ["block"] = {bit.bor, STATE.Idle},
         ["unblock"] = {bit.band, STATE.Block},
         ["startLaser"] = {bit.bor, STATE.Idle + STATE.Punch},
         ["stopLaser"] = {bit.band, STATE.Laser},
+        ["dash"] = {bit.bor, STATE.Idle}
     }
 
     local pressToAct = {
@@ -260,6 +340,48 @@ else
         l1:setPos(self.ent:localToWorld(Vector(0, 0, 30)))
         l1:draw()
     end
+
+    function AstroScout:onDrawHUD(sw, sh)
+        local text = "LASER_1"
+        local x, y = sw / 2, sh / 2
+        local laserRemain
+        local cur = timer.curtime()
+        if bit.band(self:getState(), STATE.LaserOn) == STATE.LaserOn then
+            laserRemain = self:getLaserRemain() - math.min(cur - self:getLaserStartTime(), 6)
+        else
+            laserRemain = math.min(cur - self:getLaserEndTime(), 6)
+        end
+        astrogui.drawProgressBar(x - 164 - 128, y - 12, 164, 24, laserRemain / 6, text)
+
+        local dir = self:getDashDirection()
+        local percent = !dir and (1 - (math.clamp(self:getNextAction("dash") - timer.curtime(), 0, 3) / 3)) or 0
+        astrogui.drawProgressBar(x - 85, y, 170, 20, percent, "DASH_MOD", (math.ceil(percent * 100)) .. "%", true, true)
+    end
 end
+
+---[SHARED] Get direction of dash
+---@return Vector?
+function AstroScout:getDashDirection()
+    return self:getNWVar("dashDirection")
+end
+
+---[SHARED] Get laser start time
+---@return Vector?
+function AstroScout:getLaserStartTime()
+    return self:getNWVar("laserStartTime", 0)
+end
+
+---[SHARED] Get laser end time
+---@return Vector?
+function AstroScout:getLaserEndTime()
+    return self:getNWVar("laserEndTime", 0)
+end
+
+---[SHARED] Get laser remain
+---@return Vector?
+function AstroScout:getLaserRemain()
+    return self:getNWVar("laserRemain", 6)
+end
+
 
 ents.register(AstroScout, "astrobase")
