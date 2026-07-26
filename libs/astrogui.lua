@@ -3,6 +3,11 @@ if !CLIENT then return end
 ---GUI for Astro
 ---@class astrogui
 local astrogui = {}
+astrogui.colors = {
+   main = Color(255, 20, 20, 200),
+   overlay = Color(255, 70, 70, 100),
+   overlay1 = Color(255, 70, 70, 30),
+}
 
 
 ---[CLIENT] Push mask to scissor something at canvas
@@ -64,7 +69,7 @@ local mat = material.load("gui/gradient_up")
 
 local fontArial32 = render.createFont("Arial",18,500,true,false,false,false,0,false,0)
 local function progressBarOutline(x, y, w, h, leftText, rightText, textBottom)
-    render.setColor(Color(255, 20, 20, 200))
+    render.setColor(astrogui.colors.main)
     render.setFont(fontArial32)
     local vAlign = textBottom and TEXT_ALIGN.TOP or TEXT_ALIGN.BOTTOM
     local yOffset = textBottom and h - 2 or 2
@@ -89,14 +94,14 @@ end
 ---@param centerBar boolean?
 function astrogui.drawProgressBar(x, y, w, h, progress, leftText, rightText, textBottom, centerBar)
     render.setMaterial(mat)
-    render.setColor(Color(255, 70, 70, 30))
+    render.setColor(astrogui.colors.overlay1)
     render.drawTexturedRect(x + 8, y + 4, w - 16, h - 8)
 
     local progressWidth = (w - 16) * progress
-    render.setColor(Color(255, 70, 70, 100))
+    render.setColor(astrogui.colors.overlay)
     local offset = (centerBar and (w - 16) / 2 - progressWidth / 2 or 0) + 8
     render.drawRect(x + offset, y + 4, progressWidth, h - 8)
-    render.setColor(Color(255, 20, 20, 200))
+    render.setColor(astrogui.colors.main)
     render.setMaterial(mat)
     render.drawTexturedRect(x + offset, y + 4, progressWidth, h - 8)
     progressBarOutline(x, y, w, h, leftText or "", rightText or "", textBottom)
@@ -122,17 +127,31 @@ function astrogui.drawProgressBarSections(x, y, w, h, sectionW, progress, leftTe
         end
     end)
     render.setMaterial(mat)
-    render.setColor(Color(255, 70, 70, 30))
+    render.setColor(astrogui.colors.overlay1)
     render.drawTexturedRect(x + 8, y + 4, w - 16, h - 8)
     local progressWidth = (w - 16) * progress
-    render.setColor(Color(255, 70, 70, 100))
+    render.setColor(astrogui.colors.overlay)
     local offset = mirror and w - 8 - progressWidth or 8
     render.drawRect(x + offset, y + 4, progressWidth, h - 8)
-    render.setColor(Color(255, 20, 20, 200))
+    render.setColor(astrogui.colors.main)
     render.setMaterial(mat)
     render.drawTexturedRect(x + offset, y + 4, progressWidth, h - 8)
     progressBarOutline(x, y, w, h, leftText or "", rightText or "", textBottom)
     astrogui.popStencilMask()
+end
+
+function astrogui.control(x, y, control, disabled)
+    local col = disabled and astrogui.colors.overlay1 or astrogui.colors.main
+    local col1 = disabled and astrogui.colors.overlay1 or astrogui.colors.overlay
+    local isControl = !disabled and input.isKeyDown(KEY[control])
+    render.setMaterial(mat)
+    render.setColor(isControl and col1 or astrogui.colors.overlay1)
+    render.drawTexturedRect(x - 10, y - 10, 20, 20)
+    render.setColor(isControl and col or col1)
+    render.drawRectOutline(x - 9, y - 9, 18, 18)
+    render.drawRectOutline(x - 10, y - 10, 20, 20)
+    render.setColor(col)
+    render.drawSimpleText(x, y, control, TEXT_ALIGN.CENTER, TEXT_ALIGN.CENTER)
 end
 
 return astrogui

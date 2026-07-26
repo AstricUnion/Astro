@@ -11,7 +11,8 @@ local STATE = {
     Punch = 2,
     Laser = 4,
     LaserOn = 8,
-    Dashing = 16
+    Dashing = 16,
+    Berserk = 32
 }
 
 ---@class AstroScout: AstroBase
@@ -30,6 +31,8 @@ AstroScout.Modules = {}
 AstroScout.SeatOffset = Vector(85, 0, 0)
 AstroScout.SeatVisible = true
 AstroScout.Health = 6500
+AstroScout.Speed = 200
+AstroScout.SprintSpeed = 600
 ---@type table<string, fun(self: AstroScout, cur: number): boolean?>
 AstroScout.actions = {}
 
@@ -47,7 +50,8 @@ function AstroScout.actions.punch(astro, cur)
         timer.simple(0.2, function()
             local st = astro:getState()
             if !(isValid(astro) and bit.band(st, STATE.Punch) == STATE.Punch) then return end
-            local radius = 160
+            local isBerserk = bit.band(st, STATE.Berserk) == STATE.Berserk
+            local radius = 160 * (isBerserk and 1.2 or 1)
             local spheres = {
                 astro.ent:localToWorld(Vector(93, -53, 0)),
                 astro.ent:localToWorld(Vector(183, -21, 0))
@@ -63,7 +67,7 @@ function AstroScout.actions.punch(astro, cur)
                 for _, target in ipairs(v) do
                     if !isValid(target) or alreadyDamaged[target] or target == world then goto cont end
                     if !table.hasValue(astro.filter, target) then
-                        astroutils.applyDamage(target, 350, astro.ent, astro.ent)
+                        astroutils.applyDamage(target, 350 * (isBerserk and 1.5 or 1), astro.ent, astro.ent)
                         alreadyDamaged[target] = true
                     end
                     ::cont::
@@ -86,7 +90,8 @@ function AstroScout.actions.swing(astro, cur)
         timer.simple(0.5, function()
             local st = astro:getState()
             if !(isValid(astro) and bit.band(st, STATE.Punch) == STATE.Punch) then return end
-            local radius = 160
+            local isBerserk = bit.band(st, STATE.Berserk) == STATE.Berserk
+            local radius = 160 * (isBerserk and 1.2 or 1)
             local pos = astro.ent:localToWorld(Vector(197, -21, 0))
             bdebug.sphere(pos, radius, 1, Color(255, 0, 0, 0))
             local targets = find.inSphere(pos, radius)
@@ -94,8 +99,9 @@ function AstroScout.actions.swing(astro, cur)
             for _, target in ipairs(targets) do
                 if !isValid(target) or target == world then goto cont end
                 if !table.hasValue(astro.filter, target) then
-                    damage = damage + math.min(target:getHealth(), 600)
-                    astroutils.applyDamage(target, 600, astro.ent, astro.ent)
+                    local dam = 600 * (isBerserk and 1.5 or 1)
+                    damage = damage + math.min(target:getHealth(), dam)
+                    astroutils.applyDamage(target, dam, astro.ent, astro.ent)
                 end
                 ::cont::
             end
@@ -124,7 +130,7 @@ function AstroScout.actions.unblock(astro, cur)
         timer.simple(0.5, function()
             local st = astro:getState()
             if !(isValid(astro) and bit.band(st, STATE.Block) == STATE.Block) then return end
-            astro:setState(bit.band(astro:getState(), bit.bnot(STATE.Block)))
+            astro:setState(bit.band(st, bit.bnot(STATE.Block)))
         end)
         return true
     end
@@ -173,7 +179,7 @@ function AstroScout.actions.stopLaser(astro, cur)
         if bit.band(st, STATE.LaserOn) == STATE.LaserOn then
             astro:setNWVar("laserEndTime", cur - (astro:getLaserRemain() - (cur - astro:getLaserStartTime())))
         end
-        astro:setState(bit.band(st, bit.bnot(STATE.Laser), bit.bnot(STATE.LaserOn)))
+        astro:setState(bit.band(st, bit.bnot(STATE.Laser + STATE.LaserOn)))
         return true
     end
 end
@@ -189,19 +195,47 @@ function AstroScout.actions.dash(astro, cur)
         local dir = astro:getDirection()
         if !dir then return end
         astro:setState(bit.bor(astro:getState(), STATE.Dashing))
-        astro.dashStartTime = timer.curtime()
+        astro.dashStartTime = cur
         astro:setNWVar("dashDirection", !dir:isZero() and dir or astro.ent:getAngles():getForward())
         return true
     end
 end
 
+function AstroScout.actions.berserk(astro, cur)
+    if CLIENT then
+        -- astro.ent:setSequence("swing", 1)
+    else
+        if astro:getBerserkProgress() < 3200 then return end
+        astro:setState(bit.bor(astro:getState(), STATE.Berserk))
+        astro:setNWVar("berserkStartTime", cur)
+        astro.Speed = astro.Speed * 1.2
+        astro.SprintSpeed = astro.SprintSpeed * 1.2
+    end
+end
+
+
 function AstroScout:think()
     local st = self:getState()
+    local cur = timer.curtime()
+    local isBerserk = bit.band(st, STATE.Berserk) == STATE.Berserk
+    if isBerserk and cur - self:getBerserkStartTime() > 12 then
+        st = bit.band(st, bit.bnot(STATE.Berserk))
+        isBerserk = false
+        if SERVER then
+            self:setState(st)
+            self:setNWVar("laserStartTime", cur)
+            self:setNWVar("laserEndTime", 0)
+            self.Speed = self.Speed / 1.2
+            self.SprintSpeed = self.SprintSpeed / 1.2
+        end
+    end
     local band = bit.band(st, STATE.Laser + STATE.Dashing)
     local byStates = {
         [STATE.Laser] = function()
-            local tr = self:getEyeTrace()
-            if !tr then return end
+            local eyeAng = self:getEyeAngles()
+            if !eyeAng then return end
+            local pos = self.ent:getPos()
+            local tr = trace.hull(pos, pos + eyeAng:getForward() * 32768, Vector(-16), Vector(16), self.filter)
             if CLIENT then
                 local module = self.ent:getBoneEntity(self.ent:lookupBone("left_shoulder"))
                 local ang = (tr.HitPos - module:getPos()):getAngle()
@@ -222,9 +256,11 @@ function AstroScout:think()
                     end
                     ::cont::
                 end
-                local fromStart = timer.curtime() - self:getLaserStartTime()
-                if fromStart > self:getLaserRemain() then
-                    self:sendAction("stopLaser")
+                if !isBerserk then
+                    local fromStart = timer.curtime() - self:getLaserStartTime()
+                    if fromStart > self:getLaserRemain() then
+                        self:sendAction("stopLaser")
+                    end
                 end
             end
         end,
@@ -234,7 +270,6 @@ function AstroScout:think()
                 if SERVER then
                     self:setVelocity(dir * 4000)
                     local pos = self.ent:getPos()
-                    local cur = timer.curtime()
                     local remain = 1.8 - (cur - self.dashStartTime)
                     local interval = game.getTickInterval()
                     local endPos = pos + dir * (interval * 16000)
@@ -247,14 +282,14 @@ function AstroScout:think()
                         self:setNextAction("swing", cur + 0.5)
                         self:setNWVar("dashDirection", nil)
                         self.ent:setSequence("swing", 1, 0.4)
-                        local radius = 160
+                        local radius = 160 * (isBerserk and 1.2 or 1)
                         local hitPos = self.ent:localToWorld(Vector(197, -21, 0))
                         bdebug.sphere(hitPos, radius, 1, Color(255, 0, 0, 0))
                         local targets = find.inSphere(hitPos, radius)
                         for _, target in ipairs(targets) do
                             if !isValid(target) or target == world then goto cont end
                             if !table.hasValue(self.filter, target) then
-                                astroutils.applyDamage(target, 1200, self.ent, self.ent)
+                                astroutils.applyDamage(target, 1200 * (isBerserk and 1.5 or 1), self.ent, self.ent)
                             end
                             ::cont::
                         end
@@ -274,13 +309,14 @@ if SERVER then
     end
 
     local canAct = {
-        ["punch"] = {bit.bor, STATE.Idle + STATE.Laser + STATE.LaserOn},
-        ["swing"] = {bit.bor, STATE.Idle + STATE.Laser + STATE.LaserOn},
-        ["block"] = {bit.bor, STATE.Idle},
+        ["punch"] = {bit.bor, STATE.Idle + STATE.Laser + STATE.LaserOn + STATE.Berserk},
+        ["swing"] = {bit.bor, STATE.Idle + STATE.Laser + STATE.LaserOn + STATE.Berserk},
+        ["block"] = {bit.bor, STATE.Idle + STATE.Berserk},
         ["unblock"] = {bit.band, STATE.Block},
-        ["startLaser"] = {bit.bor, STATE.Idle + STATE.Punch},
+        ["startLaser"] = {bit.bor, STATE.Idle + STATE.Punch + STATE.Berserk},
         ["stopLaser"] = {bit.band, STATE.Laser},
-        ["dash"] = {bit.bor, STATE.Idle}
+        ["dash"] = {bit.bor, STATE.Idle + STATE.Berserk},
+        ["berserk"] = {bit.band, STATE.Idle}
     }
 
     local pressToAct = {
@@ -289,6 +325,7 @@ if SERVER then
         [MOUSE.MIDDLE] = "block",
         [KEY.R] = "startLaser",
         [KEY.G] = "dash",
+        [KEY.F] = "berserk",
     }
 
     local releaseToAct = {
@@ -317,9 +354,12 @@ if SERVER then
     end
 
     function AstroScout:onDamage(_, _, amount)
+        local multiplier = 1
         if bit.band(self:getState(), STATE.Block) == STATE.Block then
             self:setHealth(self:getHealth() + amount * 0.4)
+            multiplier = 1.2
         end
+        self:setNWVar("berserkProgress", self:getBerserkProgress() + amount * multiplier)
     end
 else
     function AstroScout:astroInitialize()
@@ -342,20 +382,41 @@ else
     end
 
     function AstroScout:onDrawHUD(sw, sh)
-        local text = "LASER_1"
         local x, y = sw / 2, sh / 2
-        local laserRemain
+        local st = self:getState()
+        local isBerserk = bit.band(st, STATE.Berserk) == STATE.Berserk
         local cur = timer.curtime()
-        if bit.band(self:getState(), STATE.LaserOn) == STATE.LaserOn then
-            laserRemain = self:getLaserRemain() - math.min(cur - self:getLaserStartTime(), 6)
-        else
-            laserRemain = math.min(cur - self:getLaserEndTime(), 6)
+        do
+            local text = "LASER_1"
+            local percent
+            if isBerserk then
+                percent = 1
+            else
+                local laserRemain
+                if bit.band(self:getState(), STATE.LaserOn) == STATE.LaserOn then
+                    laserRemain = self:getLaserRemain() - math.min(cur - self:getLaserStartTime(), 6)
+                else
+                    laserRemain = math.min(cur - self:getLaserEndTime(), 6)
+                end
+                percent = laserRemain / 6
+            end
+            local laserProgressPosition = x - 128
+            astrogui.drawProgressBar(laserProgressPosition - 164 , y - 12, 164, 24, percent, text, isBerserk and "" or (math.floor(percent * 100) .. "%"))
+            astrogui.control(laserProgressPosition + 16, y, "R")
         end
-        astrogui.drawProgressBar(x - 164 - 128, y - 12, 164, 24, laserRemain / 6, text)
 
-        local dir = self:getDashDirection()
-        local percent = !dir and (1 - (math.clamp(self:getNextAction("dash") - timer.curtime(), 0, 3) / 3)) or 0
-        astrogui.drawProgressBar(x - 85, y + 128, 170, 20, percent, "DASH_MOD", (math.ceil(percent * 100)) .. "%", true, true)
+        do
+            local dir = self:getDashDirection()
+            local percent = !dir and (1 - (math.clamp(self:getNextAction("dash") - cur, 0, 3) / 3)) or 0
+            astrogui.drawProgressBar(x - 85, y + 128, 170, 20, percent, "DASH_MOD", (math.ceil(percent * 100)) .. "%", true, true)
+            astrogui.control(x + 101, y + 138, "G", percent < 1)
+        end
+
+        do
+            local percent = math.clamp(isBerserk and (12 - (cur - self:getBerserkStartTime())) / 12 or self:getBerserkProgress() / 3200, 0, 1)
+            astrogui.drawProgressBar(x - 85, y - 86, 170, 20, percent, "BERSERK_MOD", (math.ceil(percent * 100)) .. "%", false, true)
+            astrogui.control(x + 101, y - 76, "F", isBerserk or percent < 1)
+        end
     end
 end
 
@@ -383,5 +444,16 @@ function AstroScout:getLaserRemain()
     return self:getNWVar("laserRemain", 6)
 end
 
+---[SHARED] Get berserk mode progress
+---@return number?
+function AstroScout:getBerserkProgress()
+    return self:getNWVar("berserkProgress", 0)
+end
+
+---[SHARED] Get berserk start time
+---@return Vector?
+function AstroScout:getBerserkStartTime()
+    return self:getNWVar("berserkStartTime", 0)
+end
 
 ents.register(AstroScout, "astrobase")
