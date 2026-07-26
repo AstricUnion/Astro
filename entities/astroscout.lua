@@ -206,10 +206,9 @@ function AstroScout:think()
                 local module = self.ent:getBoneEntity(self.ent:lookupBone("left_shoulder"))
                 local ang = (tr.HitPos - module:getPos()):getAngle()
                 ang = ang:rotateAroundAxis(ang:getUp(), -90)
-                local localAng = module:getParent():worldToLocalAngles(ang)
-                self.ent:setPoseParameter("laser_rotation_p", localAng.p)
-                self.ent:setPoseParameter("laser_rotation_y", localAng.y)
-                self.ent:setPoseParameter("laser_rotation_r", localAng.r)
+                self.ent:setPoseParameter("laser_rotation_p", ang.p)
+                self.ent:setPoseParameter("laser_rotation_y", ang.y)
+                self.ent:setPoseParameter("laser_rotation_r", ang.r)
                 if self.laserEffect then
                     self.laserEffect:setOrigin(tr.HitPos)
                 end
@@ -324,6 +323,7 @@ if SERVER then
     end
 else
     function AstroScout:astroInitialize()
+        self.ent:setPoseParameter("rotation_multiplier", 1)
         self.ent:setSequence("idle")
     end
     local l1 = light.create(Vector(), 80, 10, Color(255, 0, 0))
@@ -355,7 +355,7 @@ else
 
         local dir = self:getDashDirection()
         local percent = !dir and (1 - (math.clamp(self:getNextAction("dash") - timer.curtime(), 0, 3) / 3)) or 0
-        astrogui.drawProgressBar(x - 85, y, 170, 20, percent, "DASH_MOD", (math.ceil(percent * 100)) .. "%", true, true)
+        astrogui.drawProgressBar(x - 85, y + 128, 170, 20, percent, "DASH_MOD", (math.ceil(percent * 100)) .. "%", true, true)
     end
 end
 

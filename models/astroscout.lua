@@ -387,11 +387,11 @@ model.new("astroscout", part {
         return tween.new {
             param { 0, 0.5, body, bodyAng, nil, Angle(0, -30, -5), math.easeInOutQuint },
             lerpParam { 0, shoulder, shoulderAng, function()
-                return Angle(
+                return body:worldToLocalAngles(Angle(
                     ent:getPoseParameter("laser_rotation_p"),
                     ent:getPoseParameter("laser_rotation_y"),
                     ent:getPoseParameter("laser_rotation_r")
-                )
+                ))
             end, 0.2 },
             param { 0, 0.5, forearm, forearmAng, nil, Angle(), math.easeInOutQuint },
             function(process)
@@ -408,20 +408,27 @@ model.new("astroscout", part {
         local forearm = ent:getBoneEntity(ent:lookupBone("left_forearm"))
 
         local _, bodyAng = body:getPropertyForLayer(layer)
-        local _, shoulderAng = shoulder:getPropertyForLayer(layer)
-        local _, forearmAng = forearm:getPropertyForLayer(layer)
+        local shoulderPos, shoulderAng = shoulder:getPropertyForLayer(layer)
+        local bodyTween = tween.new {
+            param { 0, 0.1, body, bodyAng, nil, Angle(0, -35, -5), math.easeInSine },
+            param { 0.1, 0.2, body, bodyAng, nil, Angle(0, -30, -5), math.easeOutSine },
+        }
 
         return tween.new {
-            param { 0, 0.5, body, bodyAng, nil, Angle(0, -30, -5), math.easeInOutQuint },
             function(process)
-                shoulderAng.set(shoulder, Angle(
+                bodyTween(process)
+                shoulderAng.set(shoulder, body:worldToLocalAngles(Angle(
                     ent:getPoseParameter("laser_rotation_p"),
                     ent:getPoseParameter("laser_rotation_y"),
                     ent:getPoseParameter("laser_rotation_r")
-                ))
-                if process > 0.5 then return true end
+                )))
+                if process > 0.2 then return true end
             end,
-            param { 0, 0.5, forearm, forearmAng, nil, Angle(), math.easeInOutQuint },
+            function(process)
+                local fraction = math.min(process / 0.2, 1)
+                shoulderPos.set(shoulder, Vector(math.sin(fraction * math.pi * 2) * 2, math.rand(-1, 1), math.rand(-1, 1)))
+                if fraction == 1 then return true end
+            end,
         }
     end)
 

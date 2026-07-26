@@ -47,6 +47,7 @@ if CLIENT then
         self.impactLaserEffect:setMaterial("models/effects/vortshield")
         self.impactLaserEffect:setColor(Color(255, 50, 50))
         self.nextParticle = 0
+        self.add = false
     end
 
     function Laser:render()
@@ -57,9 +58,6 @@ if CLIENT then
         local size = start:getDistance(origin)
         local ang = (origin - start):getAngle()
         local newAng = ang:rotateAroundAxis(ang:getRight(), 90)
-        if game.getTickCount() % 5 == 0 and trace.canCreateDecal() then
-            trace.decal("Dark", origin, origin + ang:getForward())
-        end
         self.holo:setAngles(newAng)
         self.holo:setPos(start)
         self.holo:setSize(Vector(12 * scale, 12 * scale, size * 2))
