@@ -204,12 +204,18 @@ end
 function AstroScout.actions.berserk(astro, cur)
     if CLIENT then
         -- astro.ent:setSequence("swing", 1)
+        local eff = beff.create("berserk")
+        eff:setOrigin(astro.ent:getPos())
+        eff:setScale(3)
+        eff:play()
     else
         if astro:getBerserkProgress() < 3200 then return end
         astro:setState(bit.bor(astro:getState(), STATE.Berserk))
+        astro:setNWVar("berserkProgress", 0)
         astro:setNWVar("berserkStartTime", cur)
         astro.Speed = astro.Speed * 1.2
         astro.SprintSpeed = astro.SprintSpeed * 1.2
+        return true
     end
 end
 
@@ -355,11 +361,14 @@ if SERVER then
 
     function AstroScout:onDamage(_, _, amount)
         local multiplier = 1
-        if bit.band(self:getState(), STATE.Block) == STATE.Block then
+        local st = self:getState()
+        if bit.band(st, STATE.Block) == STATE.Block then
             self:setHealth(self:getHealth() + amount * 0.4)
             multiplier = 1.2
         end
-        self:setNWVar("berserkProgress", self:getBerserkProgress() + amount * multiplier)
+        if bit.band(st, STATE.Berserk) ~= STATE.Berserk then
+            self:setNWVar("berserkProgress", self:getBerserkProgress() + amount * multiplier)
+        end
     end
 else
     function AstroScout:astroInitialize()

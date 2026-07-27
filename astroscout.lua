@@ -3,7 +3,6 @@
 ---@include astronew/baseincludes.lua
 ---@include astronew/models/astroscout.lua
 ---@include astronew/entities/astroscout.lua
--- -@include astronew/entities/astroscout_arms.lua
 
 require("astronew/baseincludes.lua")
 
@@ -12,7 +11,6 @@ dodir("astronew/effects", {})
 
 require("astronew/models/astroscout.lua")
 require("astronew/entities/astroscout.lua")
--- require("astronew/entities/astroscout_arms.lua")
 
 
 if SERVER then
