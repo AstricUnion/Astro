@@ -9,7 +9,6 @@ local Laser = {}
 Laser.Identifier = "laser"
 
 if CLIENT then
-    local Ply = player()
     local randVector = function() return Vector(math.rand(-1, 1), math.rand(-1, 1), math.rand(-1, 1)) end
     local fire = material.load("particle/fire")
     local warp = material.load("particle/warp1_warp")
@@ -19,79 +18,118 @@ if CLIENT then
     -- }
     local emm = particle.create(Vector(), false)
 
+    local zeroVector = Vector()
+    local zeroAngle = Angle()
+
     function Laser:init()
         self.emmiter = emm
-        self.ent = self:getEntity()
-        self.offset = self:getStart()
-        self.scale = self:getScale()
-        self.holo = hologram.create(Vector(), Angle(), "models/holograms/hq_cylinder.mdl")
-        self.holo:suppressEngineLighting(true)
-        self.holo:setClip(0, true, Vector(), Vector(0, 0, -1), self.holo)
-        self.laserEffect = hologram.create(Vector(), Angle(), "models/holograms/hq_cylinder.mdl")
-        self.laserEffect:setParent(self.holo)
-        self.laserEffect:suppressEngineLighting(true)
-        self.laserEffect:setMaterial("cable/redlaser")
-        self.laserEffect:setClip(0, true, Vector(), Vector(0, 0, -1), self.laserEffect)
-        self.lightEffect = hologram.create(Vector(), Angle(), "models/effects/vol_light64x128.mdl", Vector(self.scale / 2.2, self.scale / 2.2, self.scale / 2.5))
-        self.lightEffect:setParent(self.holo)
-        self.lightEffect:setColor(Color(255, 0, 0, 60))
-        self.lightEffect2 = hologram.create(Vector(), Angle(), "models/holograms/plane.mdl")
-        self.lightEffect2:setParent(self.holo)
-        self.lightEffect2:setMaterial("cable/redlaser")
-        self.lightEffect2:setClip(0, true, Vector(), Vector(0, 0, -1), self.holo)
-        self.lightEffect2:setColor(Color(255, 0, 0))
-        self.impact = hologram.create(Vector(), Angle(), "models/holograms/hq_sphere.mdl")
-        self.impact:suppressEngineLighting(true)
-        self.impactLaserEffect = hologram.create(Vector(), Angle(), "models/holograms/hq_sphere.mdl")
-        self.impactLaserEffect:suppressEngineLighting(true)
-        self.impactLaserEffect:setMaterial("models/effects/vortshield")
-        self.impactLaserEffect:setColor(Color(255, 50, 50))
+        local ent = self:getEntity()
+        local offset = self:getStart()
+        local scale = self:getScale()
+
+        local holo = hologram.create(zeroVector, zeroAngle, "models/holograms/hq_cylinder.mdl")
+        if !holo then return end
+        holo:suppressEngineLighting(true)
+        holo:setClip(0, true, zeroVector, Vector(0, 0, -1), holo)
+
+        local laserEffect = hologram.create(zeroVector, zeroAngle, "models/holograms/hq_cylinder.mdl")
+        if !laserEffect then return end
+        laserEffect:setParent(holo)
+        laserEffect:suppressEngineLighting(true)
+        laserEffect:setMaterial("cable/redlaser")
+        laserEffect:setClip(0, true, zeroVector, Vector(0, 0, -1), laserEffect)
+
+        local lightEffect = hologram.create(zeroVector, zeroAngle, "models/effects/vol_light64x128.mdl", Vector(scale / 2.2, scale / 2.2, scale / 2.5))
+        if !lightEffect then return end
+        lightEffect:setParent(holo)
+        lightEffect:setColor(Color(255, 0, 0, 60))
+
+        local lightEffect2 = hologram.create(zeroVector, zeroAngle, "models/holograms/plane.mdl")
+        if !lightEffect2 then return end
+        lightEffect2:setParent(holo)
+        lightEffect2:setMaterial("cable/redlaser")
+        lightEffect2:setClip(0, true, zeroVector, Vector(0, 0, -1), holo)
+        lightEffect2:setColor(Color(255, 0, 0))
+
+        local impact = hologram.create(zeroVector, zeroAngle, "models/holograms/hq_sphere.mdl")
+        if !impact then return end
+        impact:suppressEngineLighting(true)
+
+        local impactLaserEffect = hologram.create(zeroVector, zeroAngle, "models/holograms/hq_sphere.mdl")
+        if !impactLaserEffect then return end
+        impactLaserEffect:suppressEngineLighting(true)
+        impactLaserEffect:setMaterial("models/effects/vortshield")
+        impactLaserEffect:setColor(Color(255, 50, 50))
+
+        astrosound.play {"laser", looping = true, callback = function(snd)
+            self.sound = snd
+        end}
+
+        self.ent = ent
+        self.offset = offset
+        self.scale = scale
+        self.holo = holo
+        self.laserEffect = laserEffect
+        self.lightEffect = lightEffect
+        self.lightEffect2 = lightEffect2
+        self.impact = impact
+        self.impactLaserEffect = impactLaserEffect
         self.nextParticle = 0
         self.add = false
     end
 
+    function Laser:think()
+        if !isValid(self.ent) then return false end
+    end
+
     function Laser:render()
-        if !isValid(self.ent) then return end
-        local start = self.ent:localToWorld(self.offset)
+        local ent = self.ent
+        if !isValid(self.ent) then return false end
+        local holo = self.holo
+        local impact = self.impact
+        local impactLaserEffect = self.impactLaserEffect
+        local laserEffect = self.laserEffect
+        local lightEffect2 = self.lightEffect2
+        local snd = self.sound
+        local start = ent:localToWorld(self.offset)
         local origin = self:getOrigin() + randVector() * 2
         local scale = self:getScale()
         local size = start:getDistance(origin)
         local ang = (origin - start):getAngle()
         local newAng = ang:rotateAroundAxis(ang:getRight(), 90)
-        self.holo:setAngles(newAng)
-        self.holo:setPos(start)
-        self.holo:setSize(Vector(12 * scale, 12 * scale, size * 2))
+        holo:setAngles(newAng)
+        holo:setPos(start)
+        holo:setSize(Vector(12 * scale, 12 * scale, size * 2))
 
-        self.impact:setPos(origin)
-        self.impact:setSize(Vector(20 * scale, 20 * scale, 48 * scale))
-        self.impact:setAngles(newAng)
+        impact:setPos(origin)
+        impact:setSize(Vector(20 * scale, 20 * scale, 48 * scale))
+        impact:setAngles(newAng)
 
-        self.impactLaserEffect:setPos(origin)
-        self.impactLaserEffect:setSize(Vector(32 * scale, 32 * scale, 56 * scale))
-        self.impactLaserEffect:setAngles(newAng:rotateAroundAxis(ang:getUp(), 180))
+        impactLaserEffect:setPos(origin)
+        impactLaserEffect:setSize(Vector(32 * scale, 32 * scale, 56 * scale))
+        impactLaserEffect:setAngles(newAng:rotateAroundAxis(ang:getUp(), 180))
 
         ---@type ViewSetup
         local vs = render.getViewSetup(true)
-        local laserEffAngle = self.holo:worldToLocalAngles((vs.origin - start):getAngle())
-        self.laserEffect:setSize(Vector(16 * scale, 16 * scale, size * 2))
-        self.laserEffect:setAngles(self.holo:localToWorldAngles(Angle(0, laserEffAngle.y + 90, 0)))
+        local laserEffAngle = holo:worldToLocalAngles((vs.origin - start):getAngle())
+        laserEffect:setSize(Vector(16 * scale, 16 * scale, size * 2))
+        laserEffect:setAngles(holo:localToWorldAngles(Angle(0, laserEffAngle.y + 90, 0)))
 
-        self.lightEffect2:setSize(Vector(size * 2, 48 * scale, 48 * scale))
-        self.lightEffect2:setAngles(self.holo:localToWorldAngles(Angle(90, laserEffAngle.y + 90, 90)))
+        lightEffect2:setSize(Vector(size * 2, 48 * scale, 48 * scale))
+        lightEffect2:setAngles(holo:localToWorldAngles(Angle(90, laserEffAngle.y + 90, 90)))
+
+        if snd then
+            local localEyePos = holo:worldToLocal(vs.origin)
+            local sndPos = holo:localToWorld(Vector(0, 0, math.clamp(localEyePos.z, -size, 0)))
+            snd:setPos(sndPos)
+        end
 
         local cur = timer.curtime()
         if self.nextParticle > cur then return end
         if emm:getParticlesLeft() < 1 then return end
         do
             local startSize = math.random(10, 14)
-            local part = emm:add(
-                fire,
-                origin,
-                startSize, 0,
-                0, 0,
-                255, 0,
-                1
-            )
+            local part = emm:add(fire, origin, startSize, 0, 0, 0, 255, 0, 1)
             if !part then return end
             part:setVelocity(randVector() * 50 * scale)
             part:setAirResistance(10)
@@ -103,14 +141,7 @@ if CLIENT then
         end
         do
             local startSize = math.random(20, 24) * scale
-            local part = emm:add(
-                warp,
-                origin + randVector() * 6 * scale,
-                startSize, startSize + 20,
-                0, 0,
-                255, 0,
-                0.2
-            )
+            local part = emm:add(warp, origin + randVector() * 6 * scale, startSize, startSize + 20, 0, 0, 255, 0, 0.2)
             if !part then return end
             part:setVelocity(randVector() * 100 * scale)
             part:setAirResistance(10)
@@ -128,8 +159,8 @@ if CLIENT then
         if isValid(self.lightEffect) then self.lightEffect:remove() end
         if isValid(self.lightEffect2) then self.lightEffect2:remove() end
         if isValid(self.impact) then self.impact:remove() end
-        if isValid(self.impactLight) then self.impactLight:remove() end
         if isValid(self.impactLaserEffect) then self.impactLaserEffect:remove() end
+        if isValid(self.sound) then self.sound:stop() end
     end
 end
 

@@ -1,6 +1,6 @@
 if CLIENT then
     local sounds = "https://raw.githubusercontent.com/AstricUnion/Astro/refs/heads/main/sounds/astrotrooper/"
-    astrosound.preloadURL("loop", sounds .. "Idle.mp")
+    astrosound.preloadURL("loop", sounds .. "Idle.mp3")
     astrosound.preloadURL("dash", sounds .. "TrooperDash.mp3")
     astrosound.preloadURL("reload", sounds .. "Reload.mp3")
     astrosound.preloadURL("blaster", sounds .. "Fire.mp3")
