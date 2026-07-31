@@ -16,3 +16,6 @@
 [submodule "libs/bdebug"]
 	path = libs/bdebug
 	url = git@github.com:AstricUnion/BDebug
+[submodule "libs/astrosound"]
+	path = libs/astrosound
+	url = git@github.com:AstricUnion/Astrosound
