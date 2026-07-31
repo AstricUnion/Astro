@@ -10,12 +10,12 @@
 [submodule "libs/beffect"]
 	path = libs/beffect
 	url = git@github.com:AstricUnion/BEffects
-[submodule "libs/astrosound"]
-	path = libs/astrosound
-	url = git@github.com:AstricUnion/AstroSound
 [submodule "builder"]
 	path = builder
 	url = https://github.com/AstricUnion/SEXBuilder
 [submodule "libs/bdebug"]
 	path = libs/bdebug
 	url = git@github.com:AstricUnion/BDebug
+[submodule "astrosound"]
+	path = astrosound
+	url = git@github.com:AstricUnion/Astrosound

@@ -22,7 +22,6 @@ if CLIENT then
         material.load("particles/flamelet5")
     }
     local emm = particle.create(Vector(), false)
-    local randVector = function() return Vector(math.rand(-1, 1), math.rand(-1, 1), math.rand(-1, 1)) end
 
     function HitSmoke:init()
         self.emmiter = emm
@@ -49,23 +48,23 @@ if CLIENT then
         local size = math.rand(10, 20) * scale
         if flags == 1 then
             local particle = self.emmiter:add(
-                fires[math.random(1, #fires)], origin + randVector() * scale, 5, size + 5,
+                fires[math.random(1, #fires)], origin + beff.randVector() * scale, 5, size + 5,
                 0, 0, 255, 0, 0.3
             )
             if particle then
-                local vel = randVector() * 10 * scale * Vector(1, 1, 10)
+                local vel = beff.randVector() * 10 * scale * Vector(1, 1, 10)
                 particle:setVelocity(vel:setZ(math.abs(vel.z)))
                 particle:setLighting(true)
                 particle:setCollide(true)
             end
         end
         local particle = self.emmiter:add(
-            sprite, origin + randVector() * scale, 5, size + 5,
+            sprite, origin + beff.randVector() * scale, 5, size + 5,
             0, 0, 255, 0, 1
         )
         if particle then
             particle:setGravity(Vector(0, 0, 200))
-            particle:setVelocity(randVector() * 30 * scale)
+            particle:setVelocity(beff.randVector() * 30 * scale)
             particle:setLighting(true)
             local darg = math.rand(50, 100)
             particle:setColor(Color(darg, darg, darg))

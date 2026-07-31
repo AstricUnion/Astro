@@ -2,6 +2,7 @@
 ---@author AstricUnion
 ---@include astronew/baseincludes.lua
 ---@include astronew/models/astroscout.lua
+---@include astronew/entities/astrodash.lua
 ---@include astronew/entities/astroscout.lua
 
 require("astronew/baseincludes.lua")
@@ -10,6 +11,7 @@ require("astronew/baseincludes.lua")
 dodir("astronew/effects", {})
 
 require("astronew/models/astroscout.lua")
+require("astronew/entities/astrodash.lua")
 require("astronew/entities/astroscout.lua")
 
 

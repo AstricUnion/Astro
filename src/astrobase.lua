@@ -176,6 +176,8 @@ end
 ents.register(ModuleBase)
 
 
+-- TODO: maybe move all actions to AstroBase and made module pathing?
+
 ---Astro module - module with physics body, like guns or arms
 ---You are free in use of this, but I recommend use it with breakable elements
 ---@class AstroModuleBase: ModuleBase
@@ -275,7 +277,7 @@ ents.register(AstroModuleBase, "module_base")
 
 ---@class AstroModuleCfg
 ---@field module string?
----@field offset Vector
+---@field offset Vector?
 
 ---@class AstroBase: ModuleBase
 ---@field SprintSpeed number Sprint speed of Astro. By default is 600
@@ -283,11 +285,13 @@ ents.register(AstroModuleBase, "module_base")
 ---@field VelocityRatio number Velocity ratio to lerp. By default is 0.05
 ---@field CameraOffset Vector Camera offset
 ---@field CameraAngle Angle Camera angles
+---@field HeadOffset Vector Head offset (for trace)
 ---@field Health number Health of Astro
----@field Modules AstroModuleCfg[]
+---@field Modules AstroModuleCfg[] Modules of Astro. BEntities inherited from class AstroModuleBase
 ---@field SeatOffset Vector Offset of seat
 ---@field SeatAngle Angle Angle offset of seat
 ---@field SeatVisible boolean Made seat visible
+---@field Radius number Radius of an Astro. Modules or you can use this parameter, so change it. By default is 48
 ---@field driver Player Driver of this Astro
 ---@field velocity Vector Velocity of this Astro
 ---@field physobj PhysObj Physics object of this Astro
@@ -310,15 +314,21 @@ AstroBase.Speed = 400
 AstroBase.VelocityRatio = 0.04
 AstroBase.CameraOffset = Vector()
 AstroBase.CameraAngle = Angle()
+AstroBase.HeadOffset = Vector()
 AstroBase.Health = 1000
 AstroBase.Modules = {}
 AstroBase.SeatOffset = Vector()
 AstroBase.SeatAngle = Angle(0, -90, 0)
 AstroBase.SeatVisible = false
+AstroBase.Radius = 48
 
 
 ---[SHARED] Post initialize Astro
 function AstroBase:astroInitialize() end
+
+---[SHARED] On initialize Astro modules
+---@param mod AstroModuleBase Initialized module
+function AstroBase:astroModuleInitialize(mod) end
 
 
 function AstroBase:moduleInitialize()
@@ -334,7 +344,8 @@ function AstroBase:moduleInitialize()
         self.physobj:addGameFlags(FVPHYSICS.NO_IMPACT_DMG)
         self.velocity = Vector()
         local pos, ang = self.ent:getPos(), self.ent:getAngles()
-        for i, v in ipairs(self.Modules) do
+        for i, v in pairs(self.Modules) do
+            if v.offset == nil then v.offset = Vector() end
             local ent = ents.create(v.module)
             ---@cast ent AstroModuleBase
             local localPos, localAng = localToWorld(v.offset, Angle(), pos, ang)
@@ -342,6 +353,7 @@ function AstroBase:moduleInitialize()
             ent:spawn(localPos, localAng, false)
             ent.ent:setParent(self.ent)
             modules[i] = ent
+            self:astroModuleInitialize(ent)
             self.filter[#self.filter+1] = ent.ent
         end
     else
@@ -391,6 +403,14 @@ if SERVER then
         self:seatToAstro()
     end
 
+    ---[SERVER] On Astro activation (when player enters seat)
+    ---@param ply Player Player activated Astro
+    function AstroBase:astroActivate(ply) end
+
+    ---[SERVER] On Astro deactivation (when player leaves seat)
+    ---@param ply Player Player deactivated Astro
+    function AstroBase:astroDeactivate(ply) end
+
     ---@param self AstroBase
     ---@param ply Player
     ---@param vehicle Vehicle
@@ -407,6 +427,7 @@ if SERVER then
         self.driver = ply
         enableHud(ply, true)
         ply:setViewEntity(self.ent)
+        self:astroActivate(ply)
     end
 
     ---@param self AstroBase
@@ -422,6 +443,7 @@ if SERVER then
         ply:setViewEntity(nil)
         enableHud(ply, false)
         self:seatToAstro()
+        self:astroDeactivate(ply)
     end
 
     ---[SERVER] Get fly velocity of Astro
@@ -502,9 +524,9 @@ if SERVER then
                 local angvel = ang:getQuaternion():getRotationVector() - self.ent:getAngleVelocity() / 5
                 self.physobj:addAngleVelocity(angvel)
             end
-            for _, v in ipairs(self.modules) do
-                v:think()
-            end
+        end
+        for _, v in ipairs(self.modules) do
+            v:think()
         end
     end
 
@@ -694,6 +716,7 @@ else
     function AstroBase:clientInitializeModule(module)
         self.modules[module:getModuleID()] = module
         self.filter[#self.filter+1] = module.ent
+        self:astroModuleInitialize(module)
     end
 end
 
@@ -713,21 +736,31 @@ function AstroBase:getSeat()
     return ent
 end
 
----[SHARED] Get astro eyes angles
----@return Angle?
+---[SHARED] Get Astro eyes angles
+---@return Angle
 function AstroBase:getEyeAngles()
     local dr = self.driver
-    if !dr then return end
+    if !dr then return Angle() end
     return dr:getEyeAngles()
 end
 
+---[SHARED] Get Astro eyes position
+---@return Vector
+function AstroBase:getEyePos()
+    local angs = self:getEyeAngles()
+    if !angs then return Vector() end
+    return self.ent:localToWorld(self.HeadOffset) + self.CameraOffset:getRotated(angs)
+end
+
 ---[SHARED] Get Astro eye trace
----@return TraceResult? trace
+---@return TraceResult trace
 function AstroBase:getEyeTrace()
-    local ang = self:getEyeAngles()
-    if !ang then return end
-    local pos = self.ent:getPos()
-    return trace.line(pos, pos + ang:getForward() * 32768, self.filter)
+    local angs = self:getEyeAngles()
+    if !angs then
+        angs = Angle()
+    end
+    local pos = self.ent:localToWorld(self.HeadOffset) + self.CameraOffset:getRotated(angs)
+    return trace.line(pos, pos + angs:getForward() * 32768, self.filter)
 end
 
 

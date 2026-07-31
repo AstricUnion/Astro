@@ -9,7 +9,7 @@ if CLIENT then
     astrosound.preloadURL("startBerserk", sounds .. "BerserkOn.mp3")
     astrosound.preloadURL("berserkLoop", sounds .. "BerserkLoop.mp3")
     astrosound.preloadURL("stopBerserk", sounds .. "BerserkOff.mp3")
-    astrosound.preloadURL("dash", sounds .. "Dash.mp3")
+    astrosound.preloadURL("dash2", sounds .. "Dash.mp3")
 end
 
 
@@ -37,8 +37,9 @@ AstroScout.Model = function()
 end
 AstroScout.hooks = {}
 AstroScout.CameraOffset = Vector(19, 0, -14)
+AstroScout.HeadOffset = Vector(0, 0, 68)
 ---@type AstroModuleCfg[]
-AstroScout.Modules = {}
+AstroScout.Modules = { { module = "astrodash" } }
 AstroScout.SeatOffset = Vector(85, 0, 0)
 AstroScout.SeatVisible = true
 AstroScout.Health = 6500
@@ -46,9 +47,8 @@ AstroScout.Speed = 200
 AstroScout.SprintSpeed = 600
 ---@type table<string, fun(self: AstroScout, cur: number): boolean?>
 AstroScout.actions = {}
+AstroScout.Radius = 128
 
-
-local world = game.getWorld()
 
 function AstroScout.actions.punch(astro, cur)
     if CLIENT then
@@ -64,28 +64,16 @@ function AstroScout.actions.punch(astro, cur)
             if !(isValid(astro) and bit.band(st, STATE.Punch) == STATE.Punch) then return end
             local isBerserk = bit.band(st, STATE.Berserk) == STATE.Berserk
             local radius = 160 * (isBerserk and 1.2 or 1)
-            local spheres = {
-                astro.ent:localToWorld(Vector(93, -53, 0)),
-                astro.ent:localToWorld(Vector(183, -21, 0))
-            }
-            bdebug.sphere(spheres[1], radius, 1, Color(255, 0, 0, 0))
-            bdebug.sphere(spheres[2], radius, 1, Color(255, 0, 0, 0))
-            local found = {
-                find.inSphere(spheres[1], radius),
-                find.inSphere(spheres[2], radius)
-            }
-            local alreadyDamaged = {}
-            for _, v in ipairs(found) do
-                for _, target in ipairs(v) do
-                    if !isValid(target) or alreadyDamaged[target] or target == world then goto cont end
-                    if !table.hasValue(astro.filter, target) then
-                        astroutils.applyDamage(target, 350 * (isBerserk and 1.5 or 1), astro.ent, astro.ent)
-                        alreadyDamaged[target] = true
-                    end
-                    ::cont::
-                end
-            end
-            astro:setState(st - STATE.Punch)
+            local damage = 350 * (isBerserk and 1.5 or 1)
+            astroutils.attack(
+                astro.ent, astro.ent, damage,
+                {
+                    {Vector(93, -53, 0), radius},
+                    {Vector(183, -21, 0), radius}
+                },
+                astro.filter, true
+            )
+            astro:setState(bit.band(st, bit.bnot(STATE.Punch)))
         end)
         return true
     end
@@ -106,20 +94,15 @@ function AstroScout.actions.swing(astro, cur)
             if !(isValid(astro) and bit.band(st, STATE.Punch) == STATE.Punch) then return end
             local isBerserk = bit.band(st, STATE.Berserk) == STATE.Berserk
             local radius = 160 * (isBerserk and 1.2 or 1)
-            local pos = astro.ent:localToWorld(Vector(197, -21, 0))
-            bdebug.sphere(pos, radius, 1, Color(255, 0, 0, 0))
-            local targets = find.inSphere(pos, radius)
-            local damage = 0
-            for _, target in ipairs(targets) do
-                if !isValid(target) or target == world then goto cont end
-                if !table.hasValue(astro.filter, target) then
-                    local dam = 600 * (isBerserk and 1.5 or 1)
-                    damage = damage + math.min(target:getHealth(), dam)
-                    astroutils.applyDamage(target, dam, astro.ent, astro.ent)
+            local damage = 600 * (isBerserk and 1.5 or 1)
+            astroutils.attack(
+                astro.ent, astro.ent, damage,
+                {{Vector(197, -21, 0), radius}},
+                astro.filter, true,
+                function(target)
+                    astro:setHealth(math.min(astro:getHealth() + math.min(target:getHealth(), damage) * 0.15, astro.Health))
                 end
-                ::cont::
-            end
-            astro:setHealth(math.min(astro:getHealth() + damage * 0.15, astro.Health))
+            )
             astro:setState(bit.band(st, bit.bnot(STATE.Punch)))
         end)
         return true
@@ -207,29 +190,13 @@ function AstroScout.actions.stopLaser(astro, cur)
     end
 end
 
+
 function AstroScout.actions.dash(astro, cur)
-    if CLIENT then
-        astro.ent:setSequence("swing", 1)
-        astrosound.play {"dash", nil, astro.ent, volume = 1.5}
-        timer.simple(0.4, function()
-            if !(isValid(astro) and bit.band(astro:getState(), STATE.Dashing) == STATE.Dashing) then return end
-            astro.ent:setSequence(0, 1)
-        end)
-    else
-        local dir = astro:getDirection()
-        if !dir then return end
-        dir = !dir:isZero() and dir or astro.ent:getAngles():getForward()
-        local pos = astro.ent:getPos()
-        local interval = game.getTickInterval()
-        local endPos = pos + dir * (interval * 16000)
-        local canPos = trace.hull(pos, endPos, Vector(-40), Vector(40), astro.filter)
-        if canPos.Hit then return end
-        astro:setState(bit.bor(astro:getState(), STATE.Dashing))
-        astro.dashStartTime = cur
-        astro:setNWVar("dashDirection", dir)
-        return true
+    if SERVER then
+        astro.modules[1]:sendAction("dash")
     end
 end
+
 
 function AstroScout.actions.berserk(astro, cur)
     if CLIENT then
@@ -238,6 +205,10 @@ function AstroScout.actions.berserk(astro, cur)
         eff:setEntity(astro.ent)
         eff:play()
         astro.berserkEffect = eff
+        astrosound.play {"berserkLoop", nil, astro.ent, looping = true, volume = 2, callback = function(snd)
+            if isValid(astro.loopSound) then astro.loopSound:stop() end
+            astro.loopSound = snd
+        end}
     else
         if astro:getBerserkProgress() < 3200 then return end
         astro:setState(bit.bor(astro:getState(), STATE.Berserk))
@@ -269,87 +240,94 @@ function AstroScout:think()
                 self.berserkEffect = nil
             end
             astrosound.play {"stopBerserk", nil, self.ent, volume = 2}
+            astrosound.play {"loop2", nil, self.ent, looping = true, volume = 0.8, callback = function(snd)
+                if isValid(self.loopSound) then self.loopSound:stop() end
+                self.loopSound = snd
+            end}
         end
     end
-    local band = bit.band(st, STATE.Laser + STATE.Dashing)
-    local byStates = {
-        [STATE.Laser] = function()
-            local eyeAng = self:getEyeAngles()
-            if !eyeAng then return end
-            local pos = self.ent:getPos()
-            local tr = trace.hull(pos, pos + eyeAng:getForward() * 32768, Vector(-16), Vector(16), self.filter)
-            if CLIENT then
-                local module = self.ent:getBoneEntity(self.ent:lookupBone("left_shoulder"))
-                local ang = (tr.HitPos - module:getPos()):getAngle()
-                ang = ang:rotateAroundAxis(ang:getUp(), -90)
-                self.ent:setPoseParameter("laser_rotation_p", ang.p)
-                self.ent:setPoseParameter("laser_rotation_y", ang.y)
-                self.ent:setPoseParameter("laser_rotation_r", ang.r)
-                if self.laserEffect then
-                    self.laserEffect:setOrigin(tr.HitPos)
-                end
-            else
-                if bit.band(st, STATE.LaserOn) ~= STATE.LaserOn then return end
-                local toDamage = find.inSphere(tr.HitPos, 48)
-                for _, v in ipairs(toDamage) do
-                    if !isValid(v) or v == world then goto cont end
-                    if !table.hasValue(self.filter, v) then
-                        astroutils.applyDamage(v, 20, self.ent, self.ent)
-                    end
-                    ::cont::
-                end
-                if !isBerserk then
-                    local fromStart = timer.curtime() - self:getLaserStartTime()
-                    if fromStart > self:getLaserRemain() then
-                        self:sendAction("stopLaser")
-                    end
-                end
+    if bit.band(st, STATE.Laser) == STATE.Laser then
+        local eyeAng = self:getEyeAngles()
+        local pos = self:getEyePos()
+        local tr = trace.hull(pos, pos + eyeAng:getForward() * 32768, Vector(-16), Vector(16), self.filter)
+        if CLIENT then
+            local module = self.ent:getBoneEntity(self.ent:lookupBone("left_shoulder"))
+            local ang = (tr.HitPos - module:getPos()):getAngle()
+            ang = ang:rotateAroundAxis(ang:getUp(), -90)
+            self.ent:setPoseParameter("laser_rotation_p", ang.p)
+            self.ent:setPoseParameter("laser_rotation_y", ang.y)
+            self.ent:setPoseParameter("laser_rotation_r", ang.r)
+            if self.laserEffect then
+                self.laserEffect:setOrigin(tr.HitPos)
             end
-        end,
-        [STATE.Dashing] = function()
-            local dir = self:getDashDirection()
-            if dir then
-                if SERVER then
-                    self:setVelocity(dir * 4000)
-                    local pos = self.ent:getPos()
-                    local remain = 1.8 - (cur - self.dashStartTime)
-                    local interval = game.getTickInterval()
-                    local endPos = pos + dir * (interval * 16000)
-                    local canPos = trace.hull(pos, endPos, Vector(-40), Vector(40), self.filter)
-                    if remain <= 0 or canPos.Hit then
-                        self:setVelocity(dir)
-                        self:setNextAction("dash", cur + 3)
-                        self:setNextAction("block", cur + 0.5)
-                        self:setNextAction("punch", cur + 0.5)
-                        self:setNextAction("swing", cur + 0.5)
-                        self:setNWVar("dashDirection", nil)
-                        astrosound.play {"swing", nil, self.ent, time = 0.3}
-                        self.ent:setSequence("swing", 1, 0.4)
-                        local radius = 160 * (isBerserk and 1.2 or 1)
-                        local hitPos = self.ent:localToWorld(Vector(197, -21, 0))
-                        bdebug.sphere(hitPos, radius, 1, Color(255, 0, 0, 0))
-                        local targets = find.inSphere(hitPos, radius)
-                        for _, target in ipairs(targets) do
-                            if !isValid(target) or target == world then goto cont end
-                            if !table.hasValue(self.filter, target) then
-                                astroutils.applyDamage(target, 1200 * (isBerserk and 1.5 or 1), self.ent, self.ent)
-                            end
-                            ::cont::
-                        end
-                        self:setState(bit.band(st, bit.bnot(STATE.Dashing)))
-                    end
+        else
+            if bit.band(st, STATE.LaserOn) ~= STATE.LaserOn then return end
+            astroutils.attack(self.ent, self.ent, 20, {{tr.HitPos, 48}}, self.filter)
+            if !isBerserk then
+                local fromStart = timer.curtime() - self:getLaserStartTime()
+                if fromStart > self:getLaserRemain() then
+                    self:sendAction("stopLaser")
                 end
             end
         end
-    }
-    local fun = byStates[band]
-    if fun then fun() end
+    end
 end
+
+local function dashStart(mod, astro)
+    if CLIENT then
+        astro.ent:setSequence("swing", 1)
+        astrosound.play {"dash2", nil, astro.ent, volume = 1.5}
+        local eff = beff.create("dashtrail")
+        eff:setEntity(astro.ent)
+        eff:play()
+        astro.dashTrail = eff
+        timer.simple(0.4, function()
+            if !(isValid(astro) and bit.band(astro:getState(), STATE.Dashing) == STATE.Dashing) then return end
+            astro.ent:setSequence(0, 1)
+        end)
+    else
+        astro:setState(bit.bor(astro:getState(), STATE.Dashing))
+        return true
+    end
+end
+
+local function dashEnd(mod, astro)
+    if CLIENT then
+        if astro.dashTrail then astro.dashTrail:destroy() end
+        return
+    end
+    local dir = mod:getDirection()
+    if !dir then return end
+    local cur = timer.curtime()
+    local st = astro:getState()
+    local isBerserk = bit.band(st, STATE.Berserk) == STATE.Berserk
+    astro:setNextAction("block", cur + 0.5)
+    astro:setNextAction("punch", cur + 0.5)
+    astro:setNextAction("swing", cur + 0.5)
+    astro:setVelocity(dir)
+    astrosound.play {"swing", nil, astro.ent, time = 0.3}
+    astro.ent:setSequence("swing", 1, 0.4)
+    local radius = 160 * (isBerserk and 1.2 or 1)
+    local damage = 1200 * (isBerserk and 1.5 or 1)
+    astroutils.attack(astro.ent, astro.ent, damage, {{Vector(197, -21, 0), radius}}, astro.filter, true)
+    astro:setState(bit.band(st, bit.bnot(STATE.Dashing)))
+end
+
+function AstroScout:astroModuleInitialize(mod)
+    if mod.Identifier ~= "astrodash" then return end
+    ---@cast mod AstroDash
+    mod.DashTime = 1.8
+    mod.AllowVarying = true
+    mod.Radius = 160
+    mod.Control = "G"
+    mod.dashStart = dashStart
+    mod.dashEnd = dashEnd
+end
+
 
 if SERVER then
     function AstroScout:astroInitialize()
         self:setState(STATE.Idle)
-        self:setNWVar("berserkProgress", 3200)
     end
 
     local canAct = {
@@ -395,6 +373,10 @@ if SERVER then
         if act then
             self:sendAction(act)
         end
+
+        if button == KEY.B then
+            self.ent:applyDamage(self.Health)
+        end
     end
 
     function AstroScout:onDamage(_, _, amount)
@@ -405,20 +387,71 @@ if SERVER then
             multiplier = 1.2
         end
         if bit.band(st, STATE.Berserk) ~= STATE.Berserk then
-            self:setNWVar("berserkProgress", self:getBerserkProgress() + amount * multiplier)
+            self:setNWVar("berserkProgress", math.clamp(self:getBerserkProgress() + amount * multiplier, 0, 3200))
         end
+    end
+
+    function AstroScout:astroDeactivate(ply)
+        self:sendAction("stopLaser")
+    end
+
+    function AstroScout:think()
+        if !self:isAlive() then
+            self.physobj:addVelocity(self.deathDirection * 5)
+            local localAng = self.ent:worldToLocalAngles(self.deathDirection:getAngle())
+            local deathAngle = Vector(10, 0, 0):getRotated(localAng)
+            self.physobj:addAngleVelocity(deathAngle)
+        end
+    end
+
+    function AstroScout:onDeath()
+        local dir = self:getDirection()
+        self.deathDirection = dir and !dir:isZero() and dir or self.ent:getAngles():getForward()
+        self.ent:setSequence("death")
+        local seat = self:getSeat()
+        if seat and isValid(seat) then
+            self:seatToAstro()
+            seat:ejectDriver()
+            seat:setCollisionGroup(COLLISION_GROUP.IN_VEHICLE)
+        end
+        do
+            local eff = beff.create("projectile_explosion")
+            eff:setOrigin(self.ent:getPos())
+            eff:setScale(3)
+            eff:play()
+        end
+        do
+            local eff = beff.create("hitsmoke")
+            eff:setEntity(self.ent)
+            eff:setFlags(1)
+            eff:setScale(4)
+            eff:play()
+        end
+        -- astrosound.play {"death", nil, self.ent, fadeMin = 3000, fadeMax = 50000}
+        self.ent:setCollisionGroup(COLLISION_GROUP.WORLD)
+        self.ent:addCollisionListener(function()
+            if !isValid(self) then return end
+            self:remove()
+            self.ent:removeCollisionListener()
+        end)
+        self.physobj:setAngleVelocity(Vector())
     end
 else
     local l1 = light.create(Vector(), 80, 10, Color(255, 0, 0))
 
     function AstroScout:astroInitialize()
         self.ent:setSequence("idle")
-        astrosound.play {"loop2", nil, self.ent, looping = true, volume = 0.8}
+        astrosound.play {"loop2", nil, self.ent, looping = true, volume = 0.8, callback = function(snd)
+            self.loopSound = snd
+        end}
     end
 
     function AstroScout.hooks:AstroSoundPreloaded(identifier)
-        if identifier == "loop2" then
-            astrosound.play {identifier, nil, self.ent, looping = true, volume = 0.8}
+        local isBerserk = bit.band(self:getState(), STATE.Berserk) == STATE.Berserk
+        if (isBerserk and identifier == "berserkLoop") or (!isBerserk and identifier == "loop2") then
+            astrosound.play {identifier, nil, self.ent, looping = true, volume = 0.8, callback = function(snd)
+                self.loopSound = snd
+            end}
         end
     end
 
@@ -427,6 +460,10 @@ else
         l1:draw()
     end
 
+    local upGrad = material.load("vgui/gradient_up")
+    local downGrad = material.load("vgui/gradient_down")
+    local leftGrad = material.load("vgui/gradient-l")
+    local rightGrad = material.load("vgui/gradient-r")
     function AstroScout:onDrawHUD(sw, sh)
         local x, y = sw / 2, sh / 2
         local st = self:getState()
@@ -452,24 +489,28 @@ else
         end
 
         do
-            local dir = self:getDashDirection()
-            local percent = !dir and (1 - (math.clamp(self:getNextAction("dash") - cur, 0, 3) / 3)) or 0
-            astrogui.drawProgressBar(x - 85, y + 128, 170, 20, percent, "DASH_MOD", (math.ceil(percent * 100)) .. "%", true, true)
-            astrogui.control(x + 101, y + 138, "G", percent < 1)
+            self.modules[1]:drawHUD(x, y + 128)
         end
 
         do
             local percent = math.clamp(isBerserk and (12 - (cur - self:getBerserkStartTime())) / 12 or self:getBerserkProgress() / 3200, 0, 1)
             astrogui.drawProgressBar(x - 85, y - 86, 170, 20, percent, "BERSERK_MOD", (math.ceil(percent * 100)) .. "%", false, true)
             astrogui.control(x + 101, y - 76, "F", isBerserk or percent < 1)
+            if isBerserk then
+                render.setColor(Color(255, 20, 20, 150 - math.sin(game.getTickCount() / 36) * 80))
+                local width, height = sw / 4, sh / 4
+                render.setMaterial(downGrad)
+                render.drawTexturedRect(0, 0, sw, height)
+                render.setMaterial(upGrad)
+                render.drawTexturedRect(0, sh - height, sw, height)
+                render.setMaterial(leftGrad)
+                render.drawTexturedRect(0, 0, width, sh)
+                render.setMaterial(rightGrad)
+                render.drawTexturedRect(sw - width, 0, width, sh)
+                render.setMaterial()
+            end
         end
     end
-end
-
----[SHARED] Get direction of dash
----@return Vector?
-function AstroScout:getDashDirection()
-    return self:getNWVar("dashDirection")
 end
 
 ---[SHARED] Get laser start time

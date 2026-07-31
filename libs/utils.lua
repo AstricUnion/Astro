@@ -98,6 +98,39 @@ if SERVER then
         explosive:setPos(damageOrigin)
         wire.triggerInput(explosive, "Detonate", 1)
     end
+
+    local world = game.getWorld()
+
+    ---@class AttackSphere
+    ---@field [1] Vector Origin of sphere (local to entity)
+    ---@field [2] number Radius of sphere
+
+    ---[SERVER] Astro attack by sphere hitboxes
+    ---@param inflictor Entity Entity to inflict attack
+    ---@param attacker Entity Entity to attack from
+    ---@param damage number Damage to deal
+    ---@param spheres AttackSphere[]
+    ---@param filter Entity[]? Entities to filter
+    ---@param localToEnt boolean? Localize spheres to inflictor
+    ---@param callback (fun(target: Entity): boolean?)? Callback. If returns true, then prevent attack
+    function astroutils.attack(inflictor, attacker, damage, spheres, filter, localToEnt, callback)
+        local filterByEnt = {}
+        if filter then
+            for _, v in ipairs(filter) do
+                filterByEnt[v] = true
+            end
+        end
+        for _, v in ipairs(spheres) do
+            local pos = localToEnt and inflictor:localToWorld(v[1]) or v[1]
+            for _, target in ipairs(find.inSphere(pos, v[2])) do
+                if !isValid(target) or target == world or filterByEnt[target] then goto cont end
+                if (callback and callback(target)) then goto cont end
+                astroutils.applyDamage(target, damage, attacker, inflictor)
+                filterByEnt[target] = true
+                ::cont::
+            end
+        end
+    end
 end
 
 
