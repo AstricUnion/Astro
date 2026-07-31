@@ -180,15 +180,80 @@ local tube = part {
     holo { Vector(9, 12, -9), Angle(45, 0, 90), "models/props_combine/breenlight.mdl", Vector(1, 1.6, 4), color = mainColor, material = metalMat },
 }
 
-
-model.new("astroscout", part {
+model.new("astroscout_body", part {
     hitbox {
         vertex {"cylinder", Vector(0, 0, 8), nil, Vector(86, 86, 18)},
         vertex {"cylinder", Vector(0, 0, -24), nil, Vector(36, 36, 12)},
-        vertex {"cube", Vector(0, 0, 68), nil, Vector(30, 28, 28)},
         material = "Metal",
-        mass = 1000
+        mass = 800
     },
+    body,
+    rotor
+})
+
+model.new("astroscout_head", part {
+    hitbox {
+        vertex {"cube", Vector(0, 0, 0), nil, Vector(30, 28, 28)},
+        material = "Metal",
+        mass = 200
+    },
+    head
+})
+
+model.new("astroscout_leftshoulder", part {
+    hitbox {
+        vertex {"cube", Vector(0, 120, 32), nil, Vector(26, 58, 24)},
+        material = "Metal",
+        mass = 200,
+    },
+    leftShoulder
+})
+
+model.new("astroscout_leftforearm", part {
+    hitbox {
+        vertex {"cube", Vector(0, 140, 0), nil, Vector(26, 58, 24)},
+        vertex {"cylinder", Vector(0, 190, 0), Angle(90, 0, 0), Vector(38, 38, 14)},
+        material = "Metal",
+        mass = 200,
+    },
+    part {
+        leftForearm,
+        tube,
+        prongsFun,
+    }
+})
+
+model.new("astroscout_rightshoulder", part {
+    hitbox {
+        vertex {"cube", Vector(0, -120, 32), nil, Vector(26, 58, 24)},
+        material = "Metal",
+        mass = 200,
+    },
+    rightShoulder
+})
+
+model.new("astroscout_rightforearm", part {
+    hitbox {
+        vertex {"cube", Vector(0, -151, 0), nil, Vector(26, 70, 24)},
+        vertex {"cube", Vector(0, -180, 28), nil, Vector(20, 58, 8)},
+        material = "Metal",
+        mass = 200,
+    },
+    part {
+        rightForearm,
+        part {
+            hand,
+            claws
+        }
+    }
+})
+
+model.new("astroscout", hitbox {
+    vertex {"cylinder", Vector(0, 0, 8), nil, Vector(86, 86, 18)},
+    vertex {"cylinder", Vector(0, 0, -24), nil, Vector(36, 36, 12)},
+    vertex {"cube", Vector(0, 0, 68), nil, Vector(30, 28, 28)},
+    material = "Metal",
+    mass = 1000
 })
 
     :add("body", body)

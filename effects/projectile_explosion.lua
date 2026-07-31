@@ -26,6 +26,7 @@ if CLIENT then
         holo:emitSound("npc/vort/vort_explode1.wav", 75, 150, 1.5)
         holo:suppressEngineLighting(true)
         for i=1, 8 do
+            if emm:getParticlesLeft() < 1 then goto cont end
             local size = math.rand(100, 120) * scale
             local particle = emm:add(
                 warp, origin, size, 0,
@@ -40,10 +41,11 @@ if CLIENT then
                 particle:setCollide(false)
                 particle:setRollDelta(10)
             end
+            ::cont::
         end
         -- Fires particles
         for _=1, 20 do
-            if emm:getParticlesLeft() < 1 then return end
+            if emm:getParticlesLeft() < 1 then goto cont end
             local startSize = math.random(10, 14) * scale
             local part = emm:add(
                 fire[math.random(1, #fire)],
@@ -61,6 +63,7 @@ if CLIENT then
             part:setColor(Color(255, 50, 50))
             part:setCollide(true)
             part:setBounce(math.rand(0, 0.5))
+            ::cont::
         end
         tween.start(tween.new {
             param {0, 1, holo, property.SCALE, Vector(scale, scale, scale), Vector(scale * 18, scale * 18, scale * 18), math.easeOutQuart},

@@ -1,14 +1,13 @@
 ---@include astronew/baseincludes.lua
----@include astronew/models/astroscout_full.lua
+---@include astronew/models/astroscout.lua
 
 require("astronew/baseincludes.lua")
-require("astronew/models/astroscout_full.lua")
+require("astronew/models/astroscout.lua")
 
 
 if SERVER then
     local ch = chip()
-    local mdl = model.create("astroscout")
+    local mdl = model.create("astroscout_rightforearm")
     mdl:setPos(ch:getPos())
     mdl:setAngles(ch:getAngles())
-    mdl:setParent(ch)
 end

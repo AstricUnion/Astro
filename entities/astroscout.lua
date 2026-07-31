@@ -222,6 +222,13 @@ end
 
 
 function AstroScout:think()
+    if !self:isAlive() and SERVER then
+        self.physobj:addVelocity(self.deathDirection * 10)
+        local localAng = self.ent:worldToLocalAngles(self.deathDirection:getAngle())
+        local deathAngle = Vector(10, 0, 0):getRotated(localAng)
+        self.physobj:addAngleVelocity(deathAngle)
+        return
+    end
     local st = self:getState()
     local cur = timer.curtime()
     local isBerserk = bit.band(st, STATE.Berserk) == STATE.Berserk
@@ -328,6 +335,7 @@ end
 if SERVER then
     function AstroScout:astroInitialize()
         self:setState(STATE.Idle)
+        self:setNWVar("berserkProgress", 3200)
     end
 
     local canAct = {
@@ -395,18 +403,27 @@ if SERVER then
         self:sendAction("stopLaser")
     end
 
-    function AstroScout:think()
-        if !self:isAlive() then
-            self.physobj:addVelocity(self.deathDirection * 5)
-            local localAng = self.ent:worldToLocalAngles(self.deathDirection:getAngle())
-            local deathAngle = Vector(10, 0, 0):getRotated(localAng)
-            self.physobj:addAngleVelocity(deathAngle)
-        end
+    local function createPart(name, ent, offset, localDirection, force, torque, velocity)
+        local pos, ang = localToWorld(offset, Angle(), ent:getPos(), ent:getAngles())
+        local part = model.create(name)
+        if !part then return end
+        part:setPos(pos)
+        part:setAngles(ang)
+        timer.simple(0, function()
+            if !isValid(part) then return end
+            part:applyForceCenter(velocity + beff.randVector(-force, force) + localDirection:getRotated(ang) * force)
+            part:applyTorque(beff.randVector(-torque, torque))
+        end)
+        return part
     end
 
     function AstroScout:onDeath()
+        if self.dashTrail then self.dashTrail:destroy() end
+        if self.berserkEffect then self.berserkEffect:destroy() end
+        if self.laserEffect then self.laserEffect:destroy() end
         local dir = self:getDirection()
         self.deathDirection = dir and !dir:isZero() and dir or self.ent:getAngles():getForward()
+        self.deathDirection:setZ(0)
         self.ent:setSequence("death")
         local seat = self:getSeat()
         if seat and isValid(seat) then
@@ -424,15 +441,83 @@ if SERVER then
             local eff = beff.create("hitsmoke")
             eff:setEntity(self.ent)
             eff:setFlags(1)
-            eff:setScale(4)
+            eff:setScale(10)
             eff:play()
         end
+        local leftShoulder = createPart("astroscout_leftshoulder", self.ent, Vector(), Vector(0, 1, 0), 100, 100, Vector())
+        local leftForearm = createPart("astroscout_leftforearm", self.ent, Vector(-3, 85, 26), Vector(0, 2, 0), 100, 100, Vector())
+        local rightShoulder = createPart("astroscout_rightshoulder", self.ent, Vector(), Vector(0, -1, 0), 100, 100, Vector())
+        local rightForearm = createPart("astroscout_rightforearm", self.ent, Vector(-3, -85, 26), Vector(0, -2, 0), 100, 100, Vector())
+        timer.simple(0.1, function()
+            if isValid(leftShoulder) then
+                local eff = beff.create("hitsmoke")
+                eff:setEntity(leftShoulder)
+                eff:setFlags(1)
+                eff:setOrigin(Vector(-3, 100, 26))
+                eff:setScale(6)
+                eff:play()
+            end
+
+            if isValid(leftForearm) then
+                local eff = beff.create("hitsmoke")
+                eff:setEntity(leftForearm)
+                eff:setFlags(1)
+                eff:setOrigin(Vector(0, 85, 0))
+                eff:setScale(6)
+                eff:play()
+            end
+
+            if isValid(rightShoulder) then
+                local eff = beff.create("hitsmoke")
+                eff:setEntity(rightShoulder)
+                eff:setFlags(1)
+                eff:setOrigin(Vector(-3, -100, 26))
+                eff:setScale(6)
+                eff:play()
+            end
+
+            if isValid(rightForearm) then
+                local eff = beff.create("hitsmoke")
+                eff:setEntity(rightForearm)
+                eff:setFlags(1)
+                eff:setOrigin(Vector(0, -85, 0))
+                eff:setScale(6)
+                eff:play()
+            end
+        end)
         -- astrosound.play {"death", nil, self.ent, fadeMin = 3000, fadeMax = 50000}
         self.ent:setCollisionGroup(COLLISION_GROUP.WORLD)
-        self.ent:addCollisionListener(function()
+        ---@param col CollisionData
+        self.ent:addCollisionListener(function(col)
             if !isValid(self) then return end
+            local pos = self.ent:getPos()
             self:remove()
             self.ent:removeCollisionListener()
+            astroutils.blastDamage(pos, 450, 60)
+            do
+                local eff = beff.create("projectile_explosion")
+                eff:setOrigin(pos)
+                eff:setScale(5)
+                eff:play()
+            end
+            local body = createPart("astroscout_body", self.ent, Vector(), Vector(), 100, 0, -col.OurOldVelocity)
+            local head = createPart("astroscout_head", self.ent, Vector(0, 0, 68), Vector(0, 0, -10), 200, 50, -col.OurOldVelocity)
+            timer.simple(0.1, function()
+                if isValid(body) then
+                    local eff = beff.create("hitsmoke")
+                    eff:setEntity(body)
+                    eff:setFlags(1)
+                    eff:setScale(10)
+                    eff:play()
+                end
+                if isValid(head) then
+                    local eff = beff.create("hitsmoke")
+                    eff:setEntity(head)
+                    eff:setFlags(1)
+                    eff:setScale(5)
+                    eff:play()
+                end
+            end)
         end)
         self.physobj:setAngleVelocity(Vector())
     end

@@ -19,8 +19,9 @@ if CLIENT then
         material.load("particles/flamelet2"),
         material.load("particles/flamelet3"),
         material.load("particles/flamelet4"),
-        material.load("particles/flamelet5")
+        material.load("particles/flamelet5"),
     }
+    local heatwave = material.load("sprites/heatwave")
     local emm = particle.create(Vector(), false)
 
     function HitSmoke:init()
@@ -36,7 +37,7 @@ if CLIENT then
         end
         if self.emmiter:getParticlesLeft() <= 1 or self.nextParticle >= cur then return end
         local ent = self:getEntity()
-        if !ent then return false end
+        if !isValid(ent) then return false end
         local originStart = self:getOrigin()
         local origin = isValid(ent) and ent:localToWorld(originStart) or originStart
         local scale = self:getScale()
@@ -45,26 +46,42 @@ if CLIENT then
         local len = #smokes
         local smIndex = math.random(1, len)
         sprite = smokes[smIndex]
-        local size = math.rand(10, 20) * scale
+        local size = math.rand(60, 80)
         if flags == 1 then
-            local particle = self.emmiter:add(
-                fires[math.random(1, #fires)], origin + beff.randVector() * scale, 5, size + 5,
-                0, 0, 255, 0, 0.3
-            )
-            if particle then
-                local vel = beff.randVector() * 10 * scale * Vector(1, 1, 10)
-                particle:setVelocity(vel:setZ(math.abs(vel.z)))
-                particle:setLighting(true)
-                particle:setCollide(true)
+            do
+                local particle = self.emmiter:add(
+                    fires[math.random(1, #fires)], origin + beff.randVector(-5, 5):setZ(0) * scale, size / 3 + 5, 0,
+                    0, 0, 255, 0, 0.5
+                )
+                if particle then
+                    local vel = Vector(0, 0, 160)
+                    particle:setVelocity(vel:setZ(math.abs(vel.z)))
+                    particle:setRollDelta(5)
+                    particle:setAirResistance(5)
+                    particle:setLighting(true)
+                    particle:setCollide(true)
+                end
+            end
+            if math.random(0, 30) > 25 then
+                local particle = self.emmiter:add(
+                    heatwave, origin + beff.randVector(-5, 5):setZ(0) * scale, 5, size / 2 + 5,
+                    0, 0, 255, 0, 1
+                )
+                if particle then
+                    particle:setGravity(Vector(0, 0, 200))
+                    particle:setVelocity(beff.randVector(-5, 5))
+                    particle:setLighting(true)
+                    particle:setCollide(true)
+                end
             end
         end
         local particle = self.emmiter:add(
-            sprite, origin + beff.randVector() * scale, 5, size + 5,
-            0, 0, 255, 0, 1
+            sprite, origin + beff.randVector(-5, 5):setZ(0) * scale, 5, size + 5,
+            0, 0, 100, 0, 1
         )
         if particle then
             particle:setGravity(Vector(0, 0, 200))
-            particle:setVelocity(beff.randVector() * 30 * scale)
+            particle:setVelocity(beff.randVector(-5, 5))
             particle:setLighting(true)
             local darg = math.rand(50, 100)
             particle:setColor(Color(darg, darg, darg))
