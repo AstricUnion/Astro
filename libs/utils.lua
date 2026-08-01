@@ -19,7 +19,6 @@ if SERVER then
             ent:applyDamage(damage, attacker, inflictor, type)
             return
         end
-        if ent:getHealth() <= 0 then return end
         local turr = turrets[ent]
         local valid = isValid(turr)
         if valid and turr.damage ~= damage then

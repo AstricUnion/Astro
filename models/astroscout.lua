@@ -526,13 +526,16 @@ model.new("astroscout", hitbox {
         local leftForearm = ent:getBoneEntity(ent:lookupBone("left_forearm"))
         local tube = ent:getBoneEntity(ent:lookupBone("tube"))
         local prongs = ent:getBoneEntity(ent:lookupBone("prongs"))
-        rightShoulder:setNoDraw(true)
+        local rightShoulderAng = rightShoulder:getPropertyForLayer(layer + 1)
+        local leftShoulderAng = leftShoulder:getPropertyForLayer(layer + 2)
         rightForearm:setNoDraw(true)
         hand:setNoDraw(true)
         claws:setNoDraw(true)
-        leftShoulder:setNoDraw(true)
         leftForearm:setNoDraw(true)
         tube:setNoDraw(true)
         prongs:setNoDraw(true)
-        return function() return true end
+        return tween.new {
+            param { 0, 1, rightShoulder, rightShoulderAng, nil, Angle(), math.easeInOutQuint },
+            param { 0, 1, leftShoulder, leftShoulderAng, nil, Angle(), math.easeInOutQuint },
+        }
     end)

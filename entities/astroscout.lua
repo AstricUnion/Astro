@@ -444,34 +444,14 @@ if SERVER then
             eff:setScale(10)
             eff:play()
         end
-        local leftShoulder = createPart("astroscout_leftshoulder", self.ent, Vector(), Vector(0, 1, 0), 100, 100, Vector())
         local leftForearm = createPart("astroscout_leftforearm", self.ent, Vector(-3, 85, 26), Vector(0, 2, 0), 100, 100, Vector())
-        local rightShoulder = createPart("astroscout_rightshoulder", self.ent, Vector(), Vector(0, -1, 0), 100, 100, Vector())
         local rightForearm = createPart("astroscout_rightforearm", self.ent, Vector(-3, -85, 26), Vector(0, -2, 0), 100, 100, Vector())
         timer.simple(0.1, function()
-            if isValid(leftShoulder) then
-                local eff = beff.create("hitsmoke")
-                eff:setEntity(leftShoulder)
-                eff:setFlags(1)
-                eff:setOrigin(Vector(-3, 100, 26))
-                eff:setScale(6)
-                eff:play()
-            end
-
             if isValid(leftForearm) then
                 local eff = beff.create("hitsmoke")
                 eff:setEntity(leftForearm)
                 eff:setFlags(1)
                 eff:setOrigin(Vector(0, 85, 0))
-                eff:setScale(6)
-                eff:play()
-            end
-
-            if isValid(rightShoulder) then
-                local eff = beff.create("hitsmoke")
-                eff:setEntity(rightShoulder)
-                eff:setFlags(1)
-                eff:setOrigin(Vector(-3, -100, 26))
                 eff:setScale(6)
                 eff:play()
             end
@@ -502,6 +482,8 @@ if SERVER then
             end
             local body = createPart("astroscout_body", self.ent, Vector(), Vector(), 100, 0, -col.OurOldVelocity)
             local head = createPart("astroscout_head", self.ent, Vector(0, 0, 68), Vector(0, 0, -10), 200, 50, -col.OurOldVelocity)
+            local leftShoulder = createPart("astroscout_leftshoulder", self.ent, Vector(), Vector(0, 1, 0), 100, 100, Vector())
+            local rightShoulder = createPart("astroscout_rightshoulder", self.ent, Vector(), Vector(0, -1, 0), 100, 100, Vector())
             timer.simple(0.1, function()
                 if isValid(body) then
                     local eff = beff.create("hitsmoke")
@@ -515,6 +497,22 @@ if SERVER then
                     eff:setEntity(head)
                     eff:setFlags(1)
                     eff:setScale(5)
+                    eff:play()
+                end
+                if isValid(leftShoulder) then
+                    local eff = beff.create("hitsmoke")
+                    eff:setEntity(leftShoulder)
+                    eff:setFlags(1)
+                    eff:setOrigin(Vector(-3, 100, 26))
+                    eff:setScale(6)
+                    eff:play()
+                end
+                if isValid(rightShoulder) then
+                    local eff = beff.create("hitsmoke")
+                    eff:setEntity(rightShoulder)
+                    eff:setFlags(1)
+                    eff:setOrigin(Vector(-3, -100, 26))
+                    eff:setScale(6)
                     eff:play()
                 end
             end)
