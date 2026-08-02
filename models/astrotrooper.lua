@@ -30,31 +30,31 @@ local function astrosoundShot(playAt, snd, ent)
     end
 end
 
+
+-- model.setRigVisible(true)
 local function eyeclin(offset, angle)
-    local baseHolos = {
-    { Vector(0.7, 0, -5.85), Angle(127,0,0), "models/holograms/hq_cylinder.mdl", Vector(0.18, 0.18, 0.52), noLight = true, color = Color(0, 0, 0), material = "models/debug/debugwhite" },
-    { Vector(0.7, 0, -5.85), Angle(127,0,0), "models/holograms/hq_cylinder.mdl", Vector(0.15, 0.15, 0.53), noLight = true, color = Color(255, 80, 80), material = "models/debug/debugwhite" },
-    { Vector(0.75, 0, -5.9), Angle(127,0,0), "models/holograms/hq_cylinder.mdl", Vector(0.12, 0.04, 0.54), noLight = true, color = Color(255, 255, 255), material = "models/debug/debugwhite" },
+    local baseHolo = part {
+        holo { Vector(), Angle(), "models/holograms/hq_cylinder.mdl", Vector(0.18, 0.18, 0.52), noLight = true, color = Color(0, 0, 0), material = "models/debug/debugwhite" },
+        holo { Vector(), Angle(), "models/holograms/hq_cylinder.mdl", Vector(0.15, 0.15, 0.53), noLight = true, color = Color(255, 80, 80), material = "models/debug/debugwhite" },
+        holo { Vector(0.05, 0, -0.05), Angle(), "models/holograms/hq_cylinder.mdl", Vector(0.12, 0.04, 0.54), noLight = true, color = Color(255, 255, 255), material = "models/debug/debugwhite" },
     }
 
-    local rigFun = rig(offset, angle)
-    local part = 360 / 6
+    local fract = 360 / 6
 
     return function()
-        local rg = rigFun()
+        local rg = rig()()
         if !rg then return end
-        local baseAngle = rg:getAngles()
         for i = 0, 5 do
-            local ang = i * part
-            rg:setAngles(baseAngle + Angle(ang+90, 90, 0))
-            for _, hl in ipairs(baseHolos) do
-                local holoFun = holo { hl[1], hl[2], hl[3], hl[4], hl[5], hl[6], color = hl.color, material = hl.material, noLight = hl.noLight }
-                local mdl = holoFun()
-                if mdl then
-                    mdl:setParent(rg)
-                end
-            end
+            local ang = i * fract
+            rg:setAngles(Angle(ang + 90, 90, 0))
+            local hl = baseHolo()
+            if !hl then return end
+            hl:setPos(Vector(0.7, 0, -5.85))
+            hl:setAngles(Angle(127, 0, 0))
+            hl:setParent(rg)
         end
+        rg:setPos(offset)
+        -- rg:setAngles(angle)
         return rg
     end
 end
@@ -160,7 +160,7 @@ local eyeModel = part {
 
 local headModel = part {
     holo { Vector(0, 0, 0), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.75, 0.75, 0.75), noLight = true, color = Color(0, 0, 0), material = "models/debug/debugwhite" },
-        holo { Vector(20, 0, 0), Angle(-90, 180, 0), "models/Items/combine_rifle_cartridge01.mdl", Vector(0.22, 0.22, 0.16), color = Color(255, 40, 40) },
+    holo { Vector(20, 0, 0), Angle(-90, 180, 0), "models/Items/combine_rifle_cartridge01.mdl", Vector(0.22, 0.22, 0.16), color = Color(255, 40, 40) },
     holo { Vector(0, 0, 0), Angle(-90, 180, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.22, 0.22, 0.16), color = Color(255, 40, 40) },  
     holo { Vector(0, 0, 0), Angle(-90, 0, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.22, 0.22, 0.16), color = Color(255, 40, 40) },
     holo { Vector(3, 0, -7), Angle(-50, 180, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.22, 0.22, 0.17), color = Color(255, 0, 0) },
@@ -189,7 +189,7 @@ model.new("astrotrooper", hitbox {
     :add("camera", rig(Vector(0, 0, 25), Angle()))
     :add("camera", "head", headModel)
     :add("head", "eye", eyeModel)
-    :add("eye", "eyeclin", eyeclin(Vector(), Angle()))
+    :add("eye", "eyeclin", eyeclin(Vector(9, 0, 0), Angle()))
     :addSequence("idle", 0, function(ent)
         local head = ent:getBoneEntity(ent:lookupBone("head"))
         local camera = ent:getBoneEntity(ent:lookupBone("camera"))
