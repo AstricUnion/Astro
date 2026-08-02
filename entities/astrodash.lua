@@ -25,7 +25,8 @@ function AstroDash:dashStart(astro) end
 
 ---[SERVER] Hook on dash end
 ---@param astro AstroBase Astro this module pinned to
-function AstroDash:dashEnd(astro) end
+---@param dir Vector Direction of dash before end
+function AstroDash:dashEnd(astro, dir) end
 
 function AstroDash:onAction(action)
     if action == "dash" then
@@ -103,7 +104,7 @@ if SERVER then
             local cur = timer.curtime()
             local function endDash()
                 self:setNextAction("dash", cur + self.Cooldown)
-                self:dashEnd(astro)
+                self:dashEnd(astro, dir)
                 self:setNWVar("dashDirection", nil)
             end
             local remain = self.dashTime - (cur - self.dashStartTime)
@@ -115,10 +116,10 @@ if SERVER then
     end
 else
     function AstroDash:networkVariablesUpdate(oldVars, vars)
-        if oldVars.dashDirection and !vars.dashDirection then
+        if oldVars.dashDirection ~= false and vars.dashDirection == false then
             local astro = self:getAstro()
             if !isValid(astro) then return end
-            self:dashEnd(astro)
+            self:dashEnd(astro, oldVars.dashDirection or Angle():getForward())
         end
     end
 

@@ -118,10 +118,13 @@ if SERVER then
     function AstroBlaster:think()
         if !self:isAlive() then return end
         local astro = self:getAstro()
-        if !astro then return end
-        local tr = astro:getEyeTrace()
-        if !tr then return end
-        self.ent:setAngles((tr.HitPos - self.ent:getPos()):getAngle())
+        if !isValid(astro) then return end
+        if isValid(astro:getDriver()) then
+            local tr = astro:getEyeTrace()
+            self.ent:setAngles((tr.HitPos - self.ent:getPos()):getAngle())
+        else
+            self.ent:setAngles(astro.ent:getAngles())
+        end
     end
 
     local exp = effect.create()

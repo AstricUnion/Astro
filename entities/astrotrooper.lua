@@ -42,16 +42,11 @@ if SERVER then
     function AstroTrooper:astroInitialize()
         self.ent:setSequence(1)
         self.shootFrom = 1
-        self.modules[3].dashEnd = function(mod)
+        self.modules[3].warpdashEnd = function(mod)
             self:setState(STATE.Idle)
             self.ent:setNoDraw(false)
             self.modules[1].ent:setNoDraw(false)
             self.modules[2].ent:setNoDraw(false)
-            local eff = beff.create("quantum_burst")
-            eff:setOrigin(self.ent:getPos())
-            eff:setNormal(mod:getDirection())
-            eff:setScale(3)
-            eff:play()
         end
         self.nextDeathExplosion = 0
         self:setState(STATE.Idle)
@@ -189,6 +184,16 @@ else
         astrosound.play {"loop", nil, self.ent, looping = true}
     end
 
+    function AstroTrooper:astroModuleInitialize(mod)
+        if mod.Identifier == "astrowarpdash" then
+            mod.warpdashStart = function()
+                self.modules[1].ent:setNoDraw(true)
+                self.modules[2].ent:setNoDraw(true)
+                self.ent:setNoDraw(true)
+            end
+        end
+    end
+
     function AstroTrooper.hooks:AstroSoundPreloaded(identifier)
         if identifier == "loop" then astrosound.play {identifier, nil, self.ent, looping = true} end
     end
@@ -196,14 +201,6 @@ else
     function AstroTrooper:renderOffscreen()
         l1:setPos(self.ent:localToWorld(Vector(0, 0, 20)))
         l1:draw()
-    end
-
-    function AstroTrooper:astroNetworkVariablesUpdate(old, new)
-        if old.state ~= STATE.Dashing and new.state == STATE.Dashing then
-            self.modules[1].ent:setNoDraw(true)
-            self.modules[2].ent:setNoDraw(true)
-            self.ent:setNoDraw(true)
-        end
     end
 
     function AstroTrooper:onDrawHUD(sw, sh)
