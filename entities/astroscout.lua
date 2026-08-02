@@ -198,6 +198,13 @@ function AstroScout.actions.dash(astro, cur)
 end
 
 
+function AstroScout.actions.stopAddToDash(astro, cur)
+    if SERVER then
+        astro.modules[1]:sendAction("stopAddToDash")
+    end
+end
+
+
 function AstroScout.actions.berserk(astro, cur)
     if CLIENT then
         astrosound.play {"startBerserk", nil, astro.ent, volume = 2}
@@ -345,7 +352,8 @@ if SERVER then
         ["unblock"] = {bit.band, STATE.Block},
         ["startLaser"] = {bit.bor, STATE.Idle + STATE.Punch + STATE.Berserk},
         ["stopLaser"] = {bit.band, STATE.Laser},
-        ["dash"] = {bit.bor, STATE.Idle + STATE.Berserk},
+        ["dash"] = {bit.bor, STATE.Idle + STATE.Berserk + STATE.Dashing},
+        ["stopAddToDash"] = {bit.bor, STATE.Idle + STATE.Dashing},
         ["berserk"] = {bit.band, STATE.Idle}
     }
 
@@ -361,6 +369,7 @@ if SERVER then
     local releaseToAct = {
         [MOUSE.MIDDLE] = "unblock",
         [KEY.R] = "stopLaser",
+        [KEY.G] = "stopAddToDash",
     }
 
     function AstroScout:isCanAction(action)

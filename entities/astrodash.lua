@@ -29,22 +29,32 @@ function AstroDash:dashStart(astro) end
 function AstroDash:dashEnd(astro, dir) end
 
 function AstroDash:onAction(action)
-    if action == "dash" then
-        local astro = self:getAstro()
-        if !isValid(astro) then return end
-        if SERVER then
-            local dir = self:calcDirection(astro)
-            if !dir then return end
-            self.dashStartTime = timer.curtime()
-            self.dashTime = self.DashTime
-            self:setNWVar("dashDirection", dir)
-            self:dashStart(astro)
-            return true
-        else
-            self:dashStart(astro)
+    local dir = self:getDirection()
+    if !dir then
+        if action == "dash" then
+            local astro = self:getAstro()
+            if !isValid(astro) then return end
+            if SERVER then
+                local dir = self:calcDirection(astro)
+                if !dir then return end
+                self.dashStartTime = timer.curtime()
+                self.dashTime = self.DashTime
+                self.startedVarying = self.AllowVarying
+                self:setNWVar("dashDirection", dir)
+                self:dashStart(astro)
+                return true
+            else
+                self:dashStart(astro)
+            end
         end
-    elseif SERVER and action == "addToDash" and self.dashTime and self.AllowVarying then
-        self.dashTime = self.dashTime + game.getTickInterval() * self.VaryingDelta
+    else
+        if SERVER and self.dashTime and self.AllowVarying then
+            if action == "dash"  then
+                self.startedVarying = true
+            elseif action == "stopAddToDash" then
+                self.startedVarying = nil
+            end
+        end
     end
 end
 
@@ -101,6 +111,9 @@ if SERVER then
             local astro = self:getAstro()
             if !isValid(astro) then return end
             astro:setVelocity(dir * self.Speed)
+            if self.startedVarying then
+                self.dashTime = self.dashTime + game.getTickInterval() * self.VaryingDelta
+            end
             local cur = timer.curtime()
             local function endDash()
                 self:setNextAction("dash", cur + self.Cooldown)

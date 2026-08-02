@@ -83,6 +83,13 @@ if SERVER then
         end
     end
 
+    function AstroTrooper:inputReleased(butt)
+        if butt == MOUSE.MOUSE2 then
+            if !self.modules[3]:canAction("stopAddToDash") then return end
+            self.modules[3]:sendAction("stopAddToDash")
+        end
+    end
+
     function AstroTrooper:fly(dr)
         if self:getState() ~= STATE.Dashing then return end
         if dr and dr:keyDown(IN_KEY.ATTACK2) then
