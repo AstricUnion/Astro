@@ -85,10 +85,14 @@ local rotor = part {
     holo { Vector(22, 22, 15), Angle(5, 40, -45), "models/Gibs/helicopter_brokenpiece_03.mdl", color = mainColor },
 }
 
-local head = part {
-    holo { nil, nil, "models/hunter/misc/sphere075x075.mdl", Vector(1.4, 1.4, 1.4), noLight = true, color = Color(0, 0, 0), material = whiteMat },
+local headEye = part {
+    rig(),
     holo { Vector(14, 0, 0), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.6, 1.1, 1.1), noLight = true, color = mainColor, material = whiteMat },
     holo { Vector(20.2, 0, -1), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.3, 0.3, 0.9), noLight = true, material = whiteMat },
+}
+
+local head = part {
+    holo { nil, nil, "models/hunter/misc/sphere075x075.mdl", Vector(1.4, 1.4, 1.4), noLight = true, color = Color(0, 0, 0), material = whiteMat },
     holo { Vector(-22, 0, 2), Angle(-100, 180, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.4, 0.45, 0.5), color = mainColor },
     holo { Vector(-4, 0, -4), Angle(45, 180, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.3, 0.45, 0.4), color = mainColor },
     holo { Vector(0, -35, -16), Angle(20, -12, 0), "models/props_combine/headcrabcannister01a.mdl", Vector(0.4, 0.5, 0.5), color = mainColor },
@@ -197,14 +201,14 @@ model.new("astroscout_head", part {
         material = "Metal",
         mass = 200
     },
-    head
+    head,
 })
 
 model.new("astroscout_leftshoulder", part {
     hitbox {
         vertex {"cube", Vector(0, 120, 32), nil, Vector(26, 58, 24)},
         material = "Metal",
-        mass = 200,
+        mass = 251,
     },
     leftShoulder
 })
@@ -214,7 +218,7 @@ model.new("astroscout_leftforearm", part {
         vertex {"cube", Vector(0, 140, 0), nil, Vector(26, 58, 24)},
         vertex {"cylinder", Vector(0, 190, 0), Angle(90, 0, 0), Vector(38, 38, 14)},
         material = "Metal",
-        mass = 200,
+        mass = 251,
     },
     part {
         leftForearm,
@@ -227,7 +231,7 @@ model.new("astroscout_rightshoulder", part {
     hitbox {
         vertex {"cube", Vector(0, -120, 32), nil, Vector(26, 58, 24)},
         material = "Metal",
-        mass = 200,
+        mass = 251,
     },
     rightShoulder
 })
@@ -237,7 +241,7 @@ model.new("astroscout_rightforearm", part {
         vertex {"cube", Vector(0, -151, 0), nil, Vector(26, 70, 24)},
         vertex {"cube", Vector(0, -180, 28), nil, Vector(20, 58, 8)},
         material = "Metal",
-        mass = 200,
+        mass = 251,
     },
     part {
         rightForearm,
@@ -259,7 +263,7 @@ model.new("astroscout", hitbox {
     :add("body", body)
     :add("body", "rotor", rotor)
     :add("camera", rig(Vector(0, 0, 68)))
-    :add("camera", "head", head)
+    :add("camera", "head", part { head, headEye })
     :add("body", "right_shoulder", rightShoulder)
     :add("right_shoulder", "right_forearm", rightForearm)
     :add("right_forearm", "hand", hand)

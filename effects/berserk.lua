@@ -76,7 +76,7 @@ if CLIENT then
         self.lastPos = pos
         for _=0, 3 do
             self.process = self.process + processAng
-            if emm:getParticlesLeft() < 1 then return end
+            if emm:getParticlesLeft() < 1 then goto cont end
             local isWarp = math.random(1, 30) > 28
             local partPos = ent:localToWorld(Vector(math.sin(self.process), math.cos(self.process), 0.3) * 72 + vel)
             if isWarp then
@@ -95,6 +95,7 @@ if CLIENT then
                 part:setGravity(Vector(0, 0, -0.01))
                 part:setColor(Color(200, 50, 50))
             end
+            ::cont::
         end
     end
 end

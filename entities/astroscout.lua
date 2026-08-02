@@ -403,16 +403,18 @@ if SERVER then
         self:sendAction("stopLaser")
     end
 
-    local function createPart(name, ent, offset, localDirection, force, torque, velocity)
-        local pos, ang = localToWorld(offset, Angle(), ent:getPos(), ent:getAngles())
+    local function createPart(name, ent, offset, angle, localDirection, force, torque, velocity)
+        local pos, ang = localToWorld(offset, angle or Angle(), ent:getPos(), ent:getAngles())
         local part = model.create(name)
         if !part then return end
         part:setPos(pos)
         part:setAngles(ang)
         timer.simple(0, function()
             if !isValid(part) then return end
-            part:applyForceCenter(velocity + beff.randVector(-force, force) + localDirection:getRotated(ang) * force)
-            part:applyTorque(beff.randVector(-torque, torque))
+            local phys = part:getPhysicsObject()
+            if !isValid(phys) then return end
+            phys:addVelocity(velocity + beff.randVector(-force, force) + localDirection:getRotated(ang) * force)
+            phys:applyTorque(beff.randVector(-torque, torque))
         end)
         return part
     end
@@ -444,8 +446,8 @@ if SERVER then
             eff:setScale(10)
             eff:play()
         end
-        local leftForearm = createPart("astroscout_leftforearm", self.ent, Vector(-3, 85, 26), Vector(0, 2, 0), 100, 100, Vector())
-        local rightForearm = createPart("astroscout_rightforearm", self.ent, Vector(-3, -85, 26), Vector(0, -2, 0), 100, 100, Vector())
+        local leftForearm = createPart("astroscout_leftforearm", self.ent, Vector(-3, 85, 26), Angle(90, -90, 0), Vector(0, 2, 0), 500, 100, Vector())
+        local rightForearm = createPart("astroscout_rightforearm", self.ent, Vector(-3, -85, 26), Angle(-90, 90, 0), Vector(0, -2, 0), 500, 100, Vector())
         timer.simple(0.1, function()
             if isValid(leftForearm) then
                 local eff = beff.create("hitsmoke")
@@ -480,10 +482,10 @@ if SERVER then
                 eff:setScale(5)
                 eff:play()
             end
-            local body = createPart("astroscout_body", self.ent, Vector(), Vector(), 100, 0, -col.OurOldVelocity)
-            local head = createPart("astroscout_head", self.ent, Vector(0, 0, 68), Vector(0, 0, -10), 200, 50, -col.OurOldVelocity)
-            local leftShoulder = createPart("astroscout_leftshoulder", self.ent, Vector(), Vector(0, 1, 0), 100, 100, Vector())
-            local rightShoulder = createPart("astroscout_rightshoulder", self.ent, Vector(), Vector(0, -1, 0), 100, 100, Vector())
+            local body = createPart("astroscout_body", self.ent, Vector(), nil, Vector(), 100, 0, -col.OurOldVelocity)
+            local head = createPart("astroscout_head", self.ent, Vector(0, 0, 68), nil, Vector(0, 0, -10), 200, 50, -col.OurOldVelocity)
+            local leftShoulder = createPart("astroscout_leftshoulder", self.ent, Vector(), nil, Vector(0, 1, 0), 100, 100, Vector())
+            local rightShoulder = createPart("astroscout_rightshoulder", self.ent, Vector(), nil, Vector(0, -1, 0), 100, 100, Vector())
             timer.simple(0.1, function()
                 if isValid(body) then
                     local eff = beff.create("hitsmoke")
