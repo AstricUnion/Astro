@@ -30,10 +30,38 @@ local function astrosoundShot(playAt, snd, ent)
     end
 end
 
+local function eyeclin(offset, angle)
+    local baseHolos = {
+    { Vector(0.7, 0, -5.85), Angle(127,0,0), "models/holograms/hq_cylinder.mdl", Vector(0.18, 0.18, 0.52), noLight = true, color = Color(0, 0, 0), material = "models/debug/debugwhite" },
+    { Vector(0.7, 0, -5.85), Angle(127,0,0), "models/holograms/hq_cylinder.mdl", Vector(0.15, 0.15, 0.53), noLight = true, color = Color(255, 80, 80), material = "models/debug/debugwhite" },
+    { Vector(0.75, 0, -5.9), Angle(127,0,0), "models/holograms/hq_cylinder.mdl", Vector(0.12, 0.04, 0.54), noLight = true, color = Color(255, 255, 255), material = "models/debug/debugwhite" },
+    }
+
+    local rigFun = rig(offset, angle)
+    local part = 360 / 6
+
+    return function()
+        local rg = rigFun()
+        if !rg then return end
+        local baseAngle = rg:getAngles()
+        for i = 0, 5 do
+            local ang = i * part
+            rg:setAngles(baseAngle + Angle(ang+90, 90, 0))
+            for _, hl in ipairs(baseHolos) do
+                local holoFun = holo { hl[1], hl[2], hl[3], hl[4], hl[5], hl[6], color = hl.color, material = hl.material, noLight = hl.noLight }
+                local mdl = holoFun()
+                if mdl then
+                    mdl:setParent(rg)
+                end
+            end
+        end
+        return rg
+    end
+end
 
 -- i don't transfer it to layers, because it not requires
 model.new("astrotrooper_blaster", hitbox {
-    vertex {"cube", Vector(0, 0, 6), Angle(0, 0, 0), Vector(30, 8, 10)},
+    vertex {"cube", Vector(0, 0, 6), Angle(), Vector(30, 8, 10)},
     vertex {"cylinder", Vector(36, 0, 2), Angle(0, 90, 0), Vector(6, 6, 8)},
     material = "Metal",
     mass = 200,
@@ -43,8 +71,13 @@ model.new("astrotrooper_blaster", hitbox {
         rig ( Vector(), Angle() ),
         holo { Vector(24, 0, 4), Angle(267, 0, 0), "models/props_combine/breenpod.mdl", Vector(0.4, 0.48, 0.7), color = Color(255, 40, 40) },
         holo { Vector(6, 0, 4), nil, "models/props_combine/combine_emitter01.mdl", Vector(1.2, 0.8, 0.4), color = Color(255, 40, 40) },
-        holo { Vector(23, 0, -4), Angle(0, 180, 0), "models/props_combine/CombineTrain01a.mdl", Vector(0.06, 0.08, 0.035), color = Color(255, 40, 40) },
-        holo { Vector(39, 0, 0.8), Angle(90, 0, 0), "models/Items/combine_rifle_ammo01.mdl", Vector(1.4), color = Color(255, 40, 40) },
+        holo { Vector(23, 0, -3), Angle(0, 180, 0), "models/props_combine/CombineTrain01a.mdl", Vector(0.06, 0.08, 0.03), color = Color(255, 40, 40) },
+        holo { Vector(23, 3, 0), Angle(0, 180, 270), "models/props_combine/CombineTrain01a.mdl", Vector(0.06, 0.08, 0.03), color = Color(255, 40, 40) },
+        holo { Vector(23, -3, 0), Angle(0, 180, 90), "models/props_combine/CombineTrain01a.mdl", Vector(0.06, 0.08, 0.03), color = Color(255, 40, 40) },
+        holo { Vector(23, 0, 3), Angle(0, 180, 180), "models/props_combine/CombineTrain01a.mdl", Vector(0.06, 0.08, 0.03), color = Color(255, 40, 40) },
+        holo { Vector(39, 0, 0), Angle(90, 0, 0), "models/Items/combine_rifle_ammo01.mdl", Vector(1.4), color = Color(255, 40, 40) },
+        holo { Vector(39, 0, 0), Angle(7.5, 90, 90), "models/Items/combine_rifle_ammo01.mdl", Vector(1.4), color = Color(255, 40, 40) },
+        holo { Vector(39, 0, 0), Angle(-7.5, 90, 90), "models/Items/combine_rifle_ammo01.mdl", Vector(1.4), color = Color(255, 40, 40) },
     })
     :addSequence("shoot", 0.3, function(ent)
         local bone = ent:getBoneEntity(ent:lookupBone("blaster"))
@@ -121,14 +154,16 @@ model.new("astrotrooper_body", part {
 local eyeModel = part {
     holo { Vector(9, 0, 0), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.3, 0.55, 0.55), noLight = true, color = Color(255, 40, 40), material = "models/debug/debugwhite" },
     holo { Vector(12, 0, 0), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.18, 0.4, 0.4), noLight = true, color = Color(255, 255, 255), material = "models/debug/debugwhite" },
+    holo { Vector(12.7, 0, 0), Angle(90, 0, 0), "models/holograms/hq_torus_thin.mdl", Vector(1.175), noLight = true, color = Color(0, 0, 0) },
 }
 
 local headModel = part {
     holo { Vector(0, 0, 0), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.75, 0.75, 0.75), noLight = true, color = Color(0, 0, 0), material = "models/debug/debugwhite" },
-    holo { Vector(0, 0, 0), Angle(-90, 180, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.22, 0.22, 0.16), color = Color(255, 40, 40) },
+        holo { Vector(20, 0, 0), Angle(-90, 180, 0), "models/Items/combine_rifle_cartridge01.mdl", Vector(0.22, 0.22, 0.16), color = Color(255, 40, 40) },
+    holo { Vector(0, 0, 0), Angle(-90, 180, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.22, 0.22, 0.16), color = Color(255, 40, 40) },  
     holo { Vector(0, 0, 0), Angle(-90, 0, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.22, 0.22, 0.16), color = Color(255, 40, 40) },
-    holo { Vector(5, 0, -5), Angle(-50, 180, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.22, 0.22, 0.16), color = Color(255, 0, 0) },
-    holo { Vector(-3, 0, 6), Angle(-190, 0, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.21, 0.21, 0.16), color = Color(255, 40, 40), material = "models/props_combine/metal_combinebridge001" },
+    holo { Vector(3, 0, -7), Angle(-50, 180, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.22, 0.22, 0.17), color = Color(255, 0, 0) },
+    holo { Vector(-3, 0, 3), Angle(-190, 0, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.21, 0.21, 0.16), color = Color(255, 40, 40), material = "models/props_combine/metal_combinebridge001" },
 }
 model.new("astrotrooper_head", part {
     hitbox {
@@ -141,9 +176,9 @@ model.new("astrotrooper_head", part {
 
 
 model.new("astrotrooper", hitbox {
-    vertex {"cylinder", Vector(0, 0, 0), Angle(0, 0, 0), Vector(32, 32, 7)},
-    vertex {"cylinder", Vector(0, 0, -10), Angle(0, 0, 0), Vector(20, 20, 8)},
-    vertex {"cube", Vector(0, 0, 28), Angle(0, 0, 0), Vector(14, 14, 14)},
+    vertex {"cylinder", Vector(), Angle(), Vector(32, 32, 7)},
+    vertex {"cylinder", Vector(0, 0, -10), Angle(), Vector(20, 20, 8)},
+    vertex {"cube", Vector(0, 0, 28), Angle(), Vector(14, 14, 14)},
     material = "Metal",
     mass = 1000
 })
@@ -153,6 +188,7 @@ model.new("astrotrooper", hitbox {
     :add("camera", rig(Vector(0, 0, 25), Angle()))
     :add("camera", "head", headModel)
     :add("head", "eye", eyeModel)
+    :add("eye", "eyeclin", eyeclin(Vector(), Angle()))
     :addSequence("idle", 0, function(ent)
         local head = ent:getBoneEntity(ent:lookupBone("head"))
         local camera = ent:getBoneEntity(ent:lookupBone("camera"))
