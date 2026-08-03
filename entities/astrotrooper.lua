@@ -29,7 +29,7 @@ AstroTrooper.Model = function()
     return mdl
 end
 AstroTrooper.hooks = {}
-AstroTrooper.CameraOffset = Vector(9, 0, -5)
+AstroTrooper.CameraOffset = Vector(10, 0, -5)
 ---@type AstroModuleCfg[]
 AstroTrooper.Modules = {
     {offset = Vector(0, 40, 0), module = "astroblaster"},

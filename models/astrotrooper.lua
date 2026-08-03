@@ -31,23 +31,53 @@ local function astrosoundShot(playAt, snd, ent)
 end
 
 
+-- model.setRigVisible(true)
+local function eyeclin(offset, angle)
+    local baseHolo = part {
+        holo { Vector(), Angle(), "models/holograms/hq_cylinder.mdl", Vector(0.18, 0.18, 0.52), noLight = true, color = Color(0, 0, 0), material = "models/debug/debugwhite" },
+        holo { Vector(), Angle(), "models/holograms/hq_cylinder.mdl", Vector(0.15, 0.15, 0.53), noLight = true, color = Color(255, 80, 80), material = "models/debug/debugwhite" },
+        holo { Vector(0.05, 0, -0.05), Angle(), "models/holograms/hq_cylinder.mdl", Vector(0.12, 0.04, 0.54), noLight = true, color = Color(255, 255, 255), material = "models/debug/debugwhite" },
+    }
+
+    local fract = 360 / 6
+
+    return function()
+        local rg = rig()()
+        if !rg then return end
+        for i = 0, 5 do
+            local ang = i * fract
+            rg:setAngles(Angle(ang + 90, 90, 0))
+            local hl = baseHolo()
+            if !hl then return end
+            hl:setPos(Vector(0.7, 0, -5.85))
+            hl:setAngles(Angle(127, 0, 0))
+            hl:setParent(rg)
+        end
+        rg:setPos(offset)
+        -- rg:setAngles(angle)
+        return rg
+    end
+end
+
 -- i don't transfer it to layers, because it not requires
 model.new("astrotrooper_blaster", hitbox {
-    vertex {"cube", Vector(0, 0, 6), Angle(0, 0, 0), Vector(30, 8, 10)},
+    vertex {"cube", Vector(0, 0, 6), Angle(), Vector(30, 8, 10)},
     vertex {"cylinder", Vector(36, 0, 2), Angle(0, 90, 0), Vector(6, 6, 8)},
     material = "Metal",
     mass = 200,
 })
     :add("module", rig())
     :add("module", "blaster", part {
-        rig(),
-        holo { Vector(-5, 0, 2), nil, "models/hunter/blocks/cube025x025x025.mdl", color = Color(255, 0, 0, 0) },
-        holo { Vector(-28, 0, -2), Angle(180, 90, 90), "models/props_combine/combinethumper001a.mdl", Vector(0.08, 0.08, 0.12), color = Color(255, 40, 40), material = "models/props_combine/metal_combinebridge001" },
-        holo { Vector(-28, 0, 6), Angle(0, 90, 90), "models/props_combine/combinethumper001a.mdl", Vector(0.08, 0.08, 0.12), color = Color(255, 40, 40), material = "models/props_combine/metal_combinebridge001" },
-        holo { Vector(-28, -5, 2), Angle(-90, 90, 90), "models/props_combine/combinethumper001a.mdl", Vector(0.08, 0.08, 0.12), color = Color(255, 40, 40), material = "models/props_combine/metal_combinebridge001" },
-        holo { Vector(-28, 5, 2), Angle(90, 90, 90), "models/props_combine/combinethumper001a.mdl", Vector(0.08, 0.08, 0.12), color = Color(255, 40, 40), material = "models/props_combine/metal_combinebridge001" },
-        holo { Vector(-19, 0, 12), Angle(180, 0, 0), "models/combine_dropship_container.mdl", Vector(0.12, 0.12, 0.12), color = Color(255, 40, 40), material = "models/props_combine/metal_combinebridge001" },
-        holo { Vector(25, 0, 2), Angle(90, 0, 0), "models/Items/combine_rifle_ammo01.mdl", Vector(1.8, 1.8, 1.8), color = Color(255, 40, 40) },
+        rig (),
+        holo { Vector(24, 0, 4), Angle(267, 0, 0), "models/props_combine/breenpod.mdl", Vector(0.4, 0.48, 0.7), color = Color(255, 40, 40) },
+        holo { Vector(6, 0, 4), nil, "models/props_combine/combine_emitter01.mdl", Vector(1.2, 0.8, 0.4), color = Color(255, 40, 40) },
+        holo { Vector(23, 0, -3), Angle(0, 180, 0), "models/props_combine/CombineTrain01a.mdl", Vector(0.06, 0.08, 0.03), color = Color(255, 40, 40) },
+        holo { Vector(23, 3, 0), Angle(0, 180, 270), "models/props_combine/CombineTrain01a.mdl", Vector(0.06, 0.08, 0.03), color = Color(255, 40, 40) },
+        holo { Vector(23, -3, 0), Angle(0, 180, 90), "models/props_combine/CombineTrain01a.mdl", Vector(0.06, 0.08, 0.03), color = Color(255, 40, 40) },
+        holo { Vector(23, 0, 3), Angle(0, 180, 180), "models/props_combine/CombineTrain01a.mdl", Vector(0.06, 0.08, 0.03), color = Color(255, 40, 40) },
+        holo { Vector(39, 0, 0), Angle(90, 0, 0), "models/Items/combine_rifle_ammo01.mdl", Vector(1.4), color = Color(255, 40, 40) },
+        holo { Vector(39, 0, 0), Angle(7.5, 90, 90), "models/Items/combine_rifle_ammo01.mdl", Vector(1.4), color = Color(255, 40, 40) },
+        holo { Vector(39, 0, 0), Angle(-7.5, 90, 90), "models/Items/combine_rifle_ammo01.mdl", Vector(1.4), color = Color(255, 40, 40) },
     })
     :addSequence("shoot", 0.3, function(ent)
         local bone = ent:getBoneEntity(ent:lookupBone("blaster"))
@@ -80,27 +110,34 @@ model.new("astrotrooper_blaster", hitbox {
 
 local mat = {[0] = "models/props_combine/metal_combinebridge001", [1] = "models/props_combine/metal_combinebridge001", [2] = "models/props_combine/metal_combinebridge001"}
 local bodyModel = part {
-    holo { nil, nil, "models/props_combine/combine_train02a.mdl", Vector(0.1, 0.1, 0.06), color = Color(255, 40, 40) },
-    holo { Vector(32, 0, 2), Angle(15, 0, 180), "models/props_combine/combine_barricade_med01b.mdl", Vector(0.15, 0.15, 0.15), color = Color(255, 40, 40) },
-    holo { Vector(29, 14, 2), Angle(15, 30, 180), "models/props_combine/combine_barricade_med01b.mdl", Vector(0.15, 0.15, 0.15), color = Color(255, 40, 40) },
-    holo { Vector(29, -14, 2), Angle(15, -30, 180), "models/props_combine/combine_barricade_med01b.mdl", Vector(0.15, 0.15, 0.15), color = Color(255, 40, 40) },
-    holo { Vector(-32, 0, 5), Angle(15, 180, 180), "models/props_combine/combine_barricade_med01b.mdl", Vector(0.15, 0.15, 0.2), color = Color(255, 40, 40) },
-    holo { Vector(-29, 14, 2), Angle(15, 150, 180), "models/props_combine/combine_barricade_med01b.mdl", Vector(0.15, 0.15, 0.15), color = Color(255, 40, 40) },
-    holo { Vector(-29, -14, 2), Angle(15, 210, 180), "models/props_combine/combine_barricade_med01b.mdl", Vector(0.15, 0.15, 0.15), color = Color(255, 40, 40) },
-    holo { nil, Angle(0, 90, 0), "models/props_combine/combine_train02a.mdl", Vector(0.1, 0.1, 0.06), color = Color(255, 40, 40) },
-    holo { nil, Angle(0, -90, 0), "models/props_combine/combine_train02a.mdl", Vector(0.1, 0.1, 0.06), color = Color(255, 40, 40) },
-    holo { nil, Angle(0, 180, 0), "models/props_combine/combine_train02a.mdl", Vector(0.1, 0.1, 0.06), color = Color(255, 40, 40) },
-    holo { Vector(0, 40, 12), Angle(-150, 90, 0), "models/props_combine/combine_barricade_med02a.mdl", Vector(0.15, 0.18, 0.18), color = Color(255, 40, 40) },
-    holo { Vector(0, -40, 12), Angle(-150, -90, 0), "models/props_combine/combine_barricade_med02a.mdl", Vector(0.15, 0.18, 0.18), color = Color(255, 40, 40) },
+    rig ( Vector(), Angle() ),
+    holo { Vector(0, 0, 3), Angle(0, 0, 90), "models/props_wasteland/wheel02b.mdl", Vector(0.45, 0.3, 0.45), color = Color(255, 40, 40) },
+    holo { Vector(0, 0, -6), Angle(0, 0, 90), "models/props_wasteland/wheel02b.mdl", Vector(0.37, 0.3, 0.37), color = Color(255, 40, 40) },
+    holo { Vector(0, 0, -10), Angle(140, 0, 0), "models/props_combine/combineinnerwallcluster1024_003a.mdl", Vector(0.03, 0.02, 0.02), color = Color(255, 40, 40) },
+    holo { Vector(0, 0, -10), Angle(140, 180, 0), "models/props_combine/combineinnerwallcluster1024_003a.mdl", Vector(0.03, 0.02, 0.02), color = Color(255, 40, 40) },
+    holo { Vector(17, -25, -2), Angle(18, -60, 0), "models/props_combine/tprotato2.mdl", Vector(0.16, 0.22, 0.18), color = Color(255, 40, 40) },
+    holo { Vector(17, 25, -4), Angle(18, 60, 0), "models/props_combine/tprotato2.mdl", Vector(0.16, 0.22, 0.18), color = Color(255, 40, 40) },
+    holo { Vector(24, -18, -3), Angle(0, 142, 0), "models/combine_room/combine_monitor002.mdl", Vector(0.03, 0.1, 0.055), color = Color(255, 40, 40) },
+    holo { Vector(24, 18, -3.4), Angle(0, -142, 0), "models/combine_room/combine_monitor002.mdl", Vector(0.03, 0.1, 0.055), color = Color(255, 40, 40) },
+    holo { Vector(23, -1, 4), nil, "models/combine_turrets/ground_turret.mdl", Vector(0.65, 0.95, 0.7), color = Color(255, 40, 40) },
+    holo { Vector(29.4, 0, -1), nil, "models/props_combine/combine_barricade_med02c.mdl", Vector(0.08, 0.14, 0.06), color = Color(255, 40, 40) },
+    holo { Vector(-6, -27, 0), Angle(0, 90, -90), "models/props_combine/combine_binocular01.mdl", Vector(1, 1.6, 0.75), color = Color(255, 40, 40) },
+    holo { Vector(-6, 27, 0), Angle(180, 90, -90), "models/props_combine/combine_binocular01.mdl", Vector(1, 1.6, 0.75), color = Color(255, 40, 40) },
+    holo { Vector(-27, 17, -5), Angle(0, 135, 0), "models/props_combine/combine_barricade_med03b.mdl", Vector(0.06, 0.09, 0.12), color = Color(255, 40, 40) },
+    holo { Vector(-27, -17, -5), Angle(0, -135, 0), "models/props_combine/combine_barricade_med04b.mdl", Vector(0.06, 0.09, 0.12), color = Color(255, 40, 40) },
+    holo { Vector(-30, 0, -6), Angle(0, 180, 0), "models/props_combine/combine_barricade_med02b.mdl", Vector(0.08, 0.15, 0.12), color = Color(255, 40, 40) },
 }
 local rotor1Model = part {
-    rig(),
-    holo { Vector(0, 0, -11), nil, "models/props_phx/wheels/moped_tire.mdl", Vector(1.8, 1.8, 2.2), color = Color(255, 40, 40), material = mat},
-    holo { Vector(0, 0, -10), Angle(90, 0, 0), "models/props_c17/pulleywheels_large01.mdl", Vector(1.2, 1, 1), color = Color(255, 40, 40), material = mat }
+    rig ( Vector(), Angle() ),
+    holo { Vector(0, 0, -7), Angle(180, 0, 0), "models/props_phx/gears/bevel12.mdl", Vector(1.8, 1.8, 1), noLight = true, color = Color(255, 40, 40) },
 }
 local rotor2Model = part {
-    rig(),
-    holo { Vector(0, 0, -6), Angle(0, 0, 90), "models/props_wasteland/wheel03a.mdl", Vector(0.27, 0.18, 0.27), color = Color(255, 40, 40) },
+    rig ( Vector(), Angle() ),
+    holo { Vector(0, 0, -1), Angle(180, 0, 0), "models/props_phx/gears/bevel36.mdl", Vector(1.1, 1.1, 1), color = Color(255, 40, 40) },
+    holo { Vector(15, 0, 7), Angle(285, 0, 0), "models/props_combine/tprotato1.mdl", Vector(0.25, 0.1, 0.16), color = Color(255, 40, 40) },
+    holo { Vector(0, 15, 7), Angle(285, 90, 0), "models/props_combine/tprotato1.mdl", Vector(0.25, 0.1, 0.16), color = Color(255, 40, 40) },
+    holo { Vector(-15, 0, 7), Angle(285, 180, 0), "models/props_combine/tprotato1.mdl", Vector(0.25, 0.1, 0.16), color = Color(255, 40, 40) },
+    holo { Vector(0, -15, 7), Angle(285, 270, 0), "models/props_combine/tprotato1.mdl", Vector(0.25, 0.1, 0.16), color = Color(255, 40, 40) },
 }
 model.new("astrotrooper_body", part {
     hitbox {
@@ -118,14 +155,16 @@ local eyeModel = part {
     rig(),
     holo { Vector(9, 0, 0), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.3, 0.55, 0.55), noLight = true, color = Color(255, 40, 40), material = "models/debug/debugwhite" },
     holo { Vector(12, 0, 0), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.18, 0.4, 0.4), noLight = true, color = Color(255, 255, 255), material = "models/debug/debugwhite" },
+    holo { Vector(12.7, 0, 0), Angle(90, 0, 0), "models/holograms/hq_torus_thin.mdl", Vector(1.175), noLight = true, color = Color(0, 0, 0) },
 }
 
 local headModel = part {
     holo { Vector(0, 0, 0), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.75, 0.75, 0.75), noLight = true, color = Color(0, 0, 0), material = "models/debug/debugwhite" },
-    holo { Vector(0, 0, 0), Angle(-90, 180, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.22, 0.22, 0.16), color = Color(255, 40, 40) },
+    holo { Vector(20, 0, 0), Angle(-90, 180, 0), "models/Items/combine_rifle_cartridge01.mdl", Vector(0.22, 0.22, 0.16), color = Color(255, 40, 40) },
+    holo { Vector(0, 0, 0), Angle(-90, 180, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.22, 0.22, 0.16), color = Color(255, 40, 40) },  
     holo { Vector(0, 0, 0), Angle(-90, 0, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.22, 0.22, 0.16), color = Color(255, 40, 40) },
-    holo { Vector(5, 0, -5), Angle(-50, 180, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.22, 0.22, 0.16), color = Color(255, 0, 0) },
-    holo { Vector(-3, 0, 6), Angle(-190, 0, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.21, 0.21, 0.16), color = Color(255, 40, 40), material = "models/props_combine/metal_combinebridge001" },
+    holo { Vector(3, 0, -7), Angle(-50, 180, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.22, 0.22, 0.17), color = Color(255, 0, 0) },
+    holo { Vector(-3, 0, 3), Angle(-190, 0, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.21, 0.21, 0.16), color = Color(255, 40, 40), material = "models/props_combine/metal_combinebridge001" },
 }
 model.new("astrotrooper_head", part {
     hitbox {
@@ -138,9 +177,9 @@ model.new("astrotrooper_head", part {
 
 
 model.new("astrotrooper", hitbox {
-    vertex {"cylinder", Vector(0, 0, 0), Angle(0, 0, 0), Vector(32, 32, 7)},
-    vertex {"cylinder", Vector(0, 0, -10), Angle(0, 0, 0), Vector(20, 20, 8)},
-    vertex {"cube", Vector(0, 0, 28), Angle(0, 0, 0), Vector(14, 14, 14)},
+    vertex {"cylinder", Vector(), Angle(), Vector(32, 32, 7)},
+    vertex {"cylinder", Vector(0, 0, -10), Angle(), Vector(20, 20, 8)},
+    vertex {"cube", Vector(0, 0, 28), Angle(), Vector(14, 14, 14)},
     material = "Metal",
     mass = 1000
 })
@@ -150,6 +189,7 @@ model.new("astrotrooper", hitbox {
     :add("camera", rig(Vector(0, 0, 25), Angle()))
     :add("camera", "head", headModel)
     :add("head", "eye", eyeModel)
+    :add("eye", "eyeclin", eyeclin(Vector(9, 0, 0), Angle()))
     :addSequence("idle", 0, function(ent)
         local head = ent:getBoneEntity(ent:lookupBone("head"))
         local camera = ent:getBoneEntity(ent:lookupBone("camera"))
@@ -183,7 +223,7 @@ model.new("astrotrooper", hitbox {
                 end
                 local delta = timer.frametime()
                 rotor1:setLocalAngles(rotor1:getLocalAngles() + Angle(0, 200 * delta, 0))
-                rotor2:setLocalAngles(rotor2:getLocalAngles() + Angle(0, -200 * delta, 0))
+                rotor2:setLocalAngles(rotor2:getLocalAngles() + Angle(0, -80 * delta, 0))
             end
         }
     end)
