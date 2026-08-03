@@ -122,7 +122,7 @@ if SERVER then
         for _, v in ipairs(spheres) do
             local pos = localToEnt and inflictor:localToWorld(v[1]) or v[1]
             for _, target in ipairs(find.inSphere(pos, v[2])) do
-                if !isValid(target) or target == world or filterByEnt[target] then goto cont end
+                if !isValid(target) or target == world or target:getOwner() == world or filterByEnt[target] then goto cont end
                 if (callback and callback(target)) then goto cont end
                 astroutils.applyDamage(target, damage, attacker, inflictor)
                 filterByEnt[target] = true

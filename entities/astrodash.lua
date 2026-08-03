@@ -86,7 +86,7 @@ if SERVER then
         if !isValid(astro) then return end
         local dir = self:calcDirection(astro)
         if !dir then return end
-        return !self:checkByTrace(astro, dir, self.Speed * 2, dir * (astro.Radius + self.Radius))
+        return !self:checkByTrace(astro, dir, self.Speed, dir * (astro.Radius + self.Radius))
     end
 
     ---[SERVER] Is Astro can action

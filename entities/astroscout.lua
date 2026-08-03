@@ -25,9 +25,12 @@ local STATE = {
 }
 
 ---@class AstroScout: AstroBase
----@field laserEffect Laser [CLIENT] Effect for laser
----@field berserkEffect Berserk [CLIENT] Effect for Berserk
----@field laserStartSound Bass [CLIENT] Sound of laser start
+---@field cachedParts ModelEntity[] [SERVER] Cached parts for death
+---@field deathDirection Vector? [SERVER] Direction of death fly
+---@field laserEffect Laser? [CLIENT] Effect for laser
+---@field berserkEffect Berserk? [CLIENT] Effect for Berserk
+---@field laserStartSound Bass? [CLIENT] Sound of laser start
+---@field loopSound Bass? [CLIENT] Sound of laser start
 local AstroScout = {}
 AstroScout.Identifier = "astroscout"
 AstroScout.Name = "AstroScout"
@@ -40,14 +43,14 @@ AstroScout.CameraOffset = Vector(19, 0, -14)
 AstroScout.HeadOffset = Vector(0, 0, 68)
 ---@type AstroModuleCfg[]
 AstroScout.Modules = { { module = "astrodash" } }
-AstroScout.SeatOffset = Vector(85, 0, 0)
+AstroScout.SeatOffset = Vector(95, 0, 0)
 AstroScout.SeatVisible = false
 AstroScout.Health = 6500
 AstroScout.Speed = 200
 AstroScout.SprintSpeed = 600
 ---@type table<string, fun(self: AstroScout, cur: number): boolean?>
 AstroScout.actions = {}
-AstroScout.Radius = 128
+AstroScout.Radius = 86
 
 
 function AstroScout.actions.punch(astro, cur)
@@ -100,7 +103,7 @@ function AstroScout.actions.swing(astro, cur)
                 {{Vector(197, -21, 0), radius}},
                 astro.filter, true,
                 function(target)
-                    astro:setHealth(math.min(astro:getHealth() + math.min(target:getHealth(), damage) * 0.15, astro.Health))
+                    astro:setHealth(math.min(astro:getHealth() + math.clamp(target:getHealth(), 0, damage) * 0.15, astro.Health))
                 end
             )
             astro:setState(bit.band(st, bit.bnot(STATE.Punch)))
@@ -264,7 +267,9 @@ function AstroScout:think()
         local eyeAng = self:getEyeAngles()
         local pos = self:getEyePos()
         local radius = 24 * (isBerserk and 1.2 or 1)
-        local tr = trace.hull(pos, pos + eyeAng:getForward() * 32768, Vector(-radius), Vector(radius), self.filter)
+        local forw = eyeAng:getForward()
+        ---@type TraceResult
+        local tr = trace.line(pos, pos + forw * 32768, self.filter)
         if CLIENT then
             local module = self.ent:getBoneEntity(self.ent:lookupBone("left_shoulder"))
             local ang = (tr.HitPos - module:getPos()):getAngle()
@@ -333,7 +338,7 @@ function AstroScout:astroModuleInitialize(mod)
     if mod.Identifier ~= "astrodash" then return end
     ---@cast mod AstroDash
     mod.AllowVarying = true
-    mod.Radius = 160
+    mod.Radius = 140
     mod.Control = "G"
     mod.dashStart = dashStart
     mod.dashEnd = dashEnd
@@ -345,9 +350,7 @@ if SERVER then
         local part = model.create(name)
         if !part then return end
         part:setFrozen(true)
-        timer.simple(0.1, function()
-            part:setNoDraw(true)
-        end)
+        part:setNoDraw(true)
         part:setCollisionGroup(COLLISION_GROUP.IN_VEHICLE)
         return part
     end
@@ -411,7 +414,7 @@ if SERVER then
         local multiplier = 1
         local st = self:getState()
         if bit.band(st, STATE.Block) == STATE.Block then
-            self:setHealth(self:getHealth() + amount * 0.4)
+            self:setHealth(self:getHealth() + amount * 0.6)
             multiplier = 1.2
         end
         if bit.band(st, STATE.Berserk) ~= STATE.Berserk then
@@ -426,7 +429,7 @@ if SERVER then
     local function createPart(cached, name, ent, offset, angle, localDirection, force, torque, velocity)
         local pos, ang = localToWorld(offset, angle or Angle(), ent:getPos(), ent:getAngles())
         local part
-        if !cached then
+        if !isValid(cached) then
             part = model.create(name)
         else
             cached:setNoDraw(false)
@@ -512,8 +515,8 @@ if SERVER then
             end
             local body = createPart(nil, "astroscout_body", self.ent, Vector(), nil, Vector(), 10, 0, -col.OurOldVelocity)
             local head = createPart(nil, "astroscout_head", self.ent, Vector(0, 0, 68), nil, Vector(0, 0, -10), 50, 50, -col.OurOldVelocity)
-            local leftShoulder = createPart(self.cachedParts[1], nil, self.ent, Vector(), nil, Vector(0, 1, 0), 100, 100, Vector())
-            local rightShoulder = createPart(self.cachedParts[2], nil, self.ent, Vector(), nil, Vector(0, -1, 0), 100, 100, Vector())
+            local leftShoulder = createPart(self.cachedParts[1], "astroscout_leftshoulder", self.ent, Vector(), nil, Vector(0, 1, 0), 100, 100, Vector())
+            local rightShoulder = createPart(self.cachedParts[2], "astroscout_rightshoulder", self.ent, Vector(), nil, Vector(0, -1, 0), 100, 100, Vector())
             timer.simple(0.1, function()
                 if isValid(body) then
                     local eff = beff.create("hitsmoke")
@@ -571,6 +574,13 @@ else
     function AstroScout:renderOffscreen()
         l1:setPos(self.ent:localToWorld(Vector(0, 0, 30)))
         l1:draw()
+    end
+
+    function AstroScout:onAstroRemove()
+        for _, v in ipairs(self.cachedParts) do
+            if !isValid(v) then return end
+            v:remove()
+        end
     end
 
     local upGrad = material.load("vgui/gradient_up")

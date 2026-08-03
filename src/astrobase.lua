@@ -98,6 +98,7 @@ if SERVER then
         if self.Health <= 0 or health <= 0 then return end
         local prevent = self:onDamage(attacker, inflictor, amount, type, pos, force)
         if prevent then return false end
+        health = self.ent:getHealth()
         if self.ent:isValidPhys() then
             self.ent:applyForceOffset(force, pos)
         end
@@ -560,6 +561,9 @@ if SERVER then
     ---@param mod AstroModuleBase
     function AstroBase:onModuleDeath(mod) end
 
+    ---[SERVER] On Astro remove
+    function AstroBase:onAstroRemove() end
+
     ---[SERVER] On remove (to remove seat)
     function AstroBase:onRemove()
         local seat = self:getSeat()
@@ -570,6 +574,7 @@ if SERVER then
             if !dr then return end
             self.hooks.PlayerLeaveVehicle(self, dr, seat)
         end
+        self:onAstroRemove()
     end
 
     ---[SERVER] On remove chip, to teleport seat
@@ -740,8 +745,10 @@ end
 ---@return Angle
 function AstroBase:getEyeAngles()
     local dr = self.driver
-    if !dr then return Angle() end
-    return dr:getEyeAngles()
+    local seat = self:getSeat()
+    if !(dr and seat) then return Angle() end
+    local eyeAngs = dr:getEyeAngles()
+    return SERVER and seat:worldToLocalAngles(eyeAngs) or eyeAngs
 end
 
 ---[SHARED] Get Astro eyes position
