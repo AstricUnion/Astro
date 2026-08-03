@@ -41,7 +41,7 @@ AstroScout.HeadOffset = Vector(0, 0, 68)
 ---@type AstroModuleCfg[]
 AstroScout.Modules = { { module = "astrodash" } }
 AstroScout.SeatOffset = Vector(85, 0, 0)
-AstroScout.SeatVisible = true
+AstroScout.SeatVisible = false
 AstroScout.Health = 6500
 AstroScout.Speed = 200
 AstroScout.SprintSpeed = 600
@@ -263,7 +263,8 @@ function AstroScout:think()
     if bit.band(st, STATE.Laser) == STATE.Laser then
         local eyeAng = self:getEyeAngles()
         local pos = self:getEyePos()
-        local tr = trace.hull(pos, pos + eyeAng:getForward() * 32768, Vector(-16), Vector(16), self.filter)
+        local radius = 24 * (isBerserk and 1.2 or 1)
+        local tr = trace.hull(pos, pos + eyeAng:getForward() * 32768, Vector(-radius), Vector(radius), self.filter)
         if CLIENT then
             local module = self.ent:getBoneEntity(self.ent:lookupBone("left_shoulder"))
             local ang = (tr.HitPos - module:getPos()):getAngle()
@@ -273,10 +274,11 @@ function AstroScout:think()
             self.ent:setPoseParameter("laser_rotation_r", ang.r)
             if self.laserEffect then
                 self.laserEffect:setOrigin(tr.HitPos)
+                self.laserEffect:setRadius(radius)
             end
         else
             if bit.band(st, STATE.LaserOn) ~= STATE.LaserOn then return end
-            astroutils.attack(self.ent, self.ent, 20, {{tr.HitPos, 48}}, self.filter)
+            astroutils.attack(self.ent, self.ent, 20 * (isBerserk and 1.5 or 1), {{tr.HitPos, radius}}, self.filter)
             if !isBerserk then
                 local fromStart = timer.curtime() - self:getLaserStartTime()
                 if fromStart > self:getLaserRemain() then

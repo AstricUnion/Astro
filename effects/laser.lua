@@ -44,6 +44,13 @@ if CLIENT then
         lightEffect:setParent(holo)
         lightEffect:setColor(Color(255, 0, 0, 60))
 
+        local lightEffect2 = hologram.create(zeroVector, zeroAngle, "models/holograms/plane.mdl")
+        if !lightEffect2 then return end
+        lightEffect2:setParent(holo)
+        lightEffect2:setMaterial("cable/redlaser")
+        lightEffect2:setClip(0, true, zeroVector, Vector(0, 0, -1), holo)
+        lightEffect2:setColor(Color(255, 0, 0))
+
         local impact = hologram.create(zeroVector, zeroAngle, "models/holograms/hq_sphere.mdl")
         if !impact then return end
         impact:suppressEngineLighting(true)
@@ -64,6 +71,7 @@ if CLIENT then
         self.holo = holo
         self.laserEffect = laserEffect
         self.lightEffect = lightEffect
+        self.lightEffect2 = lightEffect2
         self.impact = impact
         self.impactLaserEffect = impactLaserEffect
         self.nextParticle = 0
@@ -81,10 +89,12 @@ if CLIENT then
         local impact = self.impact
         local impactLaserEffect = self.impactLaserEffect
         local laserEffect = self.laserEffect
+        local lightEffect2 = self.lightEffect2
         local snd = self.sound
         local start = ent:localToWorld(self.offset)
         local origin = self:getOrigin() + randVector() * 2
         local scale = self:getScale()
+        local diameter = self:getRadius() * 2
         local size = start:getDistance(origin)
         local ang = (origin - start):getAngle()
         local newAng = ang:rotateAroundAxis(ang:getRight(), 90)
@@ -93,11 +103,12 @@ if CLIENT then
         holo:setSize(Vector(12 * scale, 12 * scale, size * 2))
 
         impact:setPos(origin)
-        impact:setSize(Vector(20 * scale, 20 * scale, 48 * scale))
+        impact:setSize(Vector(diameter, diameter, diameter))
         impact:setAngles(newAng)
 
+        local impactEffectRadius = diameter + 12
         impactLaserEffect:setPos(origin)
-        impactLaserEffect:setSize(Vector(32 * scale, 32 * scale, 56 * scale))
+        impactLaserEffect:setSize(Vector(impactEffectRadius, impactEffectRadius, impactEffectRadius))
         impactLaserEffect:setAngles(newAng:rotateAroundAxis(ang:getUp(), 180))
 
         ---@type ViewSetup
@@ -105,6 +116,9 @@ if CLIENT then
         local laserEffAngle = holo:worldToLocalAngles((vs.origin - start):getAngle())
         laserEffect:setSize(Vector(16 * scale, 16 * scale, size * 2))
         laserEffect:setAngles(holo:localToWorldAngles(Angle(0, laserEffAngle.y + 90, 0)))
+
+        lightEffect2:setSize(Vector(size * 2, 48 * scale, 48 * scale))
+        lightEffect2:setAngles(holo:localToWorldAngles(Angle(90, laserEffAngle.y + 90, 90)))
 
         if snd then
             local localEyePos = holo:worldToLocal(vs.origin)
