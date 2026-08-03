@@ -1,6 +1,6 @@
 if CLIENT then
     local sounds = "https://raw.githubusercontent.com/AstricUnion/Astro/refs/heads/main/sounds/astrotrooper/"
-    astrosound.preloadURL("loop", sounds .. "Idle.mp")
+    astrosound.preloadURL("loop", sounds .. "Idle.mp3")
     astrosound.preloadURL("dash", sounds .. "TrooperDash.mp3")
     astrosound.preloadURL("reload", sounds .. "Reload.mp3")
     astrosound.preloadURL("blaster", sounds .. "Fire.mp3")
@@ -29,7 +29,7 @@ AstroTrooper.Model = function()
     return mdl
 end
 AstroTrooper.hooks = {}
-AstroTrooper.CameraOffset = Vector(9, 0, -5)
+AstroTrooper.CameraOffset = Vector(10, 0, -5)
 ---@type AstroModuleCfg[]
 AstroTrooper.Modules = {
     {offset = Vector(0, 40, 0), module = "astroblaster"},
@@ -42,16 +42,11 @@ if SERVER then
     function AstroTrooper:astroInitialize()
         self.ent:setSequence(1)
         self.shootFrom = 1
-        self.modules[3].dashEnd = function(mod)
+        self.modules[3].warpdashEnd = function(mod)
             self:setState(STATE.Idle)
             self.ent:setNoDraw(false)
             self.modules[1].ent:setNoDraw(false)
             self.modules[2].ent:setNoDraw(false)
-            local eff = beff.create("quantum_burst")
-            eff:setOrigin(self.ent:getPos())
-            eff:setNormal(mod:getDirection())
-            eff:setScale(3)
-            eff:play()
         end
         self.nextDeathExplosion = 0
         self:setState(STATE.Idle)
@@ -85,6 +80,13 @@ if SERVER then
             eff:setNormal(self.modules[3]:getDirection())
             eff:setScale(3)
             eff:play()
+        end
+    end
+
+    function AstroTrooper:inputReleased(butt)
+        if butt == MOUSE.MOUSE2 then
+            if !self.modules[3]:canAction("stopAddToDash") then return end
+            self.modules[3]:sendAction("stopAddToDash")
         end
     end
 
@@ -184,10 +186,19 @@ if SERVER then
     end
 else
     local l1 = light.create(Vector(), 80, 10, Color(255, 0, 0))
-    local l2 = light.create(Vector(), 80, 10, Color(255, 0, 0))
 
     function AstroTrooper:astroInitialize()
         astrosound.play {"loop", nil, self.ent, looping = true}
+    end
+
+    function AstroTrooper:astroModuleInitialize(mod)
+        if mod.Identifier == "astrowarpdash" then
+            mod.warpdashStart = function()
+                self.modules[1].ent:setNoDraw(true)
+                self.modules[2].ent:setNoDraw(true)
+                self.ent:setNoDraw(true)
+            end
+        end
     end
 
     function AstroTrooper.hooks:AstroSoundPreloaded(identifier)
@@ -196,17 +207,7 @@ else
 
     function AstroTrooper:renderOffscreen()
         l1:setPos(self.ent:localToWorld(Vector(0, 0, 20)))
-        l2:setPos(self.ent:localToWorld(Vector(0, 0, -10)))
         l1:draw()
-        l2:draw()
-    end
-
-    function AstroTrooper:networkVariablesUpdate(old, new)
-        if old.state ~= STATE.Dashing and new.state == STATE.Dashing then
-            self.modules[1].ent:setNoDraw(true)
-            self.modules[2].ent:setNoDraw(true)
-            self.ent:setNoDraw(true)
-        end
     end
 
     function AstroTrooper:onDrawHUD(sw, sh)

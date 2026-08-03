@@ -8,7 +8,6 @@ local PlasmaExhaust = {}
 PlasmaExhaust.Identifier = "plasma_exhaust"
 
 if CLIENT then
-    local randVector = function() return Vector(math.rand(-1, 1), math.rand(-1, 1), math.rand(-1, 1)) end
     local fire = {
         material.load("particle/fire"),
         material.load("particle/warp1_warp")
@@ -24,7 +23,7 @@ if CLIENT then
         local cur = timer.curtime()
         if self.emmiter:getParticlesLeft() <= 1 or self.nextParticle >= cur then return end
         local entity = self:getEntity()
-        local originStart = self:getOrigin() + randVector() * 50
+        local originStart = self:getOrigin() + beff.randVector() * 50
         local origin = isValid(entity) and entity:localToWorld(originStart) or originStart
         local size = math.rand(80, 150)
         local particle = self.emmiter:add(
@@ -34,7 +33,7 @@ if CLIENT then
         if particle then
             particle:setGravity(Vector(0, 0, -0.01))
             particle:setLighting(false)
-            particle:setVelocity(randVector() * 200)
+            particle:setVelocity(beff.randVector() * 200)
             particle:setAirResistance(50)
             local lumen = math.rand(30, 50)
             particle:setColor(Color(math.rand(230, 255), lumen, lumen))

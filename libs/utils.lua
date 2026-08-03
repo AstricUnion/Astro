@@ -19,7 +19,6 @@ if SERVER then
             ent:applyDamage(damage, attacker, inflictor, type)
             return
         end
-        if ent:getHealth() <= 0 then return end
         local turr = turrets[ent]
         local valid = isValid(turr)
         if valid and turr.damage ~= damage then
@@ -27,30 +26,36 @@ if SERVER then
             turr:remove()
             valid = false
         end
+        local holo
         if !valid then
             if !(prop.canSpawn() and hologram.canSpawn()) then return end
             local status
-            status, turr = pcall(prop.createSent, Vector(), Angle(90, 0, 0), "gmod_wire_turret", true, {
-                damage = damage,
+            local cantSplit = damage < 10
+            status, turr = pcall(prop.createSent, Vector(), Angle(-90, 0, 0), "gmod_wire_turret", true, {
+                damage = cantSplit and damage or damage / 10,
                 delay = 0,
+                numbullets = cantSplit and 1 or 10,
                 sound = "",
                 tracer = "",
                 tracernum = 0
             })
-            local holo = hologram.create(Vector(), Angle(), "models/editor/axis_helper_thick.mdl")
+            if !status then return end
+            holo = hologram.create(Vector(), Angle(), "models/editor/axis_helper_thick.mdl")
             if !holo then return end
-            if !status then holo:remove() return end
             turr:setParent(holo)
             holo:setNoDraw(true)
-            holo:setPos(ent:getPos() + Vector(0, 0, ent:getBoundingRadius()))
             holo:setAngles(Angle())
-            holo:setParent(ent)
             turr:setNoDraw(true)
             turr:setCollisionGroup(COLLISION_GROUP.IN_VEHICLE)
             turr.holo = holo
             turr.damage = damage
             turrets[ent] = turr
+        else
+            holo = turr.holo
+            holo:setParent(ent)
         end
+        holo:setParent(ent)
+        holo:setLocalPos(Vector())
         turr.toFire = true
         wire.triggerInput(turr, "Fire", 1)
     end
@@ -91,6 +96,39 @@ if SERVER then
         end
         explosive:setPos(damageOrigin)
         wire.triggerInput(explosive, "Detonate", 1)
+    end
+
+    local world = game.getWorld()
+
+    ---@class AttackSphere
+    ---@field [1] Vector Origin of sphere (local to entity)
+    ---@field [2] number Radius of sphere
+
+    ---[SERVER] Astro attack by sphere hitboxes
+    ---@param inflictor Entity Entity to inflict attack
+    ---@param attacker Entity Entity to attack from
+    ---@param damage number Damage to deal
+    ---@param spheres AttackSphere[]
+    ---@param filter Entity[]? Entities to filter
+    ---@param localToEnt boolean? Localize spheres to inflictor
+    ---@param callback (fun(target: Entity): boolean?)? Callback. If returns true, then prevent attack
+    function astroutils.attack(inflictor, attacker, damage, spheres, filter, localToEnt, callback)
+        local filterByEnt = {}
+        if filter then
+            for _, v in ipairs(filter) do
+                filterByEnt[v] = true
+            end
+        end
+        for _, v in ipairs(spheres) do
+            local pos = localToEnt and inflictor:localToWorld(v[1]) or v[1]
+            for _, target in ipairs(find.inSphere(pos, v[2])) do
+                if !isValid(target) or target == world or filterByEnt[target] then goto cont end
+                if (callback and callback(target)) then goto cont end
+                astroutils.applyDamage(target, damage, attacker, inflictor)
+                filterByEnt[target] = true
+                ::cont::
+            end
+        end
     end
 end
 
