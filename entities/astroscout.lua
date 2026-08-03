@@ -330,7 +330,6 @@ end
 function AstroScout:astroModuleInitialize(mod)
     if mod.Identifier ~= "astrodash" then return end
     ---@cast mod AstroDash
-    mod.DashTime = 1.8
     mod.AllowVarying = true
     mod.Radius = 160
     mod.Control = "G"

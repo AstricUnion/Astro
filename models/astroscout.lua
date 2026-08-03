@@ -340,6 +340,7 @@ model.new("astroscout", hitbox {
         }
     end)
 
+    -- i will fix curves in AstroStriker, but now... wtf
     :addSequence("punch", 1, function(ent, layer)
         local body = ent:getBoneEntity(ent:lookupBone("body"))
         local head = ent:getBoneEntity(ent:lookupBone("head"))

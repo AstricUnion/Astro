@@ -5,8 +5,10 @@ if !CLIENT then return end
 local astrogui = {}
 astrogui.colors = {
    main = Color(255, 20, 20, 200),
+   mainMouse = Color(255, 100, 100, 200),
    overlay = Color(255, 70, 70, 100),
    overlay1 = Color(255, 70, 70, 30),
+   overlay1Mouse = Color(255, 120, 120, 40),
 }
 
 
@@ -140,18 +142,35 @@ function astrogui.drawProgressBarSections(x, y, w, h, sectionW, progress, leftTe
     astrogui.popStencilMask()
 end
 
+local mouseIcon = {
+    [MOUSE.MOUSE1] = material.createFromImage("gui/lmb.png", ""),
+    [MOUSE.MOUSE2] = material.createFromImage("gui/rmb.png", ""),
+    [MOUSE.MOUSE3] = material.createFromImage("gui/mwheel.png", "")
+}
+
 function astrogui.control(x, y, control, disabled)
-    local col = disabled and astrogui.colors.overlay1 or astrogui.colors.main
-    local col1 = disabled and astrogui.colors.overlay1 or astrogui.colors.overlay
-    local isControl = !disabled and input.isKeyDown(KEY[control])
+    local colors = astrogui.colors
+    local col = disabled and colors.overlay1 or colors.main
+    local col1 = disabled and colors.overlay1 or colors.overlay
+    local key = KEY[control]
+    local mouse = MOUSE[control]
+    local isControl = !disabled and ((mouse and input.isMouseDown(mouse)) or (key and input.isKeyDown(key)))
     render.setMaterial(mat)
-    render.setColor(isControl and col1 or astrogui.colors.overlay1)
+    render.setColor(isControl and col1 or colors.overlay1)
     render.drawTexturedRect(x - 10, y - 10, 20, 20)
     render.setColor(isControl and col or col1)
     render.drawRectOutline(x - 9, y - 9, 18, 18)
     render.drawRectOutline(x - 10, y - 10, 20, 20)
-    render.setColor(col)
-    render.drawSimpleText(x, y, control, TEXT_ALIGN.CENTER, TEXT_ALIGN.CENTER)
+    local icon = mouse and mouseIcon[mouse]
+    if icon then
+        local iconCol = disabled and colors.overlay1Mouse or colors.mainMouse
+        render.setColor(iconCol)
+        render.setMaterial(icon)
+        render.drawTexturedRect(x - 9, y - 9, 18, 18)
+    else
+        render.setColor(col)
+        render.drawSimpleText(x, y, control, TEXT_ALIGN.CENTER, TEXT_ALIGN.CENTER)
+    end
 end
 
 return astrogui
