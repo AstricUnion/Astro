@@ -339,9 +339,23 @@ end
 
 
 if SERVER then
+    local function createCached(name)
+        local part = model.create(name)
+        if !part then return end
+        part:setFrozen(true)
+        timer.simple(0.1, function()
+            part:setNoDraw(true)
+        end)
+        part:setCollisionGroup(COLLISION_GROUP.IN_VEHICLE)
+        return part
+    end
+
     function AstroScout:astroInitialize()
         self:setState(STATE.Idle)
-        self:setNWVar("berserkProgress", 3200)
+        self.cachedParts = {
+            createCached("astroscout_leftshoulder"),
+            createCached("astroscout_rightshoulder")
+        }
     end
 
     local canAct = {
@@ -389,10 +403,6 @@ if SERVER then
         if act then
             self:sendAction(act)
         end
-
-        if button == KEY.B then
-            self.ent:applyDamage(self.Health)
-        end
     end
 
     function AstroScout:onDamage(_, _, amount)
@@ -411,9 +421,17 @@ if SERVER then
         self:sendAction("stopLaser")
     end
 
-    local function createPart(name, ent, offset, angle, localDirection, force, torque, velocity)
+    local function createPart(cached, name, ent, offset, angle, localDirection, force, torque, velocity)
         local pos, ang = localToWorld(offset, angle or Angle(), ent:getPos(), ent:getAngles())
-        local part = model.create(name)
+        local part
+        if !cached then
+            part = model.create(name)
+        else
+            cached:setNoDraw(false)
+            cached:setCollisionGroup(COLLISION_GROUP.NONE)
+            cached:setFrozen(false)
+            part = cached
+        end
         if !part then return end
         part:setPos(pos)
         part:setAngles(ang)
@@ -454,8 +472,8 @@ if SERVER then
             eff:setScale(10)
             eff:play()
         end
-        local leftForearm = createPart("astroscout_leftforearm", self.ent, Vector(-3, 85, 26), Angle(90, -90, 0), Vector(0, 2, 0), 500, 100, Vector())
-        local rightForearm = createPart("astroscout_rightforearm", self.ent, Vector(-3, -85, 26), Angle(-90, 90, 0), Vector(0, -2, 0), 500, 100, Vector())
+        local leftForearm = createPart(nil, "astroscout_leftforearm", self.ent, Vector(-3, 85, 26), Angle(90, -90, 0), Vector(0, 2, 0), 500, 100, Vector())
+        local rightForearm = createPart(nil, "astroscout_rightforearm", self.ent, Vector(-3, -85, 26), Angle(-90, 90, 0), Vector(0, -2, 0), 500, 100, Vector())
         timer.simple(0.1, function()
             if isValid(leftForearm) then
                 local eff = beff.create("hitsmoke")
@@ -490,10 +508,10 @@ if SERVER then
                 eff:setScale(5)
                 eff:play()
             end
-            local body = createPart("astroscout_body", self.ent, Vector(), nil, Vector(), 100, 0, -col.OurOldVelocity)
-            local head = createPart("astroscout_head", self.ent, Vector(0, 0, 68), nil, Vector(0, 0, -10), 200, 50, -col.OurOldVelocity)
-            local leftShoulder = createPart("astroscout_leftshoulder", self.ent, Vector(), nil, Vector(0, 1, 0), 100, 100, Vector())
-            local rightShoulder = createPart("astroscout_rightshoulder", self.ent, Vector(), nil, Vector(0, -1, 0), 100, 100, Vector())
+            local body = createPart(nil, "astroscout_body", self.ent, Vector(), nil, Vector(), 10, 0, -col.OurOldVelocity)
+            local head = createPart(nil, "astroscout_head", self.ent, Vector(0, 0, 68), nil, Vector(0, 0, -10), 50, 50, -col.OurOldVelocity)
+            local leftShoulder = createPart(self.cachedParts[1], nil, self.ent, Vector(), nil, Vector(0, 1, 0), 100, 100, Vector())
+            local rightShoulder = createPart(self.cachedParts[2], nil, self.ent, Vector(), nil, Vector(0, -1, 0), 100, 100, Vector())
             timer.simple(0.1, function()
                 if isValid(body) then
                     local eff = beff.create("hitsmoke")

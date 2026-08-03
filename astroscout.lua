@@ -25,5 +25,5 @@ require("astronew/entities/astroscout.lua")
 
 if SERVER then
     local ent = ents.create("astroscout")
-    ent:spawn(chip():getPos() + Vector(0, 0, 30), Angle(), true)
+    ent:spawn(chip():getPos() + Vector(0, 0, 50), Angle(), false)
 end
