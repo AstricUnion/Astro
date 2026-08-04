@@ -7,16 +7,16 @@
 
 require("astronew/baseincludes.lua")
 
----@include effects/berserk.lua
----@include effects/dashtrail.lua
----@include effects/hitsmoke.lua
----@include effects/laser.lua
----@include effects/projectile_explosion.lua
-require("effects/berserk.lua")
-require("effects/dashtrail.lua")
-require("effects/hitsmoke.lua")
-require("effects/laser.lua")
-require("effects/projectile_explosion.lua")
+---@include astronew/effects/berserk.lua
+---@include astronew/effects/dashtrail.lua
+---@include astronew/effects/hitsmoke.lua
+---@include astronew/effects/laser.lua
+---@include astronew/effects/projectile_explosion.lua
+require("astronew/effects/berserk.lua")
+require("astronew/effects/dashtrail.lua")
+require("astronew/effects/hitsmoke.lua")
+require("astronew/effects/laser.lua")
+require("astronew/effects/projectile_explosion.lua")
 
 require("astronew/models/astroscout.lua")
 require("astronew/entities/astrodash.lua")

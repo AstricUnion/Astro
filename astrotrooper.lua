@@ -9,16 +9,16 @@
 
 require("astronew/baseincludes.lua")
 
----@include effects/blaster_muzzle.lua
----@include effects/hitsmoke.lua
----@include effects/plasma_exhaust.lua
----@include effects/projectile_explosion.lua
----@include effects/quantum_burst.lua
-require("effects/blaster_muzzle.lua")
-require("effects/hitsmoke.lua")
-require("effects/plasma_exhaust.lua")
-require("effects/projectile_explosion.lua")
-require("effects/quantum_burst.lua")
+---@include astronew/effects/blaster_muzzle.lua
+---@include astronew/effects/hitsmoke.lua
+---@include astronew/effects/plasma_exhaust.lua
+---@include astronew/effects/projectile_explosion.lua
+---@include astronew/effects/quantum_burst.lua
+require("astronew/effects/blaster_muzzle.lua")
+require("astronew/effects/hitsmoke.lua")
+require("astronew/effects/plasma_exhaust.lua")
+require("astronew/effects/projectile_explosion.lua")
+require("astronew/effects/quantum_burst.lua")
 
 require("astronew/models/astrotrooper.lua")
 require("astronew/entities/astroblaster.lua")
