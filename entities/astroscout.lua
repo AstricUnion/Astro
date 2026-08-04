@@ -562,6 +562,7 @@ else
 
     function AstroScout:astroInitialize()
         self.ent:setSequence("idle")
+        self.ent:setPoseParameter("rotation_multiplier", 1)
         astrosound.play {"loop2", nil, self.ent, looping = true, volume = 0.8, callback = function(snd)
             self.loopSound = snd
         end}
