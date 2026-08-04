@@ -1,5 +1,5 @@
 if CLIENT then
-    local sounds = "https://raw.githubusercontent.com/AstricUnion/Astro/refs/heads/astroscout/dev/sounds/astroscout/"
+    local sounds = "https://raw.githubusercontent.com/AstricUnion/Astro/refs/heads/main/sounds/astroscout/"
     astrosound.preloadURL("loop2", sounds .. "Idle.mp3")
     astrosound.preloadURL("punch", sounds .. "Punch.mp3")
     astrosound.preloadURL("swing", sounds .. "Claws.mp3")
@@ -10,6 +10,8 @@ if CLIENT then
     astrosound.preloadURL("berserkLoop", sounds .. "BerserkLoop.mp3")
     astrosound.preloadURL("stopBerserk", sounds .. "BerserkOff.mp3")
     astrosound.preloadURL("dash2", sounds .. "Dash.mp3")
+    astrosound.preloadURL("death", sounds .. "Dying.mp3")
+    astrosound.preloadURL("metal", sounds .. "Metal.mp3")
 end
 
 
@@ -401,6 +403,9 @@ if SERVER then
         if act then
             self:sendAction(act)
         end
+        if button == KEY.B then
+            self.ent:applyDamage(self.Health)
+        end
     end
 
     function AstroScout:inputReleased(button)
@@ -458,6 +463,7 @@ if SERVER then
         self.deathDirection = dir and !dir:isZero() and dir or self.ent:getAngles():getForward()
         self.deathDirection:setZ(0)
         self.ent:setSequence("death")
+        astrosound.play {"death", nil, self.ent, fadeMin = 3000, fadeMax = 50000}
         local seat = self:getSeat()
         if seat and isValid(seat) then
             self:seatToAstro()

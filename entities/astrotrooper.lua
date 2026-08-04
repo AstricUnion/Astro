@@ -72,7 +72,6 @@ if SERVER then
         elseif button == MOUSE.MOUSE2 then
             if !self.modules[3]:canAction("dash") then return end
             astrosound.play {"dash", nil, self.ent}
-            -- astrosound.play {"olddash", nil, self.ent}
             self.modules[3]:sendAction("dash")
             self:setState(STATE.Dashing)
             local eff = beff.create("quantum_burst")
