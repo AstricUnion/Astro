@@ -29,6 +29,7 @@ if CLIENT then
         if !holo then return end
         holo:setParent(ent)
         holo:suppressEngineLighting(true)
+        holo:setColor(Color(200, 0, 0))
         for _=1, 20 do
             if emm:getParticlesLeft() < 1 then return end
             local startSize = math.random(30, 42)

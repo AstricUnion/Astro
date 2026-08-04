@@ -19,8 +19,10 @@ if CLIENT then
         local holo2 = hologram.create(origin, normal:getAngle(), "models/props_combine/portalball.mdl", Vector(scale))
         if !(holo and holo2) then return end
         holo:suppressEngineLighting(true)
+        holo:setColor(Color(255, 0, 0))
         holo2:suppressEngineLighting(true)
         holo2:setMaterial("models/effects/vortshield")
+        holo2:setColor(Color(255, 0, 0))
         tween.start(tween.new {
             param {0, 1, holo, property.SCALE, Vector(scale * 2), Vector(scale * 10), math.easeOutQuart},
             param {0, 1, holo, property.COLOR, Color(255, 0, 0), Color(255, 0, 0, 0), math.easeOutQuart},

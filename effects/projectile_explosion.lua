@@ -25,6 +25,7 @@ if CLIENT then
         if !holo then return end
         holo:emitSound("npc/vort/vort_explode1.wav", 75, 150, 1.5)
         holo:suppressEngineLighting(true)
+        holo:setColor(Color(200, 0, 0))
         for i=1, 8 do
             if emm:getParticlesLeft() < 1 then goto cont end
             local size = math.rand(100, 120) * scale

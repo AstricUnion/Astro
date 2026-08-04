@@ -117,6 +117,7 @@ end
 function AstroScout.actions.block(astro, cur)
     if CLIENT then
         astro.ent:setSequence("block", 1)
+        astrosound.play {"metal", nil, astro.ent, volume = 1, pitch = 1.7}
     else
         astro:setNextAction("block", cur + 0.5)
         astro:setState(bit.bor(astro:getState(), STATE.Block))
@@ -127,6 +128,7 @@ end
 function AstroScout.actions.unblock(astro, cur)
     if CLIENT then
         astro.ent:setSequence("unblock", 1)
+        astrosound.play {"metal", nil, astro.ent, volume = 1, pitch = 1.5}
     else
         astro:setNextAction("unblock", cur + 0.5)
         timer.simple(0.5, function()
@@ -402,9 +404,6 @@ if SERVER then
         local act = pressToAct[button]
         if act then
             self:sendAction(act)
-        end
-        if button == KEY.B then
-            self.ent:applyDamage(self.Health)
         end
     end
 

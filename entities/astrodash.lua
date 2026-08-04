@@ -117,6 +117,10 @@ if SERVER then
             local cur = timer.curtime()
             local function endDash()
                 self:setNextAction("dash", cur + self.Cooldown)
+                net.start("AstroDashEnd")
+                    net.writeEntity(self.ent)
+                    net.writeVector(dir)
+                net.send(find.allPlayers())
                 self:dashEnd(astro, dir)
                 self:setNWVar("dashDirection", nil)
             end
@@ -128,13 +132,15 @@ if SERVER then
         end
     end
 else
-    function AstroDash:networkVariablesUpdate(oldVars, vars)
-        if oldVars.dashDirection ~= false and vars.dashDirection == false then
-            local astro = self:getAstro()
-            if !isValid(astro) then return end
-            self:dashEnd(astro, oldVars.dashDirection or Angle():getForward())
-        end
-    end
+    net.receive("AstroDashEnd", function()
+          net.readEntity(function(ent)
+              local bent = ents.inited[ent:entIndex()]
+              local astro = bent:getAstro()
+              if !isValid(astro) then return end
+              local dir = bent:getDirection()
+              bent:dashEnd(astro, dir or Angle():getForward())
+          end)
+    end)
 
     function AstroDash:drawHUD(x, y)
         local dir = self:getDirection()
