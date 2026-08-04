@@ -198,6 +198,7 @@ else
                 self.modules[2].ent:setNoDraw(true)
                 self.ent:setNoDraw(true)
             end
+            mod.Control = "MOUSE2"
         end
     end
 
