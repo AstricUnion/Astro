@@ -24,9 +24,10 @@ local function overrideHealth(self, ent)
 
     -- Client has no permissions networked
     if CLIENT then
+        self.ent.__getHealthOld = self.ent.__getHealthOld or self.ent.getHealth
         function self.ent.getHealth()
             local nwVar = self:getNWVar("AstroHealth")
-            return math.round(nwVar) or self.ent:getHealth()
+            return nwVar and math.round(nwVar) or self.ent:__getHealthOld()
         end
 
         function self.ent.getMaxHealth()
