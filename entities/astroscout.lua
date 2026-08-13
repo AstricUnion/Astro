@@ -46,7 +46,7 @@ AstroScout.HeadOffset = Vector(0, 0, 68)
 ---@type AstroModuleCfg[]
 AstroScout.Modules = { { module = "astrodash" } }
 AstroScout.SeatOffset = Vector(95, 0, 0)
-AstroScout.SeatVisible = false
+AstroScout.SeatVisible = true
 AstroScout.Health = 6500
 AstroScout.Speed = 200
 AstroScout.SprintSpeed = 600
