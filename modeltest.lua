@@ -11,4 +11,5 @@ if CLIENT then
     mdl:setPos(ch:getPos())
     mdl:setAngles(ch:getAngles())
     mdl:setSequence(1)
+    mdl:setParent(ch)
 end
