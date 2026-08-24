@@ -118,15 +118,18 @@ if SERVER then
     function AstroBlaster:think()
         if !self:isAlive() then return end
         local astro = self:getAstro()
-        if !astro then return end
-        local tr = astro:getEyeTrace()
-        if !tr then return end
-        self.ent:setAngles((tr.HitPos - self.ent:getPos()):getAngle())
+        if !isValid(astro) then return end
+        if isValid(astro:getDriver()) then
+            local tr = astro:getEyeTrace()
+            self.ent:setAngles((tr.HitPos - self.ent:getPos()):getAngle())
+        else
+            self.ent:setAngles(astro.ent:getAngles())
+        end
     end
 
     local exp = effect.create()
 
-    function AstroBlaster:onDeath()
+    function AstroBlaster:onModuleDeath()
         local astro = self:getAstro()
         if !astro then return end
         self.ent:setFrozen(false)
@@ -167,7 +170,7 @@ else
         local isRight = x > sw / 2
         astrogui.drawProgressBarSections(x - 46, y, 92, 40, 16, ammo / 4, !isRight and "AMMO" or "", isRight and "AMMO" or "", true, isRight)
         local text = "BLASTER_" .. moduleId
-        local hpText = string.format("%s/%s", hp, self.Health)
+        local hpText = hp .. "/" .. self.Health
         astrogui.drawProgressBar(x - 82 + 32 * (isRight and 1 or -1), y - 28, 164, 24, hp / self.Health, !isRight and text or hpText, isRight and text or hpText)
     end
 end
