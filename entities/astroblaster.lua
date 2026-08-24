@@ -127,8 +127,6 @@ if SERVER then
         end
     end
 
-    local exp = effect.create()
-
     function AstroBlaster:onModuleDeath()
         local astro = self:getAstro()
         if !astro then return end
@@ -142,8 +140,7 @@ if SERVER then
         astro:addVelocity(forceAng:getForward() * 300)
         astro.ent:applyForceOffset(-angs:getForward() * 500, astro.ent:worldToLocal(pos))
         self.ent:applyForceCenter(astro.velocity + angs:getForward() * 100)
-        exp:setOrigin(pos)
-        exp:play("Explosion")
+        effect.create("Explosion", { origin = pos })
         astro.ent:emitSound("WaterExplosionEffect.Sound")
     end
 else
