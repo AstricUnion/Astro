@@ -75,6 +75,10 @@ else
         self.ent:setSequence("idle")
     end
 
+    function AstroStriker:colorChanged(_, newColor)
+        l1:setColor(newColor)
+    end
+
     function AstroStriker:renderOffscreen()
         l1:setPos(self.ent:localToWorld(Vector(0, 0, 20)))
         l1:draw()

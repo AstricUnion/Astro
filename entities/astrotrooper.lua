@@ -206,6 +206,10 @@ else
         if identifier == "loop" then astrosound.play {identifier, nil, self.ent, looping = true} end
     end
 
+    function AstroTrooper:colorChanged(_, newColor)
+        l1:setColor(newColor)
+    end
+
     function AstroTrooper:renderOffscreen()
         l1:setPos(self.ent:localToWorld(Vector(0, 0, 20)))
         l1:draw()

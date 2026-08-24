@@ -308,6 +308,7 @@ ents.register(AstroModuleBase, "module_base")
 ---@field SeatAngle Angle Angle offset of seat
 ---@field SeatVisible boolean Made seat visible
 ---@field Radius number Radius of an Astro. Modules or you can use this parameter, so change it. By default is 48
+---@field InitialColor Color Initial color of Astro. By default is RGB(255, 40, 40)
 ---@field driver Player Driver of this Astro
 ---@field velocity Vector Velocity of this Astro
 ---@field physobj PhysObj Physics object of this Astro
@@ -319,6 +320,7 @@ ents.register(AstroModuleBase, "module_base")
 ---@field cameraBone Entity Camera bone
 ---@field headBone Entity Head bone
 ---@field bodyBone Entity Body bone
+---@field currentColor Color Current (not updated) color
 local AstroBase = {}
 AstroBase.Identifier = "astrobase"
 AstroBase.Name = "Base Astro"
@@ -337,6 +339,7 @@ AstroBase.SeatOffset = Vector()
 AstroBase.SeatAngle = Angle(0, -90, 0)
 AstroBase.SeatVisible = false
 AstroBase.Radius = 48
+AstroBase.InitialColor = Color(255, 40, 40)
 
 
 ---[SHARED] Post initialize Astro
@@ -379,6 +382,8 @@ function AstroBase:moduleInitialize()
         self.cameraBone = self.ent:getBoneEntity(self.ent:lookupBone("camera")) or throw("You have no camera bone in your model!")
         self.headBone = self.ent:getBoneEntity(self.ent:lookupBone("head")) or throw("You have no head bone in your model!")
         self.bodyBone = self.ent:getBoneEntity(self.ent:lookupBone("body")) or throw("You have no body bone in your model!")
+        self.ent:setColor(self.InitialColor)
+        self.currentColor = self.InitialColor
     end
     self.modules = modules
     self:astroInitialize()
@@ -701,8 +706,20 @@ else
         self.cameraBone:setAngles(dr:getEyeAngles())
     end
 
+    ---[SHARED] Change color hook for Astro. You can return modified color
+    ---@param oldColor Color Old color before changing
+    ---@param newColor Color New color
+    ---@return Color? col Color change to or nil, to update to new
+    function AstroBase:colorChanged(oldColor, newColor) end
+
     ---[INTERNAL] [CLIENT] Astrobot think for client
     function AstroBase.hooks:Think()
+        local color = self.ent:getColor()
+        if self.currentColor ~= color then
+            color = self:colorChanged(self.currentColor, color) or color
+            self.ent:setColor(color)
+            self.currentColor = color
+        end
         self:think()
         for _, v in ipairs(self.modules) do
             v:think()

@@ -577,6 +577,10 @@ else
         end
     end
 
+    function AstroScout:colorChanged(_, newColor)
+        l1:setColor(newColor)
+    end
+
     function AstroScout:renderOffscreen()
         l1:setPos(self.ent:localToWorld(Vector(0, 0, 30)))
         l1:draw()

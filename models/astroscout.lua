@@ -12,7 +12,8 @@ local part = model.part
 local holo = model.holo
 local rig = model.rig
 
-local mainColor = Color(255, 40, 40)
+-- local mainColor = Color(255, 40, 40)
+local mainColor = Color(255, 255, 255)
 local metalMat = "models/props_combine/metal_combinebridge001"
 local whiteMat = "lights/white"
 
@@ -87,7 +88,7 @@ local rotor = part {
 local headEye = part {
     rig(),
     holo { Vector(14, 0, 0), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.6, 1.1, 1.1), noLight = true, color = mainColor, material = whiteMat },
-    holo { Vector(20.2, 0, -1), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.3, 0.3, 0.9), noLight = true, material = whiteMat },
+    holo { Vector(20.2, 0, -1), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.3, 0.3, 0.9), noLight = true, material = whiteMat, noColorize = true },
 }
 
 local head = part {
