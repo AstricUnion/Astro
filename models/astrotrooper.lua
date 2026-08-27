@@ -30,7 +30,7 @@ local function astrosoundShot(playAt, snd, ent)
     end
 end
 
-local mainColor = Color(255, 40, 40)
+local mainColor = Color(255, 255, 255)
 
 
 -- model.setRigVisible(true)
@@ -38,7 +38,7 @@ local function eyeclin(offset, angle)
     local baseHolo = part {
         holo { Vector(), Angle(), "models/holograms/hq_cylinder.mdl", Vector(0.18, 0.18, 0.52), noLight = true, color = Color(0, 0, 0), material = "models/debug/debugwhite" },
         holo { Vector(), Angle(), "models/holograms/hq_cylinder.mdl", Vector(0.15, 0.15, 0.53), noLight = true, color = mainColor, material = "models/debug/debugwhite" },
-        holo { Vector(0.05, 0, -0.05), Angle(), "models/holograms/hq_cylinder.mdl", Vector(0.12, 0.04, 0.54), noLight = true, color = Color(255, 255, 255), material = "models/debug/debugwhite" },
+        holo { Vector(0.05, 0, -0.05), Angle(), "models/holograms/hq_cylinder.mdl", Vector(0.12, 0.04, 0.54), noLight = true, color = Color(255, 255, 255), material = "models/debug/debugwhite", noColorize = true },
     }
 
     local fract = 360 / 6
@@ -156,7 +156,7 @@ model.new("astrotrooper_body", part {
 local eyeModel = part {
     rig(),
     holo { Vector(9, 0, 0), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.3, 0.55, 0.55), noLight = true, color = mainColor, material = "models/debug/debugwhite" },
-    holo { Vector(12, 0, 0), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.18, 0.4, 0.4), noLight = true, color = Color(255, 255, 255), material = "models/debug/debugwhite" },
+    holo { Vector(12, 0, 0), nil, "models/hunter/misc/sphere075x075.mdl", Vector(0.18, 0.4, 0.4), noLight = true, color = Color(255, 255, 255), material = "models/debug/debugwhite", noColorize = true },
     holo { Vector(12.7, 0, 0), Angle(90, 0, 0), "models/holograms/hq_torus_thin.mdl", Vector(1.175), noLight = true, color = Color(0, 0, 0) },
 }
 

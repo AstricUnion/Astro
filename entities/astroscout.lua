@@ -278,9 +278,9 @@ function AstroScout:think()
             local module = self.ent:getBoneEntity(self.ent:lookupBone("left_shoulder"))
             local ang = (tr.HitPos - module:getPos()):getAngle()
             ang = ang:rotateAroundAxis(ang:getUp(), -90)
-            self.ent:setPoseParameter("laser_rotation_p", ang.p)
-            self.ent:setPoseParameter("laser_rotation_y", ang.y)
-            self.ent:setPoseParameter("laser_rotation_r", ang.r)
+            self.ent:setPose("laser_rotation_p", ang.p)
+            self.ent:setPose("laser_rotation_y", ang.y)
+            self.ent:setPose("laser_rotation_r", ang.r)
             if self.laserEffect then
                 self.laserEffect:setOrigin(tr.HitPos)
                 self.laserEffect:setRadius(radius)
@@ -430,7 +430,7 @@ if SERVER then
         self:sendAction("stopLaser")
     end
 
-    local function createPart(cached, name, ent, offset, angle, localDirection, force, torque, velocity)
+    local function createPart(color, cached, name, ent, offset, angle, localDirection, force, torque, velocity)
         local pos, ang = localToWorld(offset, angle or Angle(), ent:getPos(), ent:getAngles())
         local part
         if !isValid(cached) then
@@ -444,6 +444,7 @@ if SERVER then
         if !part then return end
         part:setPos(pos)
         part:setAngles(ang)
+        part:setColor(color)
         timer.simple(0, function()
             if !isValid(part) then return end
             local phys = part:getPhysicsObject()
@@ -482,8 +483,9 @@ if SERVER then
             eff:setScale(10)
             eff:play()
         end
-        local leftForearm = createPart(nil, "astroscout_leftforearm", self.ent, Vector(-3, 85, 26), Angle(90, -90, 0), Vector(0, 2, 0), 500, 100, Vector())
-        local rightForearm = createPart(nil, "astroscout_rightforearm", self.ent, Vector(-3, -85, 26), Angle(-90, 90, 0), Vector(0, -2, 0), 500, 100, Vector())
+        local col = self.ent:getColor()
+        local leftForearm = createPart(col, nil, "astroscout_leftforearm", self.ent, Vector(-3, 85, 26), Angle(90, -90, 0), Vector(0, 2, 0), 500, 100, Vector())
+        local rightForearm = createPart(col, nil, "astroscout_rightforearm", self.ent, Vector(-3, -85, 26), Angle(-90, 90, 0), Vector(0, -2, 0), 500, 100, Vector())
         timer.simple(0.1, function()
             if isValid(leftForearm) then
                 local eff = beff.create("hitsmoke")
@@ -506,7 +508,7 @@ if SERVER then
         -- astrosound.play {"death", nil, self.ent, fadeMin = 3000, fadeMax = 50000}
         self.ent:setCollisionGroup(COLLISION_GROUP.WORLD)
         ---@param col CollisionData
-        self.ent:addCollisionListener(function(col)
+        self.ent:addCollisionListener(function(colData)
             if !isValid(self) then return end
             local pos = self.ent:getPos()
             self:remove()
@@ -518,10 +520,11 @@ if SERVER then
                 eff:setScale(5)
                 eff:play()
             end
-            local body = createPart(nil, "astroscout_body", self.ent, Vector(), nil, Vector(), 10, 0, -col.OurOldVelocity)
-            local head = createPart(nil, "astroscout_head", self.ent, Vector(0, 0, 68), nil, Vector(0, 0, -10), 50, 50, -col.OurOldVelocity)
-            local leftShoulder = createPart(self.cachedParts[1], "astroscout_leftshoulder", self.ent, Vector(), nil, Vector(0, 1, 0), 100, 100, Vector())
-            local rightShoulder = createPart(self.cachedParts[2], "astroscout_rightshoulder", self.ent, Vector(), nil, Vector(0, -1, 0), 100, 100, Vector())
+            local col = self.ent:getColor()
+            local body = createPart(col, nil, "astroscout_body", self.ent, Vector(), nil, Vector(), 10, 0, -colData.OurOldVelocity)
+            local head = createPart(col, nil, "astroscout_head", self.ent, Vector(0, 0, 68), nil, Vector(0, 0, -10), 50, 50, -colData.OurOldVelocity)
+            local leftShoulder = createPart(col, self.cachedParts[1], "astroscout_leftshoulder", self.ent, Vector(), nil, Vector(0, 1, 0), 100, 100, Vector())
+            local rightShoulder = createPart(col, self.cachedParts[2], "astroscout_rightshoulder", self.ent, Vector(), nil, Vector(0, -1, 0), 100, 100, Vector())
             timer.simple(0.1, function()
                 if isValid(body) then
                     local eff = beff.create("hitsmoke")
@@ -562,7 +565,7 @@ else
 
     function AstroScout:astroInitialize()
         self.ent:setSequence("idle")
-        self.ent:setPoseParameter("rotation_multiplier", 1)
+        self.ent:setPose("rotation_multiplier", 1)
         astrosound.play {"loop2", nil, self.ent, looping = true, volume = 0.8, callback = function(snd)
             self.loopSound = snd
         end}

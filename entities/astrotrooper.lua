@@ -43,12 +43,6 @@ if SERVER then
     function AstroTrooper:astroInitialize()
         self.ent:setSequence(1)
         self.shootFrom = 1
-        self.modules[3].warpdashEnd = function(mod)
-            self:setState(STATE.Idle)
-            self.ent:setNoDraw(false)
-            self.modules[1].ent:setNoDraw(false)
-            self.modules[2].ent:setNoDraw(false)
-        end
         self.nextDeathExplosion = 0
         self:setState(STATE.Idle)
     end
@@ -191,17 +185,6 @@ else
         astrosound.play {"loop", nil, self.ent, looping = true}
     end
 
-    function AstroTrooper:astroModuleInitialize(mod)
-        if mod.Identifier == "astrowarpdash" then
-            mod.warpdashStart = function()
-                self.modules[1].ent:setNoDraw(true)
-                self.modules[2].ent:setNoDraw(true)
-                self.ent:setNoDraw(true)
-            end
-            mod.Control = "MOUSE2"
-        end
-    end
-
     function AstroTrooper.hooks:AstroSoundPreloaded(identifier)
         if identifier == "loop" then astrosound.play {identifier, nil, self.ent, looping = true} end
     end
@@ -219,6 +202,28 @@ else
         self.modules[1]:drawHUD(sw / 2 - 256, sh / 2)
         self.modules[2]:drawHUD(sw / 2 + 256, sh / 2)
         self.modules[3]:drawHUD(sw / 2, sh / 2 + 128)
+    end
+end
+
+
+function AstroTrooper:astroModuleInitialize(mod)
+    if mod.Identifier == "astrowarpdash" then
+        if SERVER then
+            mod.warpdashStart = function()
+                local col = self.ent:getColor():setA(0)
+                self.modules[1].ent:setColor(col)
+                self.modules[2].ent:setColor(col)
+                self.ent:setColor(col)
+            end
+            mod.warpdashEnd = function()
+                self:setState(STATE.Idle)
+                local col = self.ent:getColor():setA(255)
+                self.ent:setColor(col)
+                self.modules[1].ent:setColor(col)
+                self.modules[2].ent:setColor(col)
+            end
+        end
+        mod.Control = "MOUSE2"
     end
 end
 

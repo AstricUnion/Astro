@@ -72,7 +72,6 @@ local function blasterCluster(offset, angle)
             rg:setLocalAngles(baseAngle + Angle(ang, 0, 0))
             local mdl = blasterHolos()
             if mdl then
-                mdl:setNoDraw(false)
                 mdl:setParent(rg)
             end
         end

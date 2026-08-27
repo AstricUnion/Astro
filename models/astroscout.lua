@@ -332,7 +332,7 @@ model.new("astroscout", hitbox {
             function(process)
                 if !isValid(tube) or !isValid(prongs) then return end
                 local delta = timer.frametime()
-                local poseParameter = ent:getPoseParameter("rotation_multiplier")
+                local poseParameter = ent:getPose("rotation_multiplier")
                 tube:setLocalAngles(tube:getLocalAngles() + Angle(400 * delta * poseParameter, 0, 0))
                 prongs:setLocalAngles(prongs:getLocalAngles() + Angle(200 * delta * poseParameter, 0, 0))
                 if process > 4 then return true end
@@ -456,15 +456,15 @@ model.new("astroscout", hitbox {
             param { 0, 0.5, body, bodyAng, nil, Angle(0, -30, -5), math.easeInOutQuint },
             lerpParam { 0, shoulder, shoulderAng, function()
                 return body:worldToLocalAngles(Angle(
-                    ent:getPoseParameter("laser_rotation_p"),
-                    ent:getPoseParameter("laser_rotation_y"),
-                    ent:getPoseParameter("laser_rotation_r")
+                    ent:getPose("laser_rotation_p"),
+                    ent:getPose("laser_rotation_y"),
+                    ent:getPose("laser_rotation_r")
                 ))
             end, 0.2 },
             param { 0, 0.5, forearm, forearmAng, nil, Angle(), math.easeInOutQuint },
             function(process)
                 local eased = math.easeOutQuart(process / 2) * 5
-                ent:setPoseParameter("rotation_multiplier", 1 + eased)
+                ent:setPose("rotation_multiplier", 1 + eased)
                 if process > 2 then return true end
             end
         }
@@ -486,9 +486,9 @@ model.new("astroscout", hitbox {
             function(process)
                 bodyTween(process)
                 shoulderAng.set(shoulder, body:worldToLocalAngles(Angle(
-                    ent:getPoseParameter("laser_rotation_p"),
-                    ent:getPoseParameter("laser_rotation_y"),
-                    ent:getPoseParameter("laser_rotation_r")
+                    ent:getPose("laser_rotation_p"),
+                    ent:getPose("laser_rotation_y"),
+                    ent:getPose("laser_rotation_r")
                 )))
                 if process > 0.2 then return true end
             end,
@@ -516,7 +516,7 @@ model.new("astroscout", hitbox {
             param { 0, 1, forearm, forearmAng, nil, tween.blenderRotation(-180.605, -63.6716, 164.196), math.easeInOutQuint },
             function(process)
                 local eased = math.easeInSine(1 - process) * 5
-                ent:setPoseParameter("rotation_multiplier", 1 + eased)
+                ent:setPose("rotation_multiplier", 1 + eased)
                 if process > 1 then return true end
             end
         }
