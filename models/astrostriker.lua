@@ -1,6 +1,5 @@
-local tween = tween
-local param = tween.param
-local fcurveParam = tween.fcurveParam
+---@include ./frames/astrostriker_animations.lua
+local t = require("./frames/astrostriker_animations.lua")
 
 local model = model
 local hitbox = model.hitbox
@@ -8,24 +7,6 @@ local vertex = model.vertex
 local part = model.part
 local holo = model.holo
 local rig = model.rig
-
-local function circleProperty(radiusX, radiusY, layer)
-    radiusY = radiusY or radiusX
-    return {
-        set = function(ent, toSet)
-            if toSet == 1 then
-                toSet = 0
-            end
-            local process = toSet * math.pi * 2
-            local sin, cos = math.sin(process), math.cos(process)
-            ent:setLocalPosLayer(layer, Vector(sin * radiusX, 0, cos * radiusY))
-            ent.circleAng = toSet
-        end,
-        get = function(ent)
-            return ent.circleAng or 0
-        end
-    }
-end
 
 
 -- local col = Color(255, 40, 40)
@@ -249,70 +230,5 @@ model.new("astrostriker", hitbox {
     :add("left_shoulder", "left_forearm", blasterCluster(Vector(0, 75, 2), Angle(90, 0, 0)))
     :add("body", "right_shoulder", rightShoulder)
     :add("right_shoulder", "right_forearm", rightForearm)
-    :addSequence("idle", 0, function(ent, layer)
-        local body = ent:getBoneEntity(ent:lookupBone("body"))
-        local head = ent:getBoneEntity(ent:lookupBone("head"))
-        local rotor1 = ent:getBoneEntity(ent:lookupBone("rotor1"))
-        local rotor2 = ent:getBoneEntity(ent:lookupBone("rotor2"))
-        local rightShoulder = ent:getBoneEntity(ent:lookupBone("right_shoulder"))
-        local rightForearm = ent:getBoneEntity(ent:lookupBone("right_forearm"))
-        local leftShoulder = ent:getBoneEntity(ent:lookupBone("left_shoulder"))
-        local leftForearm = ent:getBoneEntity(ent:lookupBone("left_forearm"))
-        local _, rightShoulderAng = rightShoulder:getPropertyForLayer(layer)
-        local _, rightForearmAng = rightForearm:getPropertyForLayer(layer)
-        local _, leftShoulderAng = leftShoulder:getPropertyForLayer(layer)
-        local _, leftForearmAng = leftForearm:getPropertyForLayer(layer)
-        local _, bodyAng = body:getPropertyForLayer(layer)
-        local _, headAng = head:getPropertyForLayer(layer)
+    :addSequence("idle", t)
 
-        rightShoulder:setLocalAnglesLayer(layer + 1, tween.blenderRotation(100.272, -33.6441, 61.8868))
-        rightForearm:setLocalAnglesLayer(layer + 1, tween.blenderRotation(-14.9618, -19.6032, -105.524))
-        leftShoulder:setLocalAnglesLayer(layer + 2, tween.blenderRotation(100.272, 33.6441, -61.8868))
-        leftForearm:setLocalAnglesLayer(layer + 2, tween.blenderRotation(-14.9618, 19.6032, 105.524))
-
-        return tween.new {
-            function(process)
-                if !(isValid(rotor1) and isValid(rotor2)) then return true end
-                local delta = timer.frametime()
-                rotor1:setLocalAngles(rotor1:getLocalAngles() + Angle(0, 300 * delta, 0))
-                rotor2:setLocalAngles(rotor2:getLocalAngles() + Angle(0, -150 * delta, 0))
-                if process > 4 then return true end
-            end,
-            param { 0, 4, leftShoulder, circleProperty(2, nil, layer), nil, 1},
-            param { 0, 2, leftShoulder, leftShoulderAng, Angle(-5, 0, 2), Angle(), math.easeInOutSine },
-            param { 2, 4, leftShoulder, leftShoulderAng, Angle(), Angle(-5, 0, 2), math.easeInOutSine },
-
-            param { 0, 2, leftForearm, leftForearmAng, Angle(0, 5, 0), Angle(), math.easeInOutSine },
-            param { 2, 4, leftForearm, leftForearmAng, Angle(), Angle(0, 5, 0), math.easeInOutSine },
-
-            param { 0, 4, rightShoulder, circleProperty(2, nil, layer), nil, 1},
-            param { 0, 2, rightShoulder, rightShoulderAng, Angle(-5, 0, -2), Angle(), math.easeInOutSine },
-            param { 2, 4, rightShoulder, rightShoulderAng, Angle(), Angle(-5, 0, -2), math.easeInOutSine },
-
-            param { 0, 2, rightForearm, rightForearmAng, Angle(0, -5, 0), Angle(), math.easeInOutSine },
-            param { 2, 4, rightForearm, rightForearmAng, Angle(), Angle(0, -5, 0), math.easeInOutSine },
-
-            param { 0, 4, body, circleProperty(2, nil, layer), nil, 1},
-            param { 0, 2, body, bodyAng, nil, Angle(2, 0, 0), math.easeInOutSine},
-            param { 2, 4, body, bodyAng, nil, Angle(), math.easeInOutSine},
-
-            param { 0, 4, head, circleProperty(1, 0.5, layer), nil, 1},
-            param { 0, 2, head, headAng, nil, Angle(5, 0, 0), math.easeInOutSine},
-            param { 2, 4, head, headAng, nil, Angle(), math.easeInOutSine},
-        }
-    end)
-    :addSequence("blade1", 0.7, function(ent, layer)
-        local body = ent:getBoneEntity(ent:lookupBone("body"))
-        -- local head = ent:getBoneEntity(ent:lookupBone("head"))
-        local shoulder = ent:getBoneEntity(ent:lookupBone("right_shoulder"))
-        local forearm = ent:getBoneEntity(ent:lookupBone("right_forearm"))
-        local _, shoulderAng = shoulder:getPropertyForLayer(layer)
-        local _, forearmAng = forearm:getPropertyForLayer(layer)
-        local _, bodyAng = body:getPropertyForLayer(layer)
-        -- local _, headAng = head:getPropertyForLayer(layer)
-        return tween.new {
-            fcurveParam {0, 0.7083333333333334, body, bodyAng, "rotation_euler", {[1] = {{{-0.333333, 0}, {1, 0}, {2.33333, 0}}, {{-2.22649, -8.12077}, {5, -8.12077}, {6, -8.12077}}, {{5.44972, 5.56398e-07}, {8, 5.56398e-07}, {11.3669, 5.56398e-07}}, {{12.8752, 0}, {17, 0}, {19.3333, 0}}}, [2] = {{{-0.333333, 0}, {1, 0}, {2.33333, 0}}, {{-2.22649, -44.7113}, {5, -44.7113}, {6, -44.7113}}, {{5.44972, 70}, {8, 70}, {11.3669, 70}}, {{12.8752, 0}, {17, 0}, {19.3333, 0}}}, [3] = {{{-0.333333, 0}, {1, 0}, {2.33333, 0}}, {{-2.22649, 5.7326}, {5, 5.7326}, {6, 5.7326}}, {{5.44972, -4.35774}, {8, -4.35774}, {11.3669, -4.35774}}, {{12.8752, 0}, {17, 0}, {19.3333, 0}}}}},
-            fcurveParam {0, 0.75, shoulder, shoulderAng, "rotation_euler", {[1] = {{{-0.666667, 100.272}, {1, 100.272}, {2.66667, 100.272}}, {{-2.3609, 107.769}, {6, 112.14}, {7.00037, 112.663}}, {{6.58257, 61.5141}, {9, 114.978}, {11.1768, 163.121}}, {{12.7781, 100.272}, {18, 100.272}, {20.3333, 100.272}}}, [2] = {{{-0.666667, -33.6441}, {1, -33.6441}, {2.66667, -33.6441}}, {{-2.36065, -33.3275}, {6, -32.5316}, {7.39784, -32.3985}}, {{7.82474, 29.9015}, {9, 83.8891}, {11.5316, 200.181}}, {{12.7781, -33.6441}, {18, -33.6441}, {20.3333, -33.6441}}}, [3] = {{{-0.666667, 61.8868}, {1, 61.8868}, {2.66667, 61.8868}}, {{-2.36064, -9.60895}, {6, -9.60895}, {7, -9.60895}}, {{6.53891, 5.85981}, {9, 18.4819}, {11.3798, 30.687}}, {{12.7781, 61.8868}, {18, 61.8868}, {20.3333, 61.8868}}}}},
-            fcurveParam {0, 0.7083333333333334, forearm, forearmAng, "rotation_euler", {[1] = {{{-0.333333, -14.9618}, {1, -14.9618}, {2.33333, -14.9618}}, {{-2.1691, -30.2635}, {5, -30.2635}, {7.15122, -30.2635}}, {{6.99834, -20.6912}, {11, -20.6912}, {12.3333, -20.6912}}, {{15, -14.9618}, {17, -14.9618}, {19, -14.9618}}}, [2] = {{{-0.333333, -19.6032}, {1, -19.6032}, {2.33333, -19.6032}}, {{-2.1691, 0.451004}, {5, 0.451004}, {7.15122, 0.451004}}, {{6.99834, 2.76729}, {11, -0.891972}, {12.3338, -2.11169}}, {{15, -19.6032}, {17, -19.6032}, {19, -19.6032}}}, [3] = {{{-0.333333, -105.524}, {1, -105.524}, {2.33333, -105.524}}, {{-2.18522, -21.5637}, {5, -21.0174}, {11.2804, -20.5398}}, {{6.62145, -91.9931}, {11, -91.9931}, {12.3333, -91.9931}}, {{15, -105.524}, {17, -105.524}, {19, -105.524}}}}},
-        }
-    end)

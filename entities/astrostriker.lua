@@ -72,7 +72,7 @@ else
     local l1 = light.create(Vector(), 80, 10, Color(255, 0, 0))
 
     function AstroStriker:astroInitialize()
-        self.ent:setSequence("idle")
+        self.ent:setSequence(1)
     end
 
     function AstroStriker:colorChanged(_, newColor)

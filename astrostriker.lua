@@ -1,13 +1,13 @@
 ---@name AstroStriker
 ---@author AstricUnion
----@include astronew/baseincludes.lua
----@include astronew/models/astrostriker.lua
----@include astronew/entities/astrostriker.lua
+---@include ./baseincludes.lua
+---@include ./models/astrostriker.lua
+---@include ./entities/astrostriker.lua
 
-require("astronew/baseincludes.lua")
+require("./baseincludes.lua")
 
-require("astronew/models/astrostriker.lua")
-require("astronew/entities/astrostriker.lua")
+require("./models/astrostriker.lua")
+require("./entities/astrostriker.lua")
 
 
 if SERVER then
