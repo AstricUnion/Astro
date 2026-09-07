@@ -1,5 +1,5 @@
----@include ./frames/astrostriker_animations.lua
-local t = require("./frames/astrostriker_animations.lua")
+---@include ./frames/breathing.lua
+local breathing = require("./frames/breathing.lua")
 
 local model = model
 local hitbox = model.hitbox
@@ -16,12 +16,8 @@ local col = Color(255, 255, 255)
 local col1 = Color(191, 191, 191)
 
 local metGibMat = {[0] = "models/gibs/metalgibs/metal_gibs", [1] = "models/gibs/metalgibs/metal_gibs", [2] = "models/gibs/metalgibs/metal_gibs"}
--- вот тут надо очень постараться с оптимизацией. каждая лишняя холка умножается на 4
--- я немношка убрал, но надо посмотреть со стороны именно дизайна, а не только оптимизации. строки можешь раскомментить по желанию
 local blasterHolos = part {
     rig(),
-    -- holo { Vector(0, 153, 2), Angle(0, 180, 180), "models/props_combine/combine_train02b.mdl", Vector(0.1, 0.145, 0.05), color = col },
-    -- holo { Vector(0, 153, 2), Angle(0, 0, 180), "models/props_combine/combine_train02b.mdl", Vector(0.1, 0.145, 0.05), color = col },
     holo { Vector(-8.5, 136, 13), Angle(0, 270, -90), "models/combine_dropship_container.mdl", Vector(0.285, 0.15, 0.06), color = col },
     holo { Vector(8.5, 136, 13), Angle(0, 270, 90), "models/combine_dropship_container.mdl", Vector(0.285, 0.15, 0.06), color = col },
     holo { Vector(0, 136, 0), Angle(0, 270, 0), "models/combine_dropship_container.mdl", Vector(0.285, 0.15, 0.05), color = col },
@@ -32,11 +28,7 @@ local blasterHolos = part {
     holo { Vector(0, 221, 13), Angle(90, 90, 0), "models/mechanics/wheels/wheel_speed_72.mdl", Vector(0.15, 0.15, 0.1), color = Color(0, 0, 0), material = metGibMat },
     holo { Vector(0, 221.5, 13), Angle(90, 90, 0), "models/hunter/tubes/circle2x2.mdl", Vector(0.15, 0.15, 0.1), noLight = true, color = Color(255, 0, 0), material = "models/effects/vortshield" },
     holo { Vector(0, 140, 13), Angle(0, 90, 0), "models/xqm/jetengine.mdl", Vector(0.5, 1, 1), color = col, material = metGibMat },
-    -- holo { Vector(0, 145, 17), Angle(0, 180, 90), "models/props_combine/combine_mine01.mdl", Vector(0.7, 0.7, 5.1), color = col },
-    -- holo { Vector(0, 145, 17), Angle(-45, 180, 90), "models/props_combine/combine_mine01.mdl", Vector(0.7, 0.7, 5.1), color = col },
-    -- holo { Vector(0, 145, 17), Angle(45, 180, 90), "models/props_combine/combine_mine01.mdl", Vector(0.7, 0.7, 5.1), color = col },
     holo { Vector(34, 95, 2.3), Angle(0, 5, -90), "models/props_combine/combine_bridge.mdl", Vector(0.1, 0.15, 0.29), color = col1, material = "models/props_canal/metalwall005b" },
-    -- holo { Vector(0, 60, 0), Angle(-22.5, 180, 90), "models/props_combine/combine_mine01.mdl", Vector(1.5, 1.5, 5.1), color = col },
     holo { Vector(0, 215, 0), Angle(90, 270, 0), "models/props_combine/combine_mortar01b.mdl", Vector(0.75, 0.75, 2.5), color = col1 }
 }
 
@@ -221,14 +213,15 @@ model.new("astrostriker", hitbox {
     material = "Metal",
     mass = 1500,
 })
-    :add("body", body)
-    :add("body", "rotor1", rotor1)
-    :add("body", "rotor2", rotor2)
-    :add("camera", rig(Vector(0, 0, 55)))
-    :add("camera", "head", head)
-    :add("body", "left_shoulder", leftShoulder)
-    :add("left_shoulder", "left_forearm", blasterCluster(Vector(0, 75, 2), Angle(90, 0, 0)))
-    :add("body", "right_shoulder", rightShoulder)
-    :add("right_shoulder", "right_forearm", rightForearm)
-    :addSequence("idle", t)
+    :add("body", Vector(0, 0, 0), body)
+    :add("rotor1", Vector(0, 0, 0), rotor1, "body")
+    :add("rotor2", Vector(0, 0, -28), rotor2, "body")
+    :add("camera", Vector(0, 0, 55), rig(Vector(0, 0, 55)))
+    :add("head", Vector(), head, "camera")
+    :add("left_shoulder", Vector(0, 75, 25), leftShoulder, "body")
+    :add("left_forearm", Vector(0, 75, 2), blasterCluster(Vector(0, 75, 2), Angle(90, 0, 0)), "left_shoulder")
+    :add("right_shoulder", Vector(0, -75, 25), rightShoulder, "body")
+    :add("right_forearm", Vector(-4, -80, 2), rightForearm, "right_shoulder")
+    :addAnimation("breathing", {breathing})
+    :addSequence("breathing", {"breathing", loop = true})
 

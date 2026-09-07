@@ -109,7 +109,7 @@ class VIEW3D_OT_frames_to_starfall(bpy.types.Operator, bpy_extras.io_utils.Expor
     bl_idname = "view3d.frames_to_starfall"
     bl_label = "Export frames"
     bl_options = {"REGISTER", "UNDO"}
-    filename_ext = ".txt"
+    filename_ext = ".lua"
 
     save_path: bpy.props.StringProperty(name="Path to export", subtype='FILE_PATH')
 
@@ -147,11 +147,11 @@ class VIEW3D_OT_frames_to_starfall(bpy.types.Operator, bpy_extras.io_utils.Expor
                 PoseMatrix = posebone.matrix
                 if posebone.parent is not None:
                     PoseMatrix = posebone.parent.matrix.inverted() @ PoseMatrix
-                keyframe.append("    {{\"{}\", {}, {}}}".format(posebone.name, self.getVector(PoseMatrix.to_translation()), self.getAngle(PoseMatrix.to_euler('ZXY'))))
-            keyframes.append("{" + (",\n".join(keyframe)) + "}")
+                keyframe.append("{{\"{}\", {}, {}}}".format(posebone.name, self.getVector(PoseMatrix.to_translation()), self.getAngle(PoseMatrix.to_euler('ZXY'))))
+            keyframes.append("{" + (", ".join(keyframe)) + "}")
 
         f = open(self.filepath, "w", encoding='utf-8')
-        f.write("{" + (",\n".join(keyframes)) + "}")
+        f.write("return {" + (", ".join(keyframes)) + "}")
         f.close()
 
         return {"FINISHED"}
