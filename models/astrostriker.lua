@@ -1,5 +1,9 @@
 ---@include ./frames/breathing.lua
+---@include ./frames/reference.lua
+---@include ./frames/blade1.lua
 local breathing = require("./frames/breathing.lua")
+local reference = require("./frames/reference.lua")
+local blade1 = require("./frames/blade1.lua")
 
 local model = model
 local hitbox = model.hitbox
@@ -222,6 +226,27 @@ model.new("astrostriker", hitbox {
     :add("left_forearm", Vector(0, 75, 2), blasterCluster(Vector(0, 75, 2), Angle(90, 0, 0)), "left_shoulder")
     :add("right_shoulder", Vector(0, -75, 25), rightShoulder, "body")
     :add("right_forearm", Vector(-4, -80, 2), rightForearm, "right_shoulder")
-    :addAnimation("breathing", {breathing})
-    :addSequence("breathing", {"breathing", loop = true})
+    :addAnimation("breathing", {breathing, fps = 24})
+    :addAnimation("reference", {reference})
+    :addAnimation("blade1", {
+        blade1,
+        subtract = {"reference", 1},
+        fps = 24
+    })
+    :addSequence("breathing", {
+        "breathing",
+        loop = true,
+        delta = true,
+        autoplay = true
+    })
+    :addSequence("reference", {
+        "reference",
+        loop = false,
+        fadeIn = 0
+    })
+    :addSequence("blade1", {
+        "blade1",
+        loop = true,
+        delta = true
+    })
 

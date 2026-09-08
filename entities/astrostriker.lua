@@ -72,7 +72,9 @@ else
     local l1 = light.create(Vector(), 80, 10, Color(255, 0, 0))
 
     function AstroStriker:astroInitialize()
-        self.ent:setSequence(1)
+        self.ent:setSequence(2)
+        -- self.ent:addGestureSequence(1)
+        -- self.ent:addGestureSequence(3)
     end
 
     function AstroStriker:colorChanged(_, newColor)
