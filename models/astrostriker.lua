@@ -226,27 +226,29 @@ model.new("astrostriker", hitbox {
     :add("left_forearm", Vector(0, 75, 2), blasterCluster(Vector(0, 75, 2), Angle(90, 0, 0)), "left_shoulder")
     :add("right_shoulder", Vector(0, -75, 25), rightShoulder, "body")
     :add("right_forearm", Vector(-4, -80, 2), rightForearm, "right_shoulder")
+    :addPoseParameter("breath", 0, 1)
+    :addAnimation("zero", {{}})
     :addAnimation("breathing", {breathing, fps = 24})
     :addAnimation("reference", {reference})
     :addAnimation("blade1", {
         blade1,
         subtract = {"reference", 1},
-        fps = 24
+        fps = 24,
+        weightlist = {left_shoulder = 0.5}
     })
     :addSequence("breathing", {
-        "breathing",
+        {"breathing", "zero"},
+        blendWidth = 2,
+        blendX = "breath",
         loop = true,
         delta = true,
         autoplay = true
     })
     :addSequence("reference", {
-        "reference",
-        loop = false,
-        fadeIn = 0
+        {"reference"},
+        fadeIn = 0,
     })
     :addSequence("blade1", {
-        "blade1",
-        loop = true,
+        {"blade1"},
         delta = true
     })
-
