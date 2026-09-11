@@ -85,16 +85,6 @@ else
     function AstroStriker:renderOffscreen()
         l1:setPos(self.ent:localToWorld(Vector(0, 0, 20)))
         l1:draw()
-        local eyeAngles = owner():getEyeAngles()
-        self.ent:setPose("head_pitch", eyeAngles.p)
-        self.ent:setPose("head_yaw", eyeAngles.y)
-        local pos = self.ent:getPos()
-        local velocity = self.ent:worldToLocalVector(self.lastRenderPos - pos)
-        self.velocity = velocity
-        self.lastRenderPos = pos
-        if !self.velocity then return end
-        self.ent:setPose("body_roll", self.velocity.y / 20)
-        self.ent:setPose("body_pitch", self.velocity.x / 20)
     end
 end
 

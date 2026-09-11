@@ -606,12 +606,10 @@ else
         if dr ~= Ply then return end
         local eyeAngles = dr:getEyeAngles()
         pos, ang = localToWorld(self.CameraOffset, self.CameraAngle, self.cameraBone:getPos(), eyeAngles)
-        local velocity = self.ent:worldToLocalVector(self.lastPos - pos)
-        self.velocity = velocity
-        self.lastPos = pos
+        local velocity = self.ent:worldToLocalVector(self.velocity)
         self.fovOffset = math.lerp(0.1, self.fovOffset, velocity:getLength() / 10)
         self.slop = math.lerp(0.2, self.slop, velocity.y / 20)
-        -- ang = (self.headBone:getLocalAnglesLayer(1) + ang)
+        self.headBone:setAngles(eyeAngles)
         return {
             origin = pos,
             angles = ang:setR(ang.r + self.slop),
@@ -699,8 +697,18 @@ else
     function AstroBase.hooks:RenderOffscreen()
         self:renderOffscreen()
         local dr = self.driver
-        if !isValid(dr) then return end
-        self.cameraBone:setAngles(dr:getEyeAngles())
+        if isValid(dr) then
+            local eyeAngles = self.ent:worldToLocalAngles(dr:getEyeAngles())
+            self.ent:setPose("head_pitch", eyeAngles.p)
+            self.ent:setPose("head_yaw", eyeAngles.y)
+        end
+        local pos = self.ent:getPos()
+        local velocity = self.lastPos - pos
+        self.velocity = velocity
+        self.lastPos = pos
+        local localVel = self.ent:worldToLocalVector(velocity)
+        self.ent:setPose("body_roll", math.lerp(0.2, self.ent:getPose("body_roll"), localVel.y / 30))
+        self.ent:setPose("body_pitch", math.lerp(0.2, self.ent:getPose("body_pitch"), localVel.x / 30))
     end
 
     ---[SHARED] Change color hook for Astro. You can return modified color
