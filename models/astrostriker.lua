@@ -1,6 +1,10 @@
+---@include ./frames/zero.lua
+---@include ./frames/head.lua
 ---@include ./frames/breathing.lua
 ---@include ./frames/reference.lua
 ---@include ./frames/blade1.lua
+local zero = require("./frames/zero.lua")
+local headKF = require("./frames/head.lua")
 local breathing = require("./frames/breathing.lua")
 local reference = require("./frames/reference.lua")
 local blade1 = require("./frames/blade1.lua")
@@ -212,6 +216,19 @@ local rightForearm = part {
     holo { Vector(4, -80, -37), Angle(180, 180, 0), "models/props_combine/combine_train02a.mdl", Vector(0.075, 0.15, 0.05), color = col },
 }
  
+
+local headWeightlist = {
+    body = 0,
+    left_forearm = 0,
+    left_shoulder = 0,
+    right_forearm = 0,
+    right_shoulder = 0,
+    rotor1 = 0,
+    rotor2 = 0,
+    camera = 0,
+    head = 1
+}
+
 model.new("astrostriker", hitbox {
     vertex {"cube", Vector(0, 0, 0), Angle(0, 0, 0), Vector(75, 75, 45)},
     material = "Metal",
@@ -226,8 +243,19 @@ model.new("astrostriker", hitbox {
     :add("left_forearm", Vector(0, 75, 2), blasterCluster(Vector(0, 75, 2), Angle(90, 0, 0)), "left_shoulder")
     :add("right_shoulder", Vector(0, -75, 25), rightShoulder, "body")
     :add("right_forearm", Vector(-4, -80, 2), rightForearm, "right_shoulder")
-    :addPoseParameter("breath", 0, 1)
-    :addAnimation("zero", {{}})
+    :addPoseParameter("head_yaw", -60, 60)
+    :addPoseParameter("head_pitch", -85, 20)
+    :addAnimation("zero", {zero})
+    :addAnimation("head_straight_up", {headKF, frames = {2, 2}, weightlist = headWeightlist})
+    :addAnimation("head_up_center", {headKF, frames = {3, 3}, weightlist = headWeightlist})
+    :addAnimation("head_up_left", {headKF, frames = {4, 4}, weightlist = headWeightlist})
+    :addAnimation("head_up_right", {headKF, frames = {5, 5}, weightlist = headWeightlist})
+    :addAnimation("head_med_center", {headKF, frames = {6, 6}, weightlist = headWeightlist})
+    :addAnimation("head_med_left", {headKF, frames = {7, 7}, weightlist = headWeightlist})
+    :addAnimation("head_med_right", {headKF, frames = {8, 8}, weightlist = headWeightlist})
+    :addAnimation("head_down_center", {headKF, frames = {9, 9}, weightlist = headWeightlist})
+    :addAnimation("head_down_left", {headKF, frames = {10, 10}, weightlist = headWeightlist})
+    :addAnimation("head_down_right", {headKF, frames = {11, 11}, weightlist = headWeightlist})
     :addAnimation("breathing", {breathing, fps = 24})
     :addAnimation("reference", {reference})
     :addAnimation("blade1", {
@@ -237,9 +265,7 @@ model.new("astrostriker", hitbox {
         weightlist = {left_shoulder = 0.5}
     })
     :addSequence("breathing", {
-        {"breathing", "zero"},
-        blendWidth = 2,
-        blendX = "breath",
+        {"breathing"},
         loop = true,
         delta = true,
         autoplay = true
@@ -250,5 +276,19 @@ model.new("astrostriker", hitbox {
     })
     :addSequence("blade1", {
         {"blade1"},
+        delta = true
+    })
+    :addSequence("head", {
+        {
+            "head_straight_up", "head_straight_up", "head_straight_up",
+            "head_up_right", "head_up_center", "head_up_left",
+            "head_med_right", "head_med_center", "head_med_left",
+            "head_down_right", "head_down_center", "head_down_left",
+        },
+        blendWidth = 3,
+        blendCenter = 8,
+        blendX = "head_yaw",
+        blendY = "head_pitch",
+        autoplay = true,
         delta = true
     })

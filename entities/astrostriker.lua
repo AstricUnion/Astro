@@ -84,6 +84,9 @@ else
     function AstroStriker:renderOffscreen()
         l1:setPos(self.ent:localToWorld(Vector(0, 0, 20)))
         l1:draw()
+        local eyeAngles = owner():getEyeAngles()
+        self.ent:setPose("head_pitch", eyeAngles.p)
+        self.ent:setPose("head_yaw", eyeAngles.y)
     end
 end
 
