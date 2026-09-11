@@ -537,8 +537,7 @@ if SERVER then
                 local speed = dr:keyDown(IN_KEY.DUCK) and self.SprintSpeed or self.Speed
                 self.velocity = math.lerpVector(self.VelocityRatio, self.velocity, dir * speed * 100 * frametime)
                 self.physobj:setVelocity(self.velocity)
-                local localVel = self.physobj:getLocalVelocity()
-                local ang = self.ent:worldToLocalAngles(Angle(eyeangles.p + (localVel.x / speed) * 6, eyeangles.y, (localVel.y / -speed) * 4))
+                local ang = self.ent:worldToLocalAngles(Angle(eyeangles.p, eyeangles.y, 0))
                 local angvel = ang:getQuaternion():getRotationVector() - self.ent:getAngleVelocity() / 5
                 self.physobj:addAngleVelocity(angvel)
             end
@@ -608,10 +607,11 @@ else
         local eyeAngles = dr:getEyeAngles()
         pos, ang = localToWorld(self.CameraOffset, self.CameraAngle, self.cameraBone:getPos(), eyeAngles)
         local velocity = self.ent:worldToLocalVector(self.lastPos - pos)
+        self.velocity = velocity
         self.lastPos = pos
         self.fovOffset = math.lerp(0.1, self.fovOffset, velocity:getLength() / 10)
         self.slop = math.lerp(0.2, self.slop, velocity.y / 20)
-        ang = (self.headBone:getLocalAnglesLayer(1) + ang)
+        -- ang = (self.headBone:getLocalAnglesLayer(1) + ang)
         return {
             origin = pos,
             angles = ang:setR(ang.r + self.slop),

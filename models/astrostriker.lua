@@ -3,7 +3,6 @@
 ---@include ./frames/breathing.lua
 ---@include ./frames/reference.lua
 ---@include ./frames/blade1.lua
-local zero = require("./frames/zero.lua")
 local headKF = require("./frames/head.lua")
 local breathing = require("./frames/breathing.lua")
 local reference = require("./frames/reference.lua")
@@ -243,36 +242,59 @@ model.new("astrostriker", hitbox {
     :add("left_forearm", Vector(0, 75, 2), blasterCluster(Vector(0, 75, 2), Angle(90, 0, 0)), "left_shoulder")
     :add("right_shoulder", Vector(0, -75, 25), rightShoulder, "body")
     :add("right_forearm", Vector(-4, -80, 2), rightForearm, "right_shoulder")
+
     :addPoseParameter("head_yaw", -60, 60)
-    :addPoseParameter("head_pitch", -85, 20)
-    :addAnimation("zero", {zero})
-    :addAnimation("head_straight_up", {headKF, frames = {2, 2}, weightlist = headWeightlist})
-    :addAnimation("head_up_center", {headKF, frames = {3, 3}, weightlist = headWeightlist})
-    :addAnimation("head_up_left", {headKF, frames = {4, 4}, weightlist = headWeightlist})
-    :addAnimation("head_up_right", {headKF, frames = {5, 5}, weightlist = headWeightlist})
-    :addAnimation("head_med_center", {headKF, frames = {6, 6}, weightlist = headWeightlist})
-    :addAnimation("head_med_left", {headKF, frames = {7, 7}, weightlist = headWeightlist})
-    :addAnimation("head_med_right", {headKF, frames = {8, 8}, weightlist = headWeightlist})
-    :addAnimation("head_down_center", {headKF, frames = {9, 9}, weightlist = headWeightlist})
-    :addAnimation("head_down_left", {headKF, frames = {10, 10}, weightlist = headWeightlist})
-    :addAnimation("head_down_right", {headKF, frames = {11, 11}, weightlist = headWeightlist})
+    :addPoseParameter("head_pitch", -90, 35)
+    :addAnimation("head_straight_up", {headKF, frames = {1, 1}, weightlist = headWeightlist})
+    :addAnimation("head_up_center", {headKF, frames = {2, 2}, weightlist = headWeightlist})
+    :addAnimation("head_up_left", {headKF, frames = {3, 3}, weightlist = headWeightlist})
+    :addAnimation("head_up_right", {headKF, frames = {4, 4}, weightlist = headWeightlist})
+    :addAnimation("head_med_center", {headKF, frames = {5, 5}, weightlist = headWeightlist})
+    :addAnimation("head_med_left", {headKF, frames = {6, 6}, weightlist = headWeightlist})
+    :addAnimation("head_med_right", {headKF, frames = {7, 7}, weightlist = headWeightlist})
+    :addAnimation("head_down_center", {headKF, frames = {8, 8}, weightlist = headWeightlist})
+    :addAnimation("head_down_left", {headKF, frames = {9, 9}, weightlist = headWeightlist})
+    :addAnimation("head_down_right", {headKF, frames = {10, 10}, weightlist = headWeightlist})
+
+    :addPoseParameter("body_roll", -1, 1)
+    :addPoseParameter("body_pitch", -1, 1)
+    :addAnimation("ref", {reference, frames = {1, 1}})
+    :addAnimation("ref_f", {reference, frames = {2, 2}})
+    :addAnimation("ref_b", {reference, frames = {3, 3}})
+    :addAnimation("ref_l", {reference, frames = {4, 4}})
+    :addAnimation("ref_r", {reference, frames = {5, 5}})
+    :addAnimation("ref_lf", {reference, frames = {6, 6}})
+    :addAnimation("ref_rf", {reference, frames = {7, 7}})
+    :addAnimation("ref_lb", {reference, frames = {8, 8}})
+    :addAnimation("ref_rb", {reference, frames = {9, 9}})
+
     :addAnimation("breathing", {breathing, fps = 24})
-    :addAnimation("reference", {reference})
     :addAnimation("blade1", {
         blade1,
-        subtract = {"reference", 1},
+        subtract = {"ref", 1},
         fps = 24,
         weightlist = {left_shoulder = 0.5}
+    })
+    :addSequence("reference", {
+        {
+            "ref_lf", "ref_f", "ref_rf",
+            "ref_l", "ref", "ref_r",
+            "ref_lb", "ref_b", "ref_rb",
+        },
+        blendWidth = 3,
+        blendCenter = "ref",
+        blendX = "body_roll",
+        blendY = "body_pitch",
+        autoplay = true,
+        delta = true,
+        fadeIn = 0
     })
     :addSequence("breathing", {
         {"breathing"},
         loop = true,
         delta = true,
-        autoplay = true
-    })
-    :addSequence("reference", {
-        {"reference"},
-        fadeIn = 0,
+        autoplay = true,
+        fadeIn = 0
     })
     :addSequence("blade1", {
         {"blade1"},
@@ -286,9 +308,10 @@ model.new("astrostriker", hitbox {
             "head_down_right", "head_down_center", "head_down_left",
         },
         blendWidth = 3,
-        blendCenter = 8,
+        blendCenter = "head_med_center",
         blendX = "head_yaw",
         blendY = "head_pitch",
         autoplay = true,
-        delta = true
+        delta = true,
+        fadeIn = 0
     })

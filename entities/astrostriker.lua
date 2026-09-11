@@ -72,9 +72,10 @@ else
     local l1 = light.create(Vector(), 80, 10, Color(255, 0, 0))
 
     function AstroStriker:astroInitialize()
-        self.ent:setSequence(2)
+        -- self.ent:setSequence(2)
         -- self.ent:addGestureSequence(1)
         -- self.ent:addGestureSequence(3)
+        self.lastRenderPos = self.ent:getPos()
     end
 
     function AstroStriker:colorChanged(_, newColor)
@@ -87,6 +88,13 @@ else
         local eyeAngles = owner():getEyeAngles()
         self.ent:setPose("head_pitch", eyeAngles.p)
         self.ent:setPose("head_yaw", eyeAngles.y)
+        local pos = self.ent:getPos()
+        local velocity = self.ent:worldToLocalVector(self.lastRenderPos - pos)
+        self.velocity = velocity
+        self.lastRenderPos = pos
+        if !self.velocity then return end
+        self.ent:setPose("body_roll", self.velocity.y / 20)
+        self.ent:setPose("body_pitch", self.velocity.x / 20)
     end
 end
 
