@@ -707,8 +707,9 @@ else
         self.velocity = velocity
         self.lastPos = pos
         local localVel = self.ent:worldToLocalVector(velocity)
-        self.ent:setPose("body_roll", math.lerp(0.2, self.ent:getPose("body_roll"), localVel.y / 30))
-        self.ent:setPose("body_pitch", math.lerp(0.2, self.ent:getPose("body_pitch"), localVel.x / 30))
+        local frametime = timer.frametime() * 700
+        self.ent:setPose("body_roll", math.lerp(0.2, self.ent:getPose("body_roll"), localVel.y / frametime))
+        self.ent:setPose("body_pitch", math.lerp(0.2, self.ent:getPose("body_pitch"), localVel.x / frametime))
     end
 
     ---[SHARED] Change color hook for Astro. You can return modified color

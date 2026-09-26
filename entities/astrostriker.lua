@@ -1,6 +1,7 @@
 ---@enum STRIKERSTATE
 local STATE = {
     Idle = 0,
+    Punch = 1,
 }
 
 ---@class AstroStriker: AstroBase
@@ -25,13 +26,45 @@ AstroStriker.SprintSpeed = 550
 AstroStriker.actions = {}
 AstroStriker.Radius = 86
 
-function AstroStriker.actions.blade(astro)
+function AstroStriker.actions.blade(astro, cur)
     if CLIENT then
-        astro.ent:setSequence("blade1", 1)
+        astro.ent:addGestureSequence("blade1")
+    else
+        astro:setState(bit.bor(astro:getState(), STATE.Punch))
+        astro:setNextAction("punch", cur + 0.5)
+        astro:setNextAction("swing", cur + 0.5)
+        astro:setNextAction("block", cur + 0.5)
+        timer.simple(0.2, function()
+            local st = astro:getState()
+            if !(isValid(astro) and bit.band(st, STATE.Punch) == STATE.Punch) then return end
+            local radius = 160
+            local damage = 350
+            astroutils.attack(
+                astro.ent, astro.ent, damage,
+                {
+                    {Vector(93, -53, 0), radius},
+                    {Vector(183, -21, 0), radius}
+                },
+                astro.filter, true
+            )
+            astro:setState(bit.band(st, bit.bnot(STATE.Punch)))
+        end)
+        return true
+    end
+end
+
+function AstroStriker.actions.startBlaster(astro, cur)
+    if CLIENT then
+        astro.ent:setSequence("startblaster")
+        timer.simple(0.5, function()
+            astro.ent:setSequence("shootblaster")
+        end)
     else
         return true
     end
 end
+
+
 
 
 if SERVER then
@@ -41,13 +74,18 @@ if SERVER then
 
     local canAct = {
         ["blade"] = {bit.band, STATE.Idle},
+        ["startBlaster"] = {bit.band, STATE.Idle},
+        ["stopBlaster"] = {bit.band, STATE.Idle},
     }
 
     local pressToAct = {
-        [MOUSE.MOUSE1] = "blade",
+        [MOUSE.MOUSE2] = "blade",
+        [MOUSE.MOUSE1] = "startBlaster",
     }
 
-    local releaseToAct = {}
+    local releaseToAct = {
+        [MOUSE.MOUSE1] = "stopBlaster",
+    }
 
     function AstroStriker:isCanAction(action)
         local st = self:getState()
@@ -75,6 +113,7 @@ else
         -- self.ent:setSequence(2)
         -- self.ent:addGestureSequence(1)
         -- self.ent:addGestureSequence(3)
+        -- self.ent:manipulateBoneAngles(6, Angle(0, 90, 0))
         self.lastRenderPos = self.ent:getPos()
     end
 

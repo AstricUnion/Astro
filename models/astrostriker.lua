@@ -1,12 +1,15 @@
----@include ./frames/zero.lua
 ---@include ./frames/head.lua
 ---@include ./frames/breathing.lua
 ---@include ./frames/reference.lua
 ---@include ./frames/blade1.lua
+---@include ./frames/startblaster.lua
+---@include ./frames/blastershoot.lua
 local headKF = require("./frames/head.lua")
 local breathing = require("./frames/breathing.lua")
 local reference = require("./frames/reference.lua")
 local blade1 = require("./frames/blade1.lua")
+local startblaster = require("./frames/startblaster.lua")
+local shootblaster = require("./frames/blastershoot.lua")
 
 local model = model
 local hitbox = model.hitbox
@@ -100,7 +103,7 @@ local body = part {
     holo { Vector(0, 0, 22), Angle(180, 0, 0), "models/props_phx/wheels/moped_tire.mdl", Vector(3.5, 3.5, 4), color = col, material = metGibMat },
     holo { Vector(0, 0, 14), Angle(180, 0, 0), "models/props_phx/wheels/moped_tire.mdl", Vector(3.75, 3.75, 2), color = col, material = metGibMat },
 }
- 
+
 local rotor1 = part {
     rig (),
     holo { Vector(0, 0, -30), Angle(90, 0, 0), "models/props_c17/pulleywheels_large01.mdl", Vector(1, 2, 2), color = col, material = metGibMat },
@@ -115,7 +118,7 @@ local rotor1 = part {
     holo { Vector(0, 0, -4), Angle(0, 90, 180), "models/props_combine/combine_mine01.mdl", Vector(2.75, 2.75, 2.7), color = col },
     holo { nil, Angle(0, 90, 180), "models/Items/combine_rifle_ammo01.mdl", Vector(11.15, 11.15, 4.25), color = col },
 }
- 
+
 local rotor2 = part {
     rig (Vector(0, 0, -28)),
     holo { Vector(0, 0, 0), Angle(180, 0, 0), "models/hunter/tubes/tube2x2x025d.mdl", Vector(0.8, 0.8, 0.2), color = col, material = "models/gibs/metalgibs/metal_gibs" },
@@ -133,7 +136,7 @@ local rotor2 = part {
     holo { Vector(0, -10, 27), nil, "models/combine_apc_wheelcollision.mdl", Vector(0.25, 0.2, 0.1), color = col },
     holo { Vector(0, 10, 27), Angle(0, 180, 0), "models/combine_apc_wheelcollision.mdl", Vector(0.25, 0.2, 0.1), color = col },
 }
- 
+
 local head = part {
     rig(),
     holo { Vector(1.68, 0, -1), Angle(-110, 0, 0), "models/props_combine/combine_booth_short01a.mdl", Vector(0.3528, 0.42, 0.294), color = col },
@@ -155,7 +158,7 @@ local head = part {
     holo { Vector(22.45, 0, -10), Angle(90, 0, 0), "models/holograms/hq_sphere.mdl", Vector(1.7, 0.96, 0.85), noLight = true, color = Color(0, 0, 0) },
     holo { Vector(23.35, 0, -10), Angle(90, 0, 0), "models/holograms/hq_sphere.mdl", Vector(1.5, 0.5, 0.75), noLight = true, noColorize =  true },
 }
- 
+
 local leftShoulder = part {
     rig(Vector(0, 75, 25)),
     holo { Vector(-30, -15, -1), Angle(180, 0, -90), "models/props_combine/combine_bridge.mdl", Vector(0.1, 0.15, 0.3), color = col1, },
@@ -170,7 +173,7 @@ local leftShoulder = part {
     holo { Vector(0, 45, 0), Angle(0, 90, 0), "models/props_wasteland/laundry_washer003.mdl", Vector(1.1, 0.85, 0.75 ), color = col, material = "models/gibs/metalgibs/metal_gibs" },
     holo { Vector(0, 20, 25), Angle(270, -90, 0), "models/props_combine/combine_dispenser.mdl", Vector(1.3), color = col }
 }
- 
+
 local rightShoulder = part {
     rig(Vector(0, -75, 25)),
     holo { Vector(0, -40, 2), nil, "models/props_combine/combine_train02b.mdl", Vector(0.35, 0.15, 0.175), color = col },
@@ -190,7 +193,7 @@ local rightShoulder = part {
     holo { Vector(0, -14, 22), Angle(-90, -90, 180), "models/props_combine/combine_barricade_med01b.mdl", Vector(0.15, 0.25, 0.5), color = col },
     holo { Vector(0, -14, -18), Angle(90, 90, 180), "models/props_combine/combine_barricade_med01b.mdl", Vector(0.15, 0.25, 0.5), color = col },
 }
- 
+
 local rightForearm = part {
     rig(Vector(-4, -80, 2)),
     holo { Vector(4, -5, -12), nil, "models/props_rooftop/dome004.mdl", Vector(0.215, 0.215, 0.215), color = col, material = "models/gibs/metalgibs/metal_gibs" },
@@ -214,7 +217,7 @@ local rightForearm = part {
     holo { Vector(4, -80, -37), Angle(180, 0, 0), "models/props_combine/combine_train02a.mdl", Vector(0.075, 0.15, 0.05), color = col },
     holo { Vector(4, -80, -37), Angle(180, 180, 0), "models/props_combine/combine_train02a.mdl", Vector(0.075, 0.15, 0.05), color = col },
 }
- 
+
 
 local headWeightlist = {
     body = 0,
@@ -226,6 +229,30 @@ local headWeightlist = {
     rotor2 = 0,
     camera = 0,
     head = 1
+}
+
+local bladeWeightlist = {
+    body = 1,
+    left_forearm = 0,
+    left_shoulder = 0,
+    right_forearm = 1,
+    right_shoulder = 1,
+    rotor1 = 0,
+    rotor2 = 0,
+    camera = 0,
+    head = 0
+}
+
+local blasterWeightlist = {
+    body = 1,
+    left_forearm = 1,
+    left_shoulder = 1,
+    right_forearm = 0,
+    right_shoulder = 0,
+    rotor1 = 0,
+    rotor2 = 0,
+    camera = 0,
+    head = 0
 }
 
 model.new("astrostriker", hitbox {
@@ -273,7 +300,17 @@ model.new("astrostriker", hitbox {
         blade1,
         subtract = {"ref", 1},
         fps = 24,
-        weightlist = {left_shoulder = 0.5}
+        weightlist = bladeWeightlist
+    })
+    :addAnimation("startblaster", {
+        startblaster,
+        fps = 24,
+        weightlist = blasterWeightlist
+    })
+    :addAnimation("shootblaster", {
+        shootblaster,
+        fps = 24,
+        weightlist = blasterWeightlist,
     })
     :addSequence("reference", {
         {
@@ -287,7 +324,7 @@ model.new("astrostriker", hitbox {
         blendY = "body_pitch",
         autoplay = true,
         delta = true,
-        fadeIn = 0
+        fadeIn = 0,
     })
     :addSequence("breathing", {
         {"breathing"},
@@ -295,6 +332,14 @@ model.new("astrostriker", hitbox {
         delta = true,
         autoplay = true,
         fadeIn = 0
+    })
+    :addSequence("startblaster", {
+        {"startblaster"},
+    })
+    :addSequence("shootblaster", {
+        {"shootblaster"},
+        loop = true,
+        -- fadeIn = 0
     })
     :addSequence("blade1", {
         {"blade1"},

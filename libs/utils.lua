@@ -121,6 +121,7 @@ if SERVER then
         end
         for _, v in ipairs(spheres) do
             local pos = localToEnt and inflictor:localToWorld(v[1]) or v[1]
+            bdebug.sphere(pos, v[2], 1, Color(255, 0, 0, 0))
             for _, target in ipairs(find.inSphere(pos, v[2])) do
                 if !isValid(target) or target == world or target:getOwner() == world or filterByEnt[target] then goto cont end
                 if (callback and callback(target)) then goto cont end
